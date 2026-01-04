@@ -1,0 +1,263 @@
+// server/server.js - WITH FIREBASE PERSISTENCE
+require('dotenv').config();
+const express = require('express');
+const https = require('https');
+const http = require('http');
+const socketIo = require('socket.io');
+const cors = require('cors');
+const admin = require('firebase-admin');
+const fs = require('fs');
+const path = require('path');
+
+// Initialize Firebase Admin
+const serviceAccount = {
+  type: "service_account",
+  project_id: process.env.FIREBASE_PROJECT_ID,
+  private_key_id: process.env.FIREBASE_PRIVATE_KEY_ID,
+  private_key: process.env.FIREBASE_PRIVATE_KEY?.replace(/\\n/g, '\n'),
+  client_email: process.env.FIREBASE_CLIENT_EMAIL,
+  client_id: process.env.FIREBASE_CLIENT_ID,
+  auth_uri: "https://accounts.google.com/o/oauth2/auth",
+  token_uri: "https://oauth2.googleapis.com/token",
+  auth_provider_x509_cert_url: "https://www.googleapis.com/oauth2/v1/certs",
+  client_x509_cert_url: process.env.FIREBASE_CLIENT_X509_CERT_URL
+};
+
+admin.initializeApp({
+  credential: admin.credential.cert(serviceAccount),
+  projectId: process.env.FIREBASE_PROJECT_ID
+});
+
+const db = admin.firestore();
+
+const app = express();
+
+// const sslOptions = {
+//   key: fs.readFileSync(path.join(__dirname, '120.72.20.15+2-key.pem')),
+//   cert: fs.readFileSync(path.join(__dirname, '120.72.20.15+2.pem'))
+// };
+
+const server = http.createServer(app);
+const io = socketIo(server, {
+  cors: {
+    origin: ["http://localhost:3000", "http://127.0.0.1:3000", "https://192.168.50.250:3000", "https://localhost:3000", "https://120.72.20.15:3000"],
+    methods: ["GET", "POST"],
+    credentials: true,
+    allowedHeaders: ["Content-Type"]
+  }
+});
+
+// Store data in memory for active session, but persist to Firebase
+const users = new Map();
+const reports = new Map();
+const messages = new Map();
+
+// Load reports from Firebase on startup
+async function loadReportsFromFirebase() {
+  try {
+    const reportsRef = db.collection('reports');
+    const snapshot = await reportsRef.get();
+    snapshot.forEach(doc => {
+      const report = { id: doc.id, ...doc.data() };
+      reports.set(doc.id, report);
+    });
+    console.log(`📋 Loaded ${reports.size} reports from Firebase`);
+  } catch (error) {
+    console.error('❌ Error loading reports from Firebase:', error);
+  }
+}
+
+// Save report to Firebase
+async function saveReportToFirebase(report) {
+  try {
+    const reportRef = db.collection('reports').doc(report.id);
+    await reportRef.set({
+      ...report,
+      timestamp: admin.firestore.Timestamp.fromDate(new Date(report.timestamp))
+    });
+    console.log('💾 Report saved to Firebase:', report.id);
+  } catch (error) {
+    console.error('❌ Error saving report to Firebase:', error);
+  }
+}
+
+// Load messages from Firebase
+async function loadMessagesFromFirebase() {
+  try {
+    const messagesRef = db.collection('messages');
+    const snapshot = await messagesRef.get();
+    snapshot.forEach(doc => {
+      const message = doc.data();
+      if (!messages.has(message.reportId)) {
+        messages.set(message.reportId, []);
+      }
+      messages.get(message.reportId).push(message);
+    });
+    console.log(`💬 Loaded messages from Firebase`);
+  } catch (error) {
+    console.error('❌ Error loading messages from Firebase:', error);
+  }
+}
+
+// Save message to Firebase
+async function saveMessageToFirebase(message) {
+  try {
+    const messageRef = db.collection('messages').doc();
+    await messageRef.set({
+      ...message,
+      timestamp: admin.firestore.Timestamp.fromDate(new Date(message.timestamp))
+    });
+    console.log('💾 Message saved to Firebase:', message.reportId);
+  } catch (error) {
+    console.error('❌ Error saving message to Firebase:', error);
+  }
+}
+
+// Initialize data loading
+async function initializeServer() {
+  await loadReportsFromFirebase();
+  await loadMessagesFromFirebase();
+}
+
+// WebSocket connection
+io.on('connection', (socket) => {
+  console.log('✅ New client connected:', socket.id);
+
+  // Authentication
+  socket.on('authenticate', (userData) => {
+    console.log('User authenticated:', userData.email);
+    socket.userId = userData.userId || socket.id;
+    socket.userData = userData;
+
+    // Send success response
+    socket.emit('auth_success', {
+      ...userData,
+      message: 'Authentication successful'
+    });
+
+    // Send existing reports
+    socket.emit('initial_reports', Array.from(reports.values()));
+  });
+
+  // Submit report
+  socket.on('submit_report', async (reportData) => {
+    console.log('📝 New report:', reportData.type);
+
+    const reportId = reportData.id || `report_${Date.now()}`;
+    const fullReport = {
+      ...reportData,
+      id: reportId,
+      status: 'pending',
+      timestamp: new Date().toISOString()
+    };
+
+    reports.set(reportId, fullReport);
+
+    // Save to Firebase
+    await saveReportToFirebase(fullReport);
+
+    // Notify everyone
+    io.emit('new_report', fullReport);
+
+    // Send confirmation
+    socket.emit('report_submitted', {
+      success: true,
+      report: fullReport
+    });
+  });
+
+  // Update report status
+  socket.on('update_report', async (updateData) => {
+    console.log('🔄 Updating report:', updateData.reportId, 'to status:', updateData.status);
+
+    const { reportId, status, notes } = updateData;
+
+    if (reports.has(reportId)) {
+      const existingReport = reports.get(reportId);
+      const updatedReport = {
+        ...existingReport,
+        status: status,
+        notes: notes || existingReport.notes,
+        updatedAt: new Date().toISOString()
+      };
+
+      reports.set(reportId, updatedReport);
+
+      // Save to Firebase
+      await saveReportToFirebase(updatedReport);
+
+      // Notify all clients
+      io.emit('report_updated', updatedReport);
+
+      console.log('✅ Report updated successfully');
+    } else {
+      console.log('❌ Report not found:', reportId);
+      socket.emit('report_update_error', {
+        reportId,
+        error: 'Report not found'
+      });
+    }
+  });
+
+  // Join report chat
+  socket.on('join_report_chat', (data) => {
+    const { reportId } = data;
+    console.log('👥 User joined chat for report:', reportId);
+
+    // Send existing chat messages for this report
+    const reportMessages = messages.get(reportId) || [];
+    socket.emit('chat_history', { reportId, messages: reportMessages });
+
+    // Join the room for this report
+    socket.join(`report_${reportId}`);
+  });
+
+  // Chat message
+  socket.on('report_chat_message', async (messageData) => {
+    console.log('💬 New chat message for report:', messageData.reportId);
+
+    const { reportId } = messageData;
+    const message = {
+      ...messageData,
+      timestamp: new Date().toISOString(),
+      id: `msg_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
+    };
+
+    // Store the message
+    if (!messages.has(reportId)) {
+      messages.set(reportId, []);
+    }
+    messages.get(reportId).push(message);
+
+    // Save to Firebase
+    await saveMessageToFirebase(message);
+
+    // Broadcast the complete message (with id and timestamp) to all users in this report's room
+    io.to(`report_${reportId}`).emit('new_chat_message', message);
+  });
+
+  // Disconnect
+  socket.on('disconnect', () => {
+    console.log('❌ Client disconnected:', socket.id);
+  });
+});
+
+// Health check
+app.get('/health', (req, res) => {
+  res.json({ 
+    status: 'OK', 
+    message: 'B-READY Server is running',
+    timestamp: new Date().toISOString()
+  });
+});
+
+// Start server
+const PORT = process.env.PORT || 3001;
+const HOST = process.env.HOST || '0.0.0.0';
+server.listen(PORT, HOST, async () => {
+  console.log(`🚀 Server running on http://${HOST}:${PORT}`);
+  console.log(`🌐 WebSocket ready at ws://${HOST}:${PORT}`);
+
+  // Initialize data from Firebase
+  await initializeServer();
+});

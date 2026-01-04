@@ -1,0 +1,15 @@
+// Global type declarations
+declare module 'socket.io-client' {
+  const io: any;
+  export default io;
+}
+
+declare module 'firebase-admin' {
+  export const initializeApp: any;
+  export const credential: {
+    cert: any;
+  };
+  export const firestore: any;
+  export const auth: any;
+  export const storage: any;
+}

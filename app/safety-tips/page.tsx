@@ -1,0 +1,164 @@
+'use client';
+
+import { Header } from '@/components/Header';
+
+export default function SafetyTipsPage() {
+  const tips = [
+    {
+      icon: '🌊',
+      title: 'Flood Safety', 
+      items: [
+        'Move to higher ground immediately when flooding occurs',
+        'Keep emergency supplies ready',
+        'Avoid walking or driving through floodwaters',
+        'Disconnect electrical appliances',
+      ],
+    },
+    {
+      icon: '🔥',
+      title: 'Fire Safety',
+      items: [
+        'Install smoke alarms and check regularly',
+        'Keep fire extinguishers accessible',
+        'Never leave cooking unattended',
+        'Know your escape routes',
+      ],
+    },
+    {
+      icon: '🌋',
+      title: 'Earthquake Safety',
+      items: [
+        'Drop, cover, and hold on during shaking',
+        'Stay away from windows and heavy objects',
+        'Prepare a family emergency plan',
+        'Evacuate if building is unsafe',
+      ],
+    },
+    {
+      icon: '🌀',
+      title: 'Typhoon Safety',
+      items: [
+        'Secure your home and outdoor items',
+        'Monitor weather updates',
+        'Evacuate early if advised',
+        'Keep emergency contacts handy',
+      ],
+    },
+    {
+      icon: '🚨',
+      title: 'General Preparedness',
+      items: [
+        'Know evacuation routes and centers',
+        'Keep important documents waterproof',
+        'Help neighbors, especially elderly',
+        'Report hazards immediately',
+      ],
+    },
+    {
+      icon: '📱',
+      title: 'Digital Safety',
+      items: [
+        'Keep phone charged during emergencies',
+        'Save emergency numbers',
+        'Use B-READY for quick reporting',
+        'Share location with trusted contacts',
+      ],
+    },
+  ];
+
+  const emergencyKit = {
+    essential: [
+      'Water (1 gallon per person per day)',
+      'Non-perishable food',
+      'First aid kit',
+      'Flashlight with batteries',
+    ],
+    documents: [
+      'Identification cards',
+      'Medical records',
+      'Emergency contacts',
+      'Insurance policies',
+    ],
+    supplies: [
+      'Prescription medications',
+      'Personal hygiene items',
+      'Multi-tool or knife',
+      'Portable phone charger',
+    ],
+  };
+
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-200">
+      <Header />
+      
+      <main className="max-w-7xl mx-auto px-4 py-8">
+        <div className="bg-white/95 backdrop-blur-lg rounded-2xl p-8 shadow-xl">
+          <h1 className="text-4xl font-bold mb-4">Safety Tips</h1>
+          <p className="text-gray-600 text-lg mb-8">
+            Essential safety information for various emergency situations.
+          </p>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-12">
+            {tips.map((tip, idx) => (
+              <div
+                key={idx}
+                className="bg-white border-l-4 border-primary rounded-xl p-6 shadow-md hover:shadow-lg transition-shadow"
+              >
+                <div className="text-4xl mb-4">{tip.icon}</div>
+                <h3 className="text-xl font-bold mb-4">{tip.title}</h3>
+                <ul className="space-y-2">
+                  {tip.items.map((item, itemIdx) => (
+                    <li key={itemIdx} className="flex items-start gap-2">
+                      <span className="text-green-500 font-bold mt-1">✓</span>
+                      <span className="text-gray-700">{item}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            ))}
+          </div>
+
+          <div className="bg-gray-50 rounded-xl p-8">
+            <h2 className="text-2xl font-bold mb-6">Emergency Kit Checklist</h2>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              <div>
+                <h3 className="text-xl font-semibold mb-4">Essential Items</h3>
+                <ul className="space-y-2">
+                  {emergencyKit.essential.map((item, idx) => (
+                    <li key={idx} className="flex items-start gap-2">
+                      <span className="text-green-500 font-bold">✓</span>
+                      <span>{item}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+              <div>
+                <h3 className="text-xl font-semibold mb-4">Important Documents</h3>
+                <ul className="space-y-2">
+                  {emergencyKit.documents.map((item, idx) => (
+                    <li key={idx} className="flex items-start gap-2">
+                      <span className="text-green-500 font-bold">✓</span>
+                      <span>{item}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+              <div>
+                <h3 className="text-xl font-semibold mb-4">Additional Supplies</h3>
+                <ul className="space-y-2">
+                  {emergencyKit.supplies.map((item, idx) => (
+                    <li key={idx} className="flex items-start gap-2">
+                      <span className="text-green-500 font-bold">✓</span>
+                      <span>{item}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            </div>
+          </div>
+        </div>
+      </main>
+    </div>
+  );
+}
+

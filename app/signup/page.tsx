@@ -1,0 +1,276 @@
+'use client';
+
+import { useState } from 'react';
+import { useRouter } from 'next/navigation';
+import { useAuth } from '@/contexts/AuthContext';
+import { Header } from '@/components/Header';
+import { notificationManager } from '@/components/NotificationManager';
+import Link from 'next/link';
+import { MapPicker } from '@/components/MapPicker';
+import type { UserRole } from '@/types';
+ 
+export default function SignupPage() {
+  const router = useRouter();
+  const { signup } = useAuth();
+  const [accountType, setAccountType] = useState<UserRole | null>(null);
+  const [showMapPicker, setShowMapPicker] = useState(false);
+  const [formData, setFormData] = useState({
+    firstName: '',
+    lastName: '',
+    email: '',
+    password: '',
+    confirmPassword: '',
+    phone: '',
+    address: '',
+    birthdate: '',
+    employeeId: '',
+  });
+  const [loading, setLoading] = useState(false);
+
+  const handleAccountTypeSelect = (type: UserRole) => {
+    setAccountType(type);
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+
+    if (!accountType) {
+      notificationManager.error('Please select an account type');
+      return;
+    }
+
+    if (formData.password !== formData.confirmPassword) {
+      notificationManager.error('Passwords do not match');
+      return;
+    }
+
+    if (formData.password.length < 6) {
+      notificationManager.error('Password must be at least 6 characters long');
+      return;
+    }
+
+    if (accountType === 'admin' && !formData.employeeId) {
+      notificationManager.error('Employee ID is required for admin accounts');
+      return;
+    }
+
+    setLoading(true);
+    try {
+      await signup({
+        email: formData.email,
+        password: formData.password,
+        firstName: formData.firstName,
+        lastName: formData.lastName,
+        phone: formData.phone,
+        address: formData.address,
+        birthdate: formData.birthdate,
+        employeeId: formData.employeeId,
+        role: accountType,
+      });
+      notificationManager.success('Account created successfully!');
+      router.push('/terms');
+    } catch (error: unknown) {
+      let errorMessage = 'Signup failed. ';
+      const firebaseError = error as { code?: string; message?: string };
+      switch (firebaseError.code) {
+        case 'auth/email-already-in-use':
+          errorMessage += 'Email already in use.';
+          break;
+        case 'auth/invalid-email':
+          errorMessage += 'Invalid email address.';
+          break;
+        case 'auth/weak-password':
+          errorMessage += 'Password is too weak.';
+          break;
+        default:
+          errorMessage += firebaseError.message || 'Unknown error occurred';
+      }
+      notificationManager.error(errorMessage);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-200">
+      <Header />
+      
+      <div className="max-w-2xl mx-auto px-4 py-12">
+        <div className="bg-white/95 backdrop-blur-lg rounded-2xl p-8 shadow-xl">
+          <div className="text-center mb-8">
+            <div className="text-5xl mb-4">🚨</div>
+            <h1 className="text-3xl font-bold mb-2">Create Account</h1>
+            <p className="text-gray-600">Choose your account type</p>
+          </div>
+
+          {!accountType ? (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
+              <button
+                onClick={() => handleAccountTypeSelect('resident')}
+                className="p-6 border-2 border-gray-300 rounded-xl hover:border-primary hover:bg-primary/5 transition-all text-center"
+              >
+                <div className="text-4xl mb-3">👨‍👩‍👧‍👦</div>
+                <div className="text-xl font-semibold mb-2">Resident</div>
+                <div className="text-sm text-gray-600">Report emergencies and view updates</div>
+              </button>
+              <button
+                onClick={() => handleAccountTypeSelect('admin')}
+                className="p-6 border-2 border-gray-300 rounded-xl hover:border-primary hover:bg-primary/5 transition-all text-center"
+              >
+                <div className="text-4xl mb-3">👨‍💼</div>
+                <div className="text-xl font-semibold mb-2">Admin</div>
+                <div className="text-sm text-gray-600">Manage reports and coordinate response</div>
+              </button>
+            </div>
+          ) : (
+            <form onSubmit={handleSubmit} className="space-y-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-semibold mb-2">First Name</label>
+                  <input
+                    type="text"
+                    value={formData.firstName}
+                    onChange={(e) => setFormData({ ...formData, firstName: e.target.value })}
+                    className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:border-primary focus:outline-none"
+                    required
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-semibold mb-2">Last Name</label>
+                  <input
+                    type="text"
+                    value={formData.lastName}
+                    onChange={(e) => setFormData({ ...formData, lastName: e.target.value })}
+                    className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:border-primary focus:outline-none"
+                    required
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-sm font-semibold mb-2">Email Address</label>
+                <input
+                  type="email"
+                  value={formData.email}
+                  onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                  className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:border-primary focus:outline-none"
+                  required
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-semibold mb-2">Password</label>
+                  <input
+                    type="password"
+                    value={formData.password}
+                    onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+                    className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:border-primary focus:outline-none"
+                    required
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-semibold mb-2">Confirm Password</label>
+                  <input
+                    type="password"
+                    value={formData.confirmPassword}
+                    onChange={(e) => setFormData({ ...formData, confirmPassword: e.target.value })}
+                    className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:border-primary focus:outline-none"
+                    required
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-sm font-semibold mb-2">Address</label>
+                <div className="flex gap-2">
+                  <input
+                    type="text"
+                    value={formData.address}
+                    readOnly
+                    className="flex-1 px-4 py-3 border-2 border-gray-300 rounded-lg bg-gray-50"
+                    placeholder="Select your location"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowMapPicker(true)}
+                    className="px-4 py-3 bg-primary text-white rounded-lg hover:opacity-90"
+                  >
+                    📍 Map
+                  </button>
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-sm font-semibold mb-2">Phone Number</label>
+                <input
+                  type="tel"
+                  value={formData.phone}
+                  onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+                  className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:border-primary focus:outline-none"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-semibold mb-2">Birthdate</label>
+                <input
+                  type="date"
+                  value={formData.birthdate}
+                  onChange={(e) => setFormData({ ...formData, birthdate: e.target.value })}
+                  className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:border-primary focus:outline-none"
+                  required
+                />
+              </div>
+
+              {accountType === 'admin' && (
+                <div>
+                  <label className="block text-sm font-semibold mb-2">Employee ID</label>
+                  <input
+                    type="text"
+                    value={formData.employeeId}
+                    onChange={(e) => setFormData({ ...formData, employeeId: e.target.value })}
+                    className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:border-primary focus:outline-none"
+                    required
+                  />
+                </div>
+              )}
+
+              <button
+                type="submit"
+                disabled={loading}
+                className="w-full py-3 bg-gradient-to-r from-primary to-primary-dark text-white rounded-lg font-semibold hover:opacity-90 transition-opacity disabled:opacity-50"
+              >
+                {loading ? 'Creating account...' : 'Create Account'}
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setAccountType(null)}
+                className="w-full py-2 text-primary font-semibold"
+              >
+                ← Back to account type selection
+              </button>
+            </form>
+          )}
+
+          <p className="text-center text-gray-600 mt-6">
+            Already have an account?{' '}
+            <Link href="/login" className="text-primary font-semibold hover:underline">
+              Login here
+            </Link>
+          </p>
+        </div>
+      </div>
+
+      {showMapPicker && (
+        <MapPicker
+          onSelect={(address) => {
+            setFormData({ ...formData, address });
+            setShowMapPicker(false);
+          }}
+          onClose={() => setShowMapPicker(false)}
+        />
+      )}
+    </div>
+  );
+}
