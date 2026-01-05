@@ -39,6 +39,7 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
   if (!user) return null;
 
   const navItems = [
+    { path: '/', label: 'Landing Page', icon: '🏠' },
     { path: '/dashboard', label: 'Home Dashboard', icon: '🏠' },
     { path: '/real-time-map', label: 'Real Time Map', icon: '🗺️' },
     { path: '/profile', label: 'Account Settings', icon: '👤' },
