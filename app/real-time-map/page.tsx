@@ -6,7 +6,12 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useSocketContext } from '@/contexts/SocketContext';
 import { Header } from '@/components/Header';
 import L from 'leaflet';
-import type { Report } from '@/types';
+
+declare global {
+  interface Window {
+    removeStation: (id: string) => void;
+  }
+}
 
 interface Station {
   id: string;
@@ -120,11 +125,11 @@ export default function RealTimeMapPage() {
     }
   };
 
-  const searchLocation = async (query: string) => {
+  const searchLocation = async (query: string): Promise<SearchResult[]> => {
     if (!query.trim()) {
       setSearchResults([]);
       setShowResults(false);
-      return;
+      return [];
     }
 
     try {
@@ -144,19 +149,23 @@ export default function RealTimeMapPage() {
 
         setSearchResults(results);
         setShowResults(true);
+        return results;
       } else {
         // Fallback: provide some common Philippine locations if no results
         if (query.toLowerCase().includes('manila')) {
-          setSearchResults([{
+          const results = [{
             place_id: 1,
             display_name: 'Manila, Metro Manila, Philippines',
             lat: '14.5995',
             lon: '120.9842'
-          }]);
+          }];
+          setSearchResults(results);
           setShowResults(true);
+          return results;
         } else {
           setSearchResults([]);
           setShowResults(false);
+          return [];
         }
       }
     } catch (error) {
@@ -172,6 +181,7 @@ export default function RealTimeMapPage() {
 
       setSearchResults(fallbackResults);
       setShowResults(fallbackResults.length > 0);
+      return fallbackResults;
     }
   };
 
@@ -180,7 +190,7 @@ export default function RealTimeMapPage() {
     const lng = parseFloat(result.lon);
 
     if (mapRef.current) {
-      mapRef.current.setView([lat, lng], 15);
+      mapRef.current.setView([lat, lng], 18);
       setSearchQuery('');
       setShowResults(false);
     }
@@ -189,9 +199,17 @@ export default function RealTimeMapPage() {
   useEffect(() => {
     if (!mapContainerRef.current || mapRef.current) return;
 
-    // Small delay to ensure DOM is fully rendered
+    // Wait for the container to be properly sized and ready
     const initMap = () => {
       if (!mapContainerRef.current || mapRef.current) return;
+
+      // Check if container has dimensions
+      const rect = mapContainerRef.current.getBoundingClientRect();
+      if (rect.width === 0 || rect.height === 0) {
+        // Container not ready yet, try again
+        setTimeout(initMap, 100);
+        return;
+      }
 
       try {
         // Initialize map centered on Philippines
@@ -267,8 +285,19 @@ export default function RealTimeMapPage() {
       }
     };
 
-    // Use setTimeout to ensure DOM is ready
-    setTimeout(initMap, 50);
+    // Use requestAnimationFrame for better timing
+    const checkReady = () => {
+      if (mapContainerRef.current) {
+        const rect = mapContainerRef.current.getBoundingClientRect();
+        if (rect.width > 0 && rect.height > 0) {
+          initMap();
+        } else {
+          requestAnimationFrame(checkReady);
+        }
+      }
+    };
+
+    requestAnimationFrame(checkReady);
 
     return () => {
       if (mapRef.current) {
@@ -385,7 +414,7 @@ export default function RealTimeMapPage() {
 
     // Add global function for popup button
     if (typeof window !== 'undefined' && user?.role === 'admin') {
-      (window as any).removeStation = removeStation;
+      window.removeStation = removeStation;
     }
   }, [stations]);
 
@@ -428,10 +457,19 @@ export default function RealTimeMapPage() {
                   setSearchQuery(e.target.value);
                   searchLocation(e.target.value);
                 }}
+                onKeyDown={async (e) => {
+                  if (e.key === 'Enter') {
+                    const results = await searchLocation(searchQuery);
+                    if (results.length > 0) selectSearchResult(results[0]);
+                  }
+                }}
                 className="flex-1 px-4 py-2 border-2 border-gray-300 rounded-lg focus:border-primary focus:outline-none"
               />
               <button
-                onClick={() => searchLocation(searchQuery)}
+                onClick={async () => {
+                  const results = await searchLocation(searchQuery);
+                  if (results.length > 0) selectSearchResult(results[0]);
+                }}
                 className="px-4 py-2 bg-primary text-white rounded-lg hover:opacity-90"
               >
                 🔍
@@ -441,9 +479,9 @@ export default function RealTimeMapPage() {
             {/* Search Results */}
             {showResults && searchResults.length > 0 && (
               <div className="absolute top-full left-0 right-0 bg-white border border-gray-300 rounded-lg shadow-lg z-10 max-h-60 overflow-y-auto">
-                {searchResults.map((result) => (
+                {searchResults.map((result, index) => (
                   <button
-                    key={result.place_id}
+                    key={index}
                     onClick={() => selectSearchResult(result)}
                     className="w-full text-left px-4 py-2 hover:bg-gray-100 border-b border-gray-200 last:border-b-0"
                   >

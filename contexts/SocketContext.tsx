@@ -14,9 +14,9 @@ interface SocketContextType {
   submitReport: (report: Partial<Report>) => void;
   updateReport: (reportId: string, status: string, notes?: string) => void;
   joinReportChat: (reportId: string) => void;
-  sendChatMessage: (reportId: string, text: string, userName: string, userRole: string) => void;
-  chatMessages: { [reportId: string]: Array<{ id: string; text: string; userName: string; userRole: string; timestamp: string; reportId: string }> };
-  setChatMessages: React.Dispatch<React.SetStateAction<{ [reportId: string]: Array<{ id: string; text: string; userName: string; userRole: string; timestamp: string; reportId: string }> }>>;
+  sendChatMessage: (reportId: string, text: string, userName: string, userRole: string, imageData?: string) => void;
+  chatMessages: { [reportId: string]: Array<{ id: string; text: string; userName: string; userRole: string; timestamp: string; reportId: string; imageData?: string }> };
+  setChatMessages: React.Dispatch<React.SetStateAction<{ [reportId: string]: Array<{ id: string; text: string; userName: string; userRole: string; timestamp: string; reportId: string; imageData?: string }> }>>;
 }
  
 const SocketContext = createContext<SocketContextType | undefined>(undefined);
@@ -131,9 +131,9 @@ export function SocketProvider({ children }: { children: React.ReactNode }) {
     }
   }, [socket, connected]);
 
-  const sendChatMessage = useCallback((reportId: string, text: string, userName: string, userRole: string) => {
+  const sendChatMessage = useCallback((reportId: string, text: string, userName: string, userRole: string, imageData?: string) => {
     if (socket && connected) {
-      socketEvents.sendChatMessage(socket, { reportId, text, userName, userRole });
+      socketEvents.sendChatMessage(socket, { reportId, text, userName, userRole, imageData });
     }
   }, [socket, connected]);
 

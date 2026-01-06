@@ -17,6 +17,8 @@ export interface OfflineMessage {
   userRole: string;
   timestamp: string;
   offlineId: string;
+  synced?: boolean;
+  imageData?: string;
 }
 
 // Check if user is online

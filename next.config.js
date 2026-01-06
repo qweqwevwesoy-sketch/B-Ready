@@ -4,10 +4,7 @@ const nextConfig = {
   typescript: {
     ignoreBuildErrors: true,
   },
-  allowedDevOrigins: ['192.168.50.250'],
-  eslint: {
-    dirs: ['app', 'components', 'lib'],
-  },
+  allowedDevOrigins: ['192.168.50.250', '192.168.0.118'],
 }
 
 module.exports = nextConfig

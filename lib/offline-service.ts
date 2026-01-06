@@ -1,4 +1,6 @@
 import type { Report, User } from '@/types';
+import { db } from '@/lib/firebase';
+import { collection, addDoc, getDocs, doc, updateDoc, query, where, orderBy } from 'firebase/firestore';
 
 interface OfflineConfig {
   phpApiUrl: string;
@@ -49,8 +51,7 @@ class OfflineService {
     if (this.shouldUseLocalBackend()) {
       return this.createReportLocal(reportData);
     } else {
-      // Would use Firebase/Socket.io here
-      throw new Error('Firebase mode not implemented in this service');
+      return this.createReportFirebase(reportData);
     }
   }
 
@@ -58,8 +59,7 @@ class OfflineService {
     if (this.shouldUseLocalBackend()) {
       return this.getReportsLocal(filters);
     } else {
-      // Would use Firebase/Socket.io here
-      throw new Error('Firebase mode not implemented in this service');
+      return this.getReportsFirebase(filters);
     }
   }
 
@@ -67,8 +67,7 @@ class OfflineService {
     if (this.shouldUseLocalBackend()) {
       return this.updateReportLocal(reportId, updates);
     } else {
-      // Would use Firebase/Socket.io here
-      throw new Error('Firebase mode not implemented in this service');
+      return this.updateReportFirebase(reportId, updates);
     }
   }
 
@@ -83,8 +82,7 @@ class OfflineService {
     if (this.shouldUseLocalBackend()) {
       return this.createMessageLocal(messageData);
     } else {
-      // Would use Firebase/Socket.io here
-      throw new Error('Firebase mode not implemented in this service');
+      return this.createMessageFirebase(messageData);
     }
   }
 
@@ -92,8 +90,7 @@ class OfflineService {
     if (this.shouldUseLocalBackend()) {
       return this.getMessagesLocal(reportId);
     } else {
-      // Would use Firebase/Socket.io here
-      throw new Error('Firebase mode not implemented in this service');
+      return this.getMessagesFirebase(reportId);
     }
   }
 
@@ -225,6 +222,113 @@ class OfflineService {
       return result.status === 'OK';
     } catch (error) {
       return false;
+    }
+  }
+
+  // Firebase implementations
+  private async createReportFirebase(reportData: Partial<Report>): Promise<{ success: boolean; id?: string }> {
+    try {
+      const reportsRef = collection(db, 'reports');
+      const docRef = await addDoc(reportsRef, {
+        ...reportData,
+        timestamp: new Date().toISOString(),
+        status: reportData.status || 'pending',
+      });
+      console.log('✅ Report created in Firebase:', docRef.id);
+      return { success: true, id: docRef.id };
+    } catch (error) {
+      console.error('❌ Failed to create report in Firebase:', error);
+      return { success: false };
+    }
+  }
+
+  private async getReportsFirebase(filters?: { userId?: string; status?: string }): Promise<Report[]> {
+    try {
+      const reportsRef = collection(db, 'reports');
+      let q = query(reportsRef, orderBy('timestamp', 'desc'));
+
+      if (filters?.userId) {
+        q = query(q, where('userId', '==', filters.userId));
+      }
+      if (filters?.status) {
+        q = query(q, where('status', '==', filters.status));
+      }
+
+      const querySnapshot = await getDocs(q);
+      const reports: Report[] = [];
+
+      querySnapshot.forEach((doc) => {
+        reports.push({
+          id: doc.id,
+          ...doc.data(),
+        } as Report);
+      });
+
+      console.log(`📋 Retrieved ${reports.length} reports from Firebase`);
+      return reports;
+    } catch (error) {
+      console.error('❌ Failed to fetch reports from Firebase:', error);
+      return [];
+    }
+  }
+
+  private async updateReportFirebase(reportId: string, updates: Partial<Report>): Promise<{ success: boolean }> {
+    try {
+      const reportRef = doc(db, 'reports', reportId);
+      await updateDoc(reportRef, {
+        ...updates,
+        updatedAt: new Date().toISOString(),
+      });
+      console.log('✅ Report updated in Firebase:', reportId);
+      return { success: true };
+    } catch (error) {
+      console.error('❌ Failed to update report in Firebase:', error);
+      return { success: false };
+    }
+  }
+
+  private async createMessageFirebase(messageData: {
+    reportId: string;
+    text: string;
+    userName: string;
+    userRole: string;
+    timestamp: string;
+  }): Promise<{ success: boolean; id?: string }> {
+    try {
+      const messagesRef = collection(db, 'messages');
+      const docRef = await addDoc(messagesRef, messageData);
+      console.log('✅ Message created in Firebase:', docRef.id);
+      return { success: true, id: docRef.id };
+    } catch (error) {
+      console.error('❌ Failed to create message in Firebase:', error);
+      return { success: false };
+    }
+  }
+
+  private async getMessagesFirebase(reportId: string): Promise<Record<string, unknown>[]> {
+    try {
+      const messagesRef = collection(db, 'messages');
+      const q = query(
+        messagesRef,
+        where('reportId', '==', reportId),
+        orderBy('timestamp', 'asc')
+      );
+
+      const querySnapshot = await getDocs(q);
+      const messages: Record<string, unknown>[] = [];
+
+      querySnapshot.forEach((doc) => {
+        messages.push({
+          id: doc.id,
+          ...doc.data(),
+        });
+      });
+
+      console.log(`💬 Retrieved ${messages.length} messages from Firebase for report ${reportId}`);
+      return messages;
+    } catch (error) {
+      console.error('❌ Failed to fetch messages from Firebase:', error);
+      return [];
     }
   }
 }

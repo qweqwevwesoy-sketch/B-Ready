@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef, useMemo } from 'react';
 import { useSocketContext } from '@/contexts/SocketContext';
+import { useAuth } from '@/contexts/AuthContext';
 import { useOfflineStatus, storeOfflineMessage, getOfflineMessagesForReport } from '@/lib/offline-manager';
 import type { Category } from '@/types';
 
@@ -10,9 +11,10 @@ interface ChatBoxProps {
   category?: Category | null;
   onClose: () => void;
   onSendMessage: (text: string) => void;
+  onSendImage?: (imageData: string) => void;
 }
 
-const getInitialMessage = (category: Category | null | undefined) => ({
+const getInitialMessage = (category: Category | null | undefined): { text: string; sender: string; time: string; type: 'sent' | 'received'; imageData?: string } => ({
   text: category
     ? `Hello! How can we help you today? You're reporting a ${category.name.toLowerCase()} incident.`
     : 'Hello! How can we help you today?',
@@ -21,31 +23,37 @@ const getInitialMessage = (category: Category | null | undefined) => ({
   type: 'received' as const,
 });
 
-export function ChatBox({ reportId, category, onClose, onSendMessage }: ChatBoxProps) {
+export function ChatBox({ reportId, category, onClose, onSendMessage, onSendImage }: ChatBoxProps) {
   const { chatMessages } = useSocketContext();
+  const { user } = useAuth();
   const [message, setMessage] = useState('');
   const [cameraActive, setCameraActive] = useState(false);
+  const [cameraReady, setCameraReady] = useState(false);
   const [capturedImage, setCapturedImage] = useState<string | null>(null);
+  const [localMessages, setLocalMessages] = useState<Array<{ text: string; sender: string; time: string; type: 'sent' | 'received'; imageData?: string }>>([]);
   const videoRef = useRef<HTMLVideoElement>(null);
   const streamRef = useRef<MediaStream | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const isOffline = useOfflineStatus();
 
   const messages = useMemo(() => {
-    let onlineMessages: Array<{ text: string; sender: string; time: string; type: 'sent' | 'received' }> = [];
+    let onlineMessages: Array<{ text: string; sender: string; time: string; type: 'sent' | 'received'; imageData?: string }> = [];
 
     if (reportId && chatMessages[reportId]) {
       // Convert stored messages to display format
-      onlineMessages = chatMessages[reportId].map(msg => ({
-        text: msg.text,
-        sender: msg.userName,
-        time: new Date(msg.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-        type: msg.userRole === 'admin' ? 'received' : 'sent' as const,
-      }));
+      onlineMessages = chatMessages[reportId].map(msg => {
+        const isCurrentUser = user && msg.userName === `${user.firstName} ${user.lastName}`;
+        return {
+          text: msg.text,
+          sender: isCurrentUser ? 'You' : msg.userName,
+          time: new Date(msg.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+          type: msg.userRole === 'admin' ? 'received' : 'sent' as const,
+        };
+      });
     }
 
     // Add offline messages if available
-    let offlineMessages: Array<{ text: string; sender: string; time: string; type: 'sent' | 'received' }> = [];
+    let offlineMessages: Array<{ text: string; sender: string; time: string; type: 'sent' | 'received'; imageData?: string }> = [];
     if (reportId) {
       const offlineMsgs = getOfflineMessagesForReport(reportId);
       offlineMessages = offlineMsgs.map(msg => ({
@@ -56,11 +64,27 @@ export function ChatBox({ reportId, category, onClose, onSendMessage }: ChatBoxP
       }));
     }
 
-    const allMessages = [...onlineMessages, ...offlineMessages];
+    const allMessages = [...onlineMessages, ...offlineMessages, ...localMessages];
 
-    // Return messages or initial message for new chats
-    return allMessages.length > 0 ? allMessages : [getInitialMessage(category)];
-  }, [reportId, chatMessages, category]);
+    // Always include initial message if no other messages exist, otherwise just show all messages
+    if (allMessages.length === 0) {
+      return [getInitialMessage(category)];
+    }
+
+    // Check if initial message is already in the messages
+    const hasInitialMessage = allMessages.some(msg =>
+      msg.sender === 'B-READY Support' &&
+      msg.type === 'received' &&
+      msg.text.includes('Hello! How can we help you')
+    );
+
+    // If no initial message and we have a category, add it at the beginning
+    if (!hasInitialMessage && category) {
+      return [getInitialMessage(category), ...allMessages];
+    }
+
+    return allMessages;
+  }, [reportId, chatMessages, category, localMessages]);
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -68,19 +92,172 @@ export function ChatBox({ reportId, category, onClose, onSendMessage }: ChatBoxP
 
   const startCamera = async () => {
     try {
-      const stream = await navigator.mediaDevices.getUserMedia({
-        video: { facingMode: 'environment', width: { ideal: 1280 }, height: { ideal: 720 } },
-      });
+      console.log('🎥 Requesting camera access...');
+
+      // Check if mediaDevices is available
+      if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+        console.warn('⚠️ Camera API not available, trying file upload fallback');
+        // Fall back to file input
+        const fileInput = document.createElement('input');
+        fileInput.type = 'file';
+        fileInput.accept = 'image/*';
+        fileInput.capture = 'environment';
+        fileInput.onchange = (e) => {
+          const file = (e.target as HTMLInputElement).files?.[0];
+          if (file) {
+            handleFileUpload(file);
+          }
+        };
+        fileInput.click();
+        return;
+      }
+
+      // Check if we're on HTTPS (required for camera access in most browsers)
+      // Allow HTTP for localhost development
+      const isSecureContext = location.protocol === 'https:' ||
+                             location.hostname === 'localhost' ||
+                             location.hostname === '127.0.0.1' ||
+                             location.hostname.startsWith('192.168.');
+
+      if (!isSecureContext) {
+        console.warn('⚠️ Not in secure context, trying file upload fallback');
+        // Fall back to file input
+        const fileInput = document.createElement('input');
+        fileInput.type = 'file';
+        fileInput.accept = 'image/*';
+        fileInput.capture = 'environment';
+        fileInput.onchange = (e) => {
+          const file = (e.target as HTMLInputElement).files?.[0];
+          if (file) {
+            handleFileUpload(file);
+          }
+        };
+        fileInput.click();
+        return;
+      }
+
+      // Try different camera configurations
+      let stream;
+      const constraints = [
+        // Try rear camera first
+        { video: { facingMode: 'environment', width: { ideal: 1280 }, height: { ideal: 720 } } },
+        // Try front camera
+        { video: { facingMode: 'user', width: { ideal: 1280 }, height: { ideal: 720 } } },
+        // Try any camera
+        { video: { width: { ideal: 1280 }, height: { ideal: 720 } } },
+        // Basic video
+        { video: true }
+      ];
+
+      for (const constraint of constraints) {
+        try {
+          console.log('🎥 Trying camera constraints:', constraint);
+          stream = await navigator.mediaDevices.getUserMedia(constraint);
+          console.log('✅ Camera access granted with constraints:', constraint);
+          break;
+        } catch (error) {
+          console.warn('⚠️ Camera constraint failed:', constraint, error);
+        }
+      }
+
+      if (!stream) {
+        throw new Error('Unable to access any camera on this device.');
+      }
+
       streamRef.current = stream;
+      setCameraReady(true);
       if (videoRef.current) {
+        console.log('📺 Setting video srcObject');
         videoRef.current.srcObject = stream;
-        videoRef.current.play().catch(console.error);
+        await videoRef.current.play();
+        console.log('▶️ Video playing');
       }
       setCameraActive(true);
     } catch (err) {
-      console.error('Error accessing camera:', err);
-      alert('Unable to access camera. Please check permissions.');
+      console.error('❌ Error accessing camera:', err);
+
+      // Final fallback: file upload
+      console.log('📁 Falling back to file upload');
+      const fileInput = document.createElement('input');
+      fileInput.type = 'file';
+      fileInput.accept = 'image/*';
+      fileInput.capture = 'environment';
+      fileInput.onchange = (e) => {
+        const file = (e.target as HTMLInputElement).files?.[0];
+        if (file) {
+          handleFileUpload(file);
+        }
+      };
+      fileInput.click();
     }
+  };
+
+  const handleFileUpload = async (file: File) => {
+    try {
+      console.log('📁 Processing uploaded file:', file.name);
+
+      // Compress the image
+      const compressedDataUrl = await compressImage(file);
+
+      // Add the image to local messages
+      const uploadedImageMessage = {
+        text: '[Photo]', // Placeholder text for image
+        sender: 'You',
+        time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+        type: 'sent' as const,
+        imageData: compressedDataUrl,
+      };
+      setLocalMessages(prev => [...prev, uploadedImageMessage]);
+
+      // Send the image if callback exists
+      if (onSendImage) {
+        onSendImage(compressedDataUrl);
+      }
+
+      console.log('✅ Image uploaded and compressed successfully');
+    } catch (error) {
+      console.error('❌ Error processing uploaded file:', error);
+      alert('Error processing the selected image. Please try again.');
+    }
+  };
+
+  const compressImage = (file: File): Promise<string> => {
+    return new Promise((resolve, reject) => {
+      const canvas = document.createElement('canvas');
+      const ctx = canvas.getContext('2d');
+      const img = new Image();
+
+      img.onload = () => {
+        // Calculate new dimensions (max 1200px width/height, maintain aspect ratio)
+        let { width, height } = img;
+
+        const maxSize = 1200;
+        if (width > height) {
+          if (width > maxSize) {
+            height = (height * maxSize) / width;
+            width = maxSize;
+          }
+        } else {
+          if (height > maxSize) {
+            width = (width * maxSize) / height;
+            height = maxSize;
+          }
+        }
+
+        canvas.width = width;
+        canvas.height = height;
+
+        // Draw and compress
+        ctx?.drawImage(img, 0, 0, width, height);
+
+        // Compress to JPEG with quality 0.8
+        const compressedDataUrl = canvas.toDataURL('image/jpeg', 0.8);
+        resolve(compressedDataUrl);
+      };
+
+      img.onerror = () => reject(new Error('Failed to load image'));
+      img.src = URL.createObjectURL(file);
+    });
   };
 
   const stopCamera = () => {
@@ -89,6 +266,7 @@ export function ChatBox({ reportId, category, onClose, onSendMessage }: ChatBoxP
       streamRef.current = null;
     }
     setCameraActive(false);
+    setCameraReady(false);
   };
 
   const capturePhoto = () => {
@@ -104,8 +282,22 @@ export function ChatBox({ reportId, category, onClose, onSendMessage }: ChatBoxP
     if (ctx) {
       ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
       const dataUrl = canvas.toDataURL('image/jpeg', 0.85);
-      setCapturedImage(dataUrl);
-      // For now, just show the image without adding to chat messages
+
+      // Add the image to local messages immediately for UI feedback
+      const sentImageMessage = {
+        text: '[Photo]', // Placeholder text for image
+        sender: 'You',
+        time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+        type: 'sent' as const,
+        imageData: dataUrl,
+      };
+      setLocalMessages(prev => [...prev, sentImageMessage]);
+
+      // Send the image if callback exists
+      if (onSendImage) {
+        onSendImage(dataUrl);
+      }
+
       stopCamera();
     }
   };
@@ -152,9 +344,9 @@ export function ChatBox({ reportId, category, onClose, onSendMessage }: ChatBoxP
               >
                 <div className="text-xs font-semibold mb-1 opacity-90">{msg.sender}</div>
                 {msg.text && <p>{msg.text}</p>}
-                {capturedImage && idx === messages.length - 1 && msg.type === 'sent' && (
+                {msg.imageData && (
                   // eslint-disable-next-line @next/next/no-img-element
-                  <img src={capturedImage} alt="Captured" className="mt-2 rounded-lg max-w-full" />
+                  <img src={msg.imageData} alt="Captured" className="mt-2 rounded-lg max-w-full" />
                 )}
                 <div className="text-xs mt-2 opacity-70">{msg.time}</div>
               </div>
@@ -166,16 +358,31 @@ export function ChatBox({ reportId, category, onClose, onSendMessage }: ChatBoxP
         {/* Camera Preview */}
         {cameraActive && (
           <div className="p-4 bg-gray-900">
-            <video
-              ref={videoRef}
-              autoPlay
-              playsInline
-              className="w-full rounded-lg mb-4"
-            />
+            <div className="relative w-full rounded-lg mb-4 bg-black">
+              <video
+                ref={videoRef}
+                autoPlay
+                playsInline
+                muted
+                className="w-full rounded-lg"
+                style={{ minHeight: '200px', objectFit: 'cover' }}
+                onLoadedData={() => console.log('🎥 Video loaded successfully')}
+                onError={(e) => console.error('🎥 Video error:', e)}
+              />
+              {!cameraReady && (
+                <div className="absolute inset-0 flex items-center justify-center text-white text-center p-4">
+                  <div>
+                    <div className="text-4xl mb-2">📷</div>
+                    <p>Camera initializing...</p>
+                  </div>
+                </div>
+              )}
+            </div>
             <div className="flex gap-2 justify-center">
               <button
                 onClick={capturePhoto}
                 className="px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600"
+                disabled={!cameraReady}
               >
                 📸 Capture
               </button>

@@ -58,7 +58,14 @@ async function loadReportsFromFirebase() {
     const reportsRef = db.collection('reports');
     const snapshot = await reportsRef.get();
     snapshot.forEach(doc => {
-      const report = { id: doc.id, ...doc.data() };
+      const data = doc.data();
+      // Convert Firestore Timestamps back to ISO strings
+      const report = {
+        id: doc.id,
+        ...data,
+        timestamp: data.timestamp?.toDate?.()?.toISOString() || data.timestamp,
+        updatedAt: data.updatedAt?.toDate?.()?.toISOString() || data.updatedAt
+      };
       reports.set(doc.id, report);
     });
     console.log(`📋 Loaded ${reports.size} reports from Firebase`);
@@ -87,7 +94,13 @@ async function loadMessagesFromFirebase() {
     const messagesRef = db.collection('messages');
     const snapshot = await messagesRef.get();
     snapshot.forEach(doc => {
-      const message = doc.data();
+      const data = doc.data();
+      // Convert Firestore Timestamps back to ISO strings
+      const message = {
+        id: doc.id,
+        ...data,
+        timestamp: data.timestamp?.toDate?.()?.toISOString() || data.timestamp
+      };
       if (!messages.has(message.reportId)) {
         messages.set(message.reportId, []);
       }

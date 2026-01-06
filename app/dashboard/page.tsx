@@ -19,32 +19,68 @@ import {
   markReportSynced,
   cleanupSyncedReports,
   storeOfflineMessage,
-  getOfflineMessagesForReport
+  getOfflineMessages,
+  getOfflineMessagesForReport,
+  type OfflineMessage
 } from '@/lib/offline-manager';
  
 export default function DashboardPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { user, loading: authLoading } = useAuth();
-  const { socket, connected, connectionError, reports, submitReport, updateReport, joinReportChat, sendChatMessage } = useSocketContext();
+  const { socket, connected, connectionError, reports, submitReport, updateReport, joinReportChat, sendChatMessage, chatMessages, setChatMessages } = useSocketContext();
   const [selectedCategory, setSelectedCategory] = useState<Category | null>(null);
   const [showChatbox, setShowChatbox] = useState(false);
   const [currentReportChat, setCurrentReportChat] = useState<string | null>(null);
   const [tempReportId, setTempReportId] = useState<string | null>(null);
   const isOffline = useOfflineStatus();
 
-  // Sync offline reports when coming back online
+  // Handle report submission to transfer chat messages from temp ID to real ID
   useEffect(() => {
-    if (!isOffline && user && connected) {
-      const syncOfflineReports = async () => {
+    if (socket && connected) {
+      const handleReportSubmitted = (data: { success: boolean; report?: Report; error?: string }) => {
+        if (data.success && data.report && tempReportId && chatMessages[tempReportId]) {
+          // Transfer messages from temp report ID to real report ID
+          setChatMessages(prev => {
+            const updated = { ...prev };
+            updated[data.report!.id] = prev[tempReportId] || [];
+            delete updated[tempReportId];
+            return updated;
+          });
+
+          // Update current chat to use real report ID
+          if (currentReportChat === tempReportId) {
+            setCurrentReportChat(data.report!.id);
+            joinReportChat(data.report!.id);
+          }
+
+          setTempReportId(null);
+        }
+      };
+
+      socket.on('report_submitted', handleReportSubmitted);
+
+      return () => {
+        socket.off('report_submitted', handleReportSubmitted);
+      };
+    }
+  }, [socket, connected, tempReportId, chatMessages, currentReportChat, joinReportChat, setChatMessages]);
+
+  // Unified offline/online functionality - dashboard works in both modes
+  useEffect(() => {
+    // Always try to sync when coming back online
+    if (!isOffline && user) {
+      const syncOfflineData = async () => {
         const offlineReports = getOfflineReports().filter(report => !report.synced);
+        const allOfflineMessages: OfflineMessage[] = getOfflineMessages();
+        const offlineMessages = allOfflineMessages.filter((msg) => !msg.synced);
 
-        if (offlineReports.length > 0) {
-          console.log('🔄 Syncing', offlineReports.length, 'offline reports...');
+        if (offlineReports.length > 0 || offlineMessages.length > 0) {
+          console.log('🔄 Syncing offline data...', { reports: offlineReports.length, messages: offlineMessages.length });
 
+          // Sync reports
           for (const offlineReport of offlineReports) {
             try {
-              // Remove the offline-specific fields before submitting
               const { offlineId, createdAt, synced, ...reportData } = offlineReport;
               await submitReport(reportData);
               markReportSynced(offlineReport.offlineId);
@@ -54,13 +90,21 @@ export default function DashboardPage() {
             }
           }
 
-          // Cleanup synced reports
+          // Note: Messages would need server-side sync implementation
+          // For now, we keep them local until a full sync system is implemented
+
           cleanupSyncedReports();
           notificationManager.success(`Synced ${offlineReports.length} offline reports!`);
         }
       };
 
-      syncOfflineReports();
+      // Only sync if connected
+      if (connected) {
+        syncOfflineData();
+      } else {
+        // Try to reconnect
+        console.log('📡 Attempting to reconnect for sync...');
+      }
     }
   }, [isOffline, user, connected, submitReport]);
 
@@ -90,11 +134,14 @@ export default function DashboardPage() {
     if (chatId && reports.length > 0 && user) {
       const report = reports.find((r) => r.id === chatId);
       if (report && (user.role === 'admin' || report.userId === user.uid)) {
-        setCurrentReportChat(chatId);
-        setShowChatbox(true);
-        joinReportChat(chatId);
-        // Clean up the URL
-        router.replace('/dashboard', undefined);
+        // Use setTimeout to avoid synchronous setState in effect
+        setTimeout(() => {
+          setCurrentReportChat(chatId);
+          setShowChatbox(true);
+          joinReportChat(chatId);
+          // Clean up the URL
+          router.replace('/dashboard', undefined);
+        }, 0);
       }
     }
   }, [searchParams, reports, user, joinReportChat, router]);
@@ -385,6 +432,25 @@ export default function DashboardPage() {
                 console.log('💬 Message stored offline for report:', currentReportChat);
               } else {
                 sendChatMessage(currentReportChat, text, `${user.firstName} ${user.lastName}`, user.role);
+              }
+            }
+          }}
+          onSendImage={(imageData) => {
+            if (currentReportChat && user) {
+              if (isOffline) {
+                // Store image message offline
+                storeOfflineMessage({
+                  reportId: currentReportChat,
+                  text: '[Photo]',
+                  userName: `${user.firstName} ${user.lastName}`,
+                  userRole: user.role,
+                  timestamp: new Date().toISOString(),
+                  imageData,
+                });
+                console.log('📸 Image stored offline for report:', currentReportChat);
+              } else {
+                // Send image through socket
+                sendChatMessage(currentReportChat, '[Photo]', `${user.firstName} ${user.lastName}`, user.role, imageData);
               }
             }
           }}

@@ -104,7 +104,7 @@ export const socketEvents = {
     socket.emit('join_report_chat', { reportId });
   },
 
-  sendChatMessage: (socket: Socket, data: { reportId: string; text: string; userName: string; userRole: string }) => {
+  sendChatMessage: (socket: Socket, data: { reportId: string; text: string; userName: string; userRole: string; imageData?: string }) => {
     socket.emit('report_chat_message', data);
   },
 
