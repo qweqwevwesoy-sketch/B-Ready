@@ -1,13 +1,28 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, Suspense } from 'react';
 import { useRouter } from 'next/navigation';
+import dynamic from 'next/dynamic';
 import { useAuth } from '@/contexts/AuthContext';
 import { Header } from '@/components/Header';
 import { notificationManager } from '@/components/NotificationManager';
 import Link from 'next/link';
-import { MapPicker } from '@/components/MapPicker';
 import type { UserRole } from '@/types';
+
+// Dynamically import MapPicker to avoid SSR issues
+const MapPicker = dynamic(() => import('@/components/MapPicker').then(mod => ({ default: mod.MapPicker })), {
+  ssr: false,
+  loading: () => (
+    <div className="fixed inset-0 bg-black/80 z-50 flex items-center justify-center p-4">
+      <div className="bg-white rounded-2xl p-6 max-w-2xl w-full">
+        <div className="text-center">
+          <div className="text-4xl mb-4">⏳</div>
+          <p>Loading map...</p>
+        </div>
+      </div>
+    </div>
+  )
+});
  
 export default function SignupPage() {
   const router = useRouter();

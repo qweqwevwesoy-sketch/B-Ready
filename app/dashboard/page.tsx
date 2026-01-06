@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState, useCallback, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
 import { useSocketContext } from '@/contexts/SocketContext';
@@ -23,8 +23,8 @@ import {
   getOfflineMessagesForReport,
   type OfflineMessage
 } from '@/lib/offline-manager';
- 
-export default function DashboardPage() {
+
+function DashboardContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { user, loading: authLoading } = useAuth();
@@ -279,12 +279,10 @@ export default function DashboardPage() {
       ? reports.filter((r) => r.status === 'pending')
       : reports.filter((r) => r.userId === user.uid);
 
-
-
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-200">
       <Header />
-      
+
       <main className="max-w-7xl mx-auto px-4 py-8">
         <div className="bg-white/95 backdrop-blur-lg rounded-2xl p-8 shadow-xl mb-8">
           <div className="flex justify-between items-center mb-6 flex-wrap gap-4">
@@ -299,7 +297,24 @@ export default function DashboardPage() {
               </p>
             </div>
             <div className="flex items-center gap-4">
-              <div className="w-12 h-12 rounded-full bg-gradient-to-br from-primary to-primary-dark text-white flex items-center justify-center font-bold text-lg">
+              {user.profilePictureUrl ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img
+                  src={user.profilePictureUrl}
+                  alt="Profile"
+                  className="w-12 h-12 rounded-full object-cover border-2 border-white"
+                  onError={(e) => {
+                    // If image fails to load, show initials
+                    (e.target as HTMLImageElement).style.display = 'none';
+                    const parent = (e.target as HTMLElement).parentElement;
+                    if (parent) {
+                      const initialsDiv = parent.querySelector('.dashboard-avatar-fallback') as HTMLElement;
+                      if (initialsDiv) initialsDiv.style.display = 'flex';
+                    }
+                  }}
+                />
+              ) : null}
+              <div className="w-12 h-12 rounded-full bg-gradient-to-br from-primary to-primary-dark text-white flex items-center justify-center font-bold text-lg dashboard-avatar-fallback" style={{ display: user.profilePictureUrl ? 'none' : 'flex' }}>
                 {user.firstName.charAt(0)}{user.lastName.charAt(0)}
               </div>
               <div className="flex items-center gap-2">
@@ -457,5 +472,20 @@ export default function DashboardPage() {
         />
       )}
     </div>
+  );
+}
+
+export default function DashboardPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <div className="text-4xl mb-4">⏳</div>
+          <p>Loading...</p>
+        </div>
+      </div>
+    }>
+      <DashboardContent />
+    </Suspense>
   );
 }

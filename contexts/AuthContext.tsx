@@ -1,15 +1,16 @@
 'use client';
 
 import React, { createContext, useContext, useEffect, useState, useCallback } from 'react';
-import { 
-  onAuthStateChanged, 
-  signInWithEmailAndPassword, 
+import {
+  onAuthStateChanged,
+  signInWithEmailAndPassword,
   createUserWithEmailAndPassword,
   User as FirebaseUser,
   updatePassword
 } from 'firebase/auth';
 import { doc, getDoc, setDoc, updateDoc, serverTimestamp } from 'firebase/firestore';
-import { auth, db } from '@/lib/firebase';
+import { ref, uploadBytes, getDownloadURL, deleteObject } from 'firebase/storage';
+import { auth, db, storage } from '@/lib/firebase';
 import type { User, UserRole } from '@/types';
 
 interface AuthContextType {
@@ -19,6 +20,7 @@ interface AuthContextType {
   signup: (userData: SignupData) => Promise<void>;
   logout: () => Promise<void>;
   updateProfile: (updates: Partial<User>) => Promise<void>;
+  uploadProfilePicture: (file: File) => Promise<void>;
   changePassword: (newPassword: string) => Promise<void>;
 }
 
@@ -47,6 +49,24 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           const userDoc = await getDoc(doc(db, 'users', firebaseUser.uid));
           if (userDoc.exists()) {
             const userData = userDoc.data();
+
+            // Handle profile picture URL - check if Firebase URL is accessible
+            let profilePictureUrl = userData.profilePictureUrl;
+
+            // If it's a Firebase URL, try to use it; if not accessible, check localStorage
+            if (profilePictureUrl && profilePictureUrl.startsWith('https://firebasestorage.googleapis.com')) {
+              // Firebase URL - we'll try to use it, but if CORS fails, the component will handle it
+            } else if (profilePictureUrl && profilePictureUrl.startsWith('data:')) {
+              // Base64 data URL from localStorage - use as-is
+            } else if (!profilePictureUrl) {
+              // Check if we have a locally stored profile picture
+              const localKey = `profile_pic_${firebaseUser.uid}`;
+              const localPicture = localStorage.getItem(localKey);
+              if (localPicture) {
+                profilePictureUrl = localPicture;
+              }
+            }
+
             setUser({
               uid: firebaseUser.uid,
               email: firebaseUser.email!,
@@ -57,6 +77,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
               birthdate: userData.birthdate,
               employeeId: userData.employeeId,
               role: userData.role,
+              profilePictureUrl,
             });
           } else {
             setUser(null);
@@ -117,6 +138,104 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setUser((prev) => prev ? { ...prev, ...updates } : null);
   }, [user]);
 
+  const uploadProfilePicture = useCallback(async (file: File) => {
+    if (!user) return;
+
+    console.log('🚀 Starting profile picture upload for user:', user.uid);
+
+    try {
+      let downloadURL;
+
+      // For development, skip Firebase and go straight to localStorage
+      // This avoids CORS issues entirely
+      if (process.env.NODE_ENV === 'development') {
+        console.log('🏠 Development mode: Using localStorage for profile pictures');
+
+        downloadURL = await new Promise<string>((resolve, reject) => {
+          const reader = new FileReader();
+          reader.onload = (e) => {
+            const result = e.target?.result as string;
+            if (result) {
+              // Store in localStorage for offline access
+              const localKey = `profile_pic_${user.uid}`;
+              localStorage.setItem(localKey, result);
+              console.log('✅ Profile picture stored in localStorage');
+              resolve(result);
+            } else {
+              reject(new Error('Failed to read file'));
+            }
+          };
+          reader.onerror = () => reject(new Error('File reading failed'));
+          reader.readAsDataURL(file);
+        });
+      } else {
+        // Production: Try Firebase Storage first
+        try {
+          console.log('☁️ Attempting Firebase Storage upload');
+
+          // Delete existing profile picture if it exists
+          if (user.profilePictureUrl && user.profilePictureUrl.startsWith('https://firebasestorage.googleapis.com')) {
+            try {
+              const oldImageRef = ref(storage, user.profilePictureUrl);
+              await deleteObject(oldImageRef);
+            } catch (error) {
+              console.warn('Could not delete old Firebase profile picture:', error);
+            }
+          }
+
+          // Upload new profile picture to Firebase
+          const fileExtension = file.name.split('.').pop();
+          const fileName = `profile_${user.uid}_${Date.now()}.${fileExtension}`;
+          const storageRef = ref(storage, `profile-pictures/${fileName}`);
+
+          const snapshot = await uploadBytes(storageRef, file);
+          downloadURL = await getDownloadURL(snapshot.ref);
+
+          console.log('✅ Profile picture uploaded to Firebase successfully:', downloadURL);
+        } catch (firebaseError) {
+          console.warn('❌ Firebase Storage upload failed, falling back to local storage:', firebaseError);
+
+          // Fallback: Convert to base64 and store locally
+          downloadURL = await new Promise<string>((resolve, reject) => {
+            const reader = new FileReader();
+            reader.onload = (e) => {
+              const result = e.target?.result as string;
+              if (result) {
+                // Store in localStorage for offline access
+                const localKey = `profile_pic_${user.uid}`;
+                localStorage.setItem(localKey, result);
+                resolve(result);
+              } else {
+                reject(new Error('Failed to read file'));
+              }
+            };
+            reader.onerror = () => reject(new Error('File reading failed'));
+            reader.readAsDataURL(file);
+          });
+
+          console.log('✅ Profile picture stored locally as fallback');
+        }
+      }
+
+      // Update user profile with new picture URL
+      console.log('💾 Updating user profile with new picture URL');
+      await updateDoc(doc(db, 'users', user.uid), {
+        profilePictureUrl: downloadURL,
+        updatedAt: serverTimestamp(),
+      });
+
+      // Update local state
+      console.log('🔄 Updating local user state');
+      setUser((prev) => prev ? { ...prev, profilePictureUrl: downloadURL } : null);
+
+      console.log('🎉 Profile picture upload completed successfully');
+
+    } catch (error) {
+      console.error('❌ Error uploading profile picture:', error);
+      throw new Error('Failed to upload profile picture. Please try again.');
+    }
+  }, [user]);
+
   const changePassword = useCallback(async (newPassword: string) => {
     const currentUser = auth.currentUser;
     if (currentUser) {
@@ -125,7 +244,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   return (
-    <AuthContext.Provider value={{ user, loading, login, signup, logout, updateProfile, changePassword }}>
+    <AuthContext.Provider value={{ user, loading, login, signup, logout, updateProfile, uploadProfilePicture, changePassword }}>
       {children}
     </AuthContext.Provider>
   );

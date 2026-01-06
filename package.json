@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "next dev --experimental-https",
+    "dev": "next dev",
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
@@ -11,7 +11,6 @@
     "dev:all": "concurrently \"npm run dev\" \"npm run dev:server\""
   },
   "dependencies": {
-    "@next/font": "^14.2.15",
     "firebase": "^12.7.0",
     "firebase-admin": "^13.6.0",
     "leaflet": "^1.9.4",

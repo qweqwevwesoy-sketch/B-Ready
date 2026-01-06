@@ -39,7 +39,6 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
   if (!user) return null;
 
   const navItems = [
-    { path: '/', label: 'Landing Page', icon: '🏠' },
     { path: '/dashboard', label: 'Home Dashboard', icon: '🏠' },
     { path: '/real-time-map', label: 'Real Time Map', icon: '🗺️' },
     { path: '/profile', label: 'Account Settings', icon: '👤' },
@@ -73,9 +72,39 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
 
           <div className="bg-primary/10 p-4 rounded-lg mb-6 border-l-4 border-primary">
             <div className="flex items-center gap-3">
-              <div className="w-12 h-12 rounded-full bg-gradient-to-br from-primary to-primary-dark text-white flex items-center justify-center font-bold text-lg">
-                {user.firstName.charAt(0)}{user.lastName.charAt(0)}
-              </div>
+              {user.profilePictureUrl ? (
+                <>
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img
+                    src={user.profilePictureUrl}
+                    alt="Profile"
+                    className="w-12 h-12 rounded-full object-cover border-2 border-white"
+                    onError={(e) => {
+                      // If Firebase image fails to load due to CORS, try localStorage fallback
+                      const localKey = `profile_pic_${user.uid}`;
+                      const localPicture = localStorage.getItem(localKey);
+                      if (localPicture && localPicture !== user.profilePictureUrl) {
+                        (e.target as HTMLImageElement).src = localPicture;
+                      } else {
+                        // Hide the image and show initials instead
+                        (e.target as HTMLImageElement).style.display = 'none';
+                        const parent = (e.target as HTMLElement).parentElement;
+                        if (parent) {
+                          const initialsDiv = parent.querySelector('.sidebar-initials-fallback') as HTMLElement;
+                          if (initialsDiv) initialsDiv.style.display = 'flex';
+                        }
+                      }
+                    }}
+                  />
+                  <div className="w-12 h-12 rounded-full bg-gradient-to-br from-primary to-primary-dark text-white flex items-center justify-center font-bold text-lg sidebar-initials-fallback hidden">
+                    {user.firstName.charAt(0)}{user.lastName.charAt(0)}
+                  </div>
+                </>
+              ) : (
+                <div className="w-12 h-12 rounded-full bg-gradient-to-br from-primary to-primary-dark text-white flex items-center justify-center font-bold text-lg">
+                  {user.firstName.charAt(0)}{user.lastName.charAt(0)}
+                </div>
+              )}
               <div>
                 <h3 className="font-semibold">{user.firstName} {user.lastName}</h3>
                 <p className="text-sm text-gray-600 bg-primary/10 px-2 py-1 rounded-full inline-block">

@@ -10,6 +10,7 @@ export interface User {
   birthdate?: string;
   employeeId?: string;
   role: UserRole;
+  profilePictureUrl?: string;
   createdAt?: Date;
   updatedAt?: Date;
 }

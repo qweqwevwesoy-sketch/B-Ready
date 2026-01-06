@@ -1,15 +1,30 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef, Suspense } from 'react';
 import { useRouter } from 'next/navigation';
+import dynamic from 'next/dynamic';
 import { useAuth } from '@/contexts/AuthContext';
 import { Header } from '@/components/Header';
-import { MapPicker } from '@/components/MapPicker';
 import { notificationManager } from '@/components/NotificationManager';
+
+// Dynamically import MapPicker to avoid SSR issues
+const MapPicker = dynamic(() => import('@/components/MapPicker').then(mod => ({ default: mod.MapPicker })), {
+  ssr: false,
+  loading: () => (
+    <div className="fixed inset-0 bg-black/80 z-50 flex items-center justify-center p-4">
+      <div className="bg-white rounded-2xl p-6 max-w-2xl w-full">
+        <div className="text-center">
+          <div className="text-4xl mb-4">⏳</div>
+          <p>Loading map...</p>
+        </div>
+      </div>
+    </div>
+  )
+});
 
 export default function ProfilePage() {
   const router = useRouter();
-  const { user, updateProfile, changePassword } = useAuth();
+  const { user, updateProfile, uploadProfilePicture, changePassword } = useAuth();
   const [showMapPicker, setShowMapPicker] = useState(false);
   const [formData, setFormData] = useState({
     firstName: '',
@@ -20,6 +35,10 @@ export default function ProfilePage() {
     employeeId: '',
   });
   const [loading, setLoading] = useState(false);
+  const [uploadingPicture, setUploadingPicture] = useState(false);
+  const [showLocationPicker, setShowLocationPicker] = useState(false);
+  const [currentLocation, setCurrentLocation] = useState<{ lat: number; lng: number } | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     if (user) {
@@ -53,6 +72,38 @@ export default function ProfilePage() {
     }
   };
 
+  const handleProfilePictureUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    // Validate file type
+    if (!file.type.startsWith('image/')) {
+      notificationManager.error('Please select a valid image file');
+      return;
+    }
+
+    // Validate file size (5MB limit)
+    if (file.size > 5 * 1024 * 1024) {
+      notificationManager.error('Image size must be less than 5MB');
+      return;
+    }
+
+    setUploadingPicture(true);
+    try {
+      await uploadProfilePicture(file);
+      notificationManager.success('Profile picture updated successfully!');
+    } catch (error: unknown) {
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
+      notificationManager.error('Error uploading profile picture: ' + errorMessage);
+    } finally {
+      setUploadingPicture(false);
+      // Reset file input
+      if (fileInputRef.current) {
+        fileInputRef.current.value = '';
+      }
+    }
+  };
+
   const handleChangePassword = () => {
     const newPassword = prompt('Enter new password (must be at least 6 characters):');
     if (newPassword && newPassword.length >= 6) {
@@ -80,12 +131,72 @@ export default function ProfilePage() {
 
           <div className="bg-primary/10 p-6 rounded-xl mb-8 border-l-4 border-primary">
             <div className="flex items-center gap-4">
-              <div className="w-20 h-20 rounded-full bg-gradient-to-br from-primary to-primary-dark text-white flex items-center justify-center font-bold text-2xl">
-                {user.firstName.charAt(0)}{user.lastName.charAt(0)}
+              <div className="relative">
+                {user.profilePictureUrl ? (
+                  <>
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img
+                      src={user.profilePictureUrl}
+                      alt="Profile"
+                      className="w-20 h-20 rounded-full object-cover border-2 border-white"
+        onError={(e) => {
+          // If Firebase image fails to load due to CORS, try localStorage fallback
+          if (typeof window !== 'undefined') {
+            const localKey = `profile_pic_${user.uid}`;
+            const localPicture = localStorage.getItem(localKey);
+            if (localPicture && localPicture !== user.profilePictureUrl) {
+              (e.target as HTMLImageElement).src = localPicture;
+            } else {
+              // Hide the image and show initials instead
+              (e.target as HTMLImageElement).style.display = 'none';
+              const parent = (e.target as HTMLElement).parentElement;
+              if (parent) {
+                const initialsDiv = parent.querySelector('.initials-fallback') as HTMLElement;
+                if (initialsDiv) initialsDiv.style.display = 'flex';
+              }
+            }
+          } else {
+            // On server side, just hide the image and show initials
+            (e.target as HTMLImageElement).style.display = 'none';
+            const parent = (e.target as HTMLElement).parentElement;
+            if (parent) {
+              const initialsDiv = parent.querySelector('.initials-fallback') as HTMLElement;
+              if (initialsDiv) initialsDiv.style.display = 'flex';
+            }
+          }
+        }}
+                    />
+                    <div className="w-20 h-20 rounded-full bg-gradient-to-br from-primary to-primary-dark text-white flex items-center justify-center font-bold text-2xl initials-fallback hidden">
+                      {user.firstName.charAt(0)}{user.lastName.charAt(0)}
+                    </div>
+                  </>
+                ) : (
+                  <div className="w-20 h-20 rounded-full bg-gradient-to-br from-primary to-primary-dark text-white flex items-center justify-center font-bold text-2xl">
+                    {user.firstName.charAt(0)}{user.lastName.charAt(0)}
+                  </div>
+                )}
+                <button
+                  onClick={() => fileInputRef.current?.click()}
+                  disabled={uploadingPicture}
+                  className="absolute -bottom-1 -right-1 w-8 h-8 bg-primary text-white rounded-full flex items-center justify-center hover:bg-primary-dark disabled:opacity-50"
+                  title="Change profile picture"
+                >
+                  {uploadingPicture ? '⏳' : '📷'}
+                </button>
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept="image/*"
+                  onChange={handleProfilePictureUpload}
+                  className="hidden"
+                />
               </div>
               <div>
                 <h2 className="text-2xl font-bold mb-1">{user.firstName} {user.lastName}</h2>
                 <p className="text-gray-600">{user.role === 'admin' ? 'Administrator' : 'Resident'}</p>
+                {uploadingPicture && (
+                  <p className="text-sm text-primary mt-1">Uploading profile picture...</p>
+                )}
               </div>
             </div>
           </div>
@@ -205,6 +316,22 @@ export default function ProfilePage() {
           </form>
 
           <div className="mt-8 pt-8 border-t border-gray-200">
+            <h3 className="text-xl font-bold mb-4">Location Settings</h3>
+            <p className="text-gray-600 mb-4">If your automatic location detection is inaccurate, you can manually set your location here.</p>
+            <div className="flex gap-4">
+              <button
+                onClick={() => setShowLocationPicker(true)}
+                className="px-6 py-3 bg-blue-500 text-white rounded-lg hover:bg-blue-600"
+              >
+                📍 Set Location Manually
+              </button>
+            </div>
+            <p className="text-sm text-gray-500 mt-2">
+              This helps ensure emergency reports are submitted with accurate location data.
+            </p>
+          </div>
+
+          <div className="mt-8 pt-8 border-t border-gray-200">
             <h3 className="text-xl font-bold mb-4">Account Security</h3>
             <div className="flex gap-4">
               <button
@@ -225,6 +352,27 @@ export default function ProfilePage() {
             setShowMapPicker(false);
           }}
           onClose={() => setShowMapPicker(false)}
+        />
+      )}
+
+      {showLocationPicker && (
+        <MapPicker
+          onSelect={(address) => {
+            // Store the manually selected location for future use
+            const locationMatch = address.match(/Lat:\s*(-?\d+\.\d+),\s*Lng:\s*(-?\d+\.\d+)/);
+            if (locationMatch) {
+              const lat = parseFloat(locationMatch[1]);
+              const lng = parseFloat(locationMatch[2]);
+              setCurrentLocation({ lat, lng });
+              // Store in localStorage for future location requests (only on client side)
+              if (typeof window !== 'undefined') {
+                localStorage.setItem('user_manual_location', JSON.stringify({ lat, lng, address }));
+              }
+              notificationManager.success('Location saved! Future reports will use this location.');
+            }
+            setShowLocationPicker(false);
+          }}
+          onClose={() => setShowLocationPicker(false)}
         />
       )}
     </div>

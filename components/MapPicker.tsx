@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from 'react';
 import L from 'leaflet';
-import { reverseGeocode } from '@/lib/utils';
+import { reverseGeocode, getCurrentLocation } from '@/lib/utils';
 
 interface MapPickerProps {
   onSelect: (address: string) => void;
@@ -81,7 +81,7 @@ export function MapPicker({ onSelect, onClose }: MapPickerProps) {
           display_name: feature.properties.name || feature.properties.city || feature.properties.state,
           lat: feature.geometry.coordinates[1].toString(),
           lon: feature.geometry.coordinates[0].toString(),
-        })).filter(result => result.display_name); // Filter out empty names
+        })).filter((result: SearchResult) => result.display_name); // Filter out empty names
 
         setSearchResults(results);
         setShowResults(true);
@@ -146,21 +146,22 @@ export function MapPicker({ onSelect, onClose }: MapPickerProps) {
     const marker = L.marker([14.5995, 120.9842], { draggable: true }).addTo(map);
     markerRef.current = marker;
 
-    // Try to get current location
-    if (navigator.geolocation) {
-      navigator.geolocation.getCurrentPosition(
-        (position) => {
-          const userLatLng: [number, number] = [position.coords.latitude, position.coords.longitude];
-          map.setView(userLatLng, 15);
-          marker.setLatLng(userLatLng);
-          setSelectedLocation({ lat: userLatLng[0], lng: userLatLng[1] });
-          updateAddress(userLatLng[0], userLatLng[1]);
-        }, 
-        () => {
-          console.log('Geolocation failed, using default');
-        }
-      );
-    }
+    // Try to get current location using our utility function
+    const setInitialLocation = async () => {
+      try {
+        const location = await getCurrentLocation();
+        const userLatLng: [number, number] = [location.lat, location.lng];
+        map.setView(userLatLng, 15);
+        marker.setLatLng(userLatLng);
+        setSelectedLocation({ lat: userLatLng[0], lng: userLatLng[1] });
+        updateAddress(userLatLng[0], userLatLng[1]);
+      } catch (error) {
+        console.log('Location tracking failed, using default location');
+        // Default location is already set above
+      }
+    };
+
+    setInitialLocation();
 
     // Handle map clicks
     map.on('click', (e) => {
