@@ -22,11 +22,21 @@ interface SocketContextType {
 const SocketContext = createContext<SocketContextType | undefined>(undefined);
 
 export function SocketProvider({ children }: { children: React.ReactNode }) {
-  const { socket, connected, connectionError } = useSocketConnection();
+  // Check if we're using local backend (offline mode)
+  const isOfflineMode = process.env.NEXT_PUBLIC_USE_LOCAL_BACKEND === 'true';
+
+  const socketConnection = useSocketConnection();
+  const { socket, connected, connectionError } = isOfflineMode ? { socket: null, connected: false, connectionError: null } : socketConnection;
+
   const [reports, setReports] = useState<Report[]>([]);
   const [chatMessages, setChatMessages] = useState<{ [reportId: string]: Array<{ id: string; text: string; userName: string; userRole: string; timestamp: string; reportId: string }> }>({});
 
   useEffect(() => {
+    if (isOfflineMode) {
+      console.log('📱 Offline mode: Skipping socket connection');
+      return;
+    }
+
     if (!socket || !connected) return;
 
     const handleInitialReports = (reportsData: Report[]) => {
