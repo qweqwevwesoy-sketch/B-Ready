@@ -24,9 +24,14 @@ import {
   type OfflineMessage
 } from '@/lib/offline-manager';
 
-function DashboardContent() {
-  const router = useRouter();
+function SearchParamsWrapper() {
   const searchParams = useSearchParams();
+
+  return <DashboardContent searchParams={searchParams} />;
+}
+
+function DashboardContent({ searchParams }: { searchParams: URLSearchParams }) {
+  const router = useRouter();
   const { user, loading: authLoading } = useAuth();
   const { socket, connected, connectionError, reports, submitReport, updateReport, joinReportChat, sendChatMessage, chatMessages, setChatMessages } = useSocketContext();
   const [selectedCategory, setSelectedCategory] = useState<Category | null>(null);
@@ -493,7 +498,7 @@ export default function DashboardPage() {
         </div>
       </div>
     }>
-      <DashboardContent />
+      <SearchParamsWrapper />
     </Suspense>
   );
 }
