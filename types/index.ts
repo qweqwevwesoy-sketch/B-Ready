@@ -65,3 +65,23 @@ export interface NotificationData {
   type: 'success' | 'error' | 'warning' | 'info';
   duration?: number;
 }
+
+export interface SafetyTip {
+  id: string;
+  icon: string;
+  title: string;
+  items: string[];
+  category: 'disaster' | 'emergency_kit';
+  order: number;
+  created_by?: string;
+  updated_at: string;
+}
+
+export interface EmergencyKitItem {
+  id: string;
+  title: string;
+  items: string[];
+  order: number;
+  created_by?: string;
+  updated_at: string;
+}

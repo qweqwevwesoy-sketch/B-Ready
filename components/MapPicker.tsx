@@ -51,6 +51,8 @@ export function MapPicker({ onSelect, onClose }: MapPickerProps) {
   const [searchQuery, setSearchQuery] = useState('');
   const [searchResults, setSearchResults] = useState<SearchResult[]>([]);
   const [showResults, setShowResults] = useState(false);
+  const [locationStatus, setLocationStatus] = useState<string>('Detecting location...');
+  const [locationAccuracy, setLocationAccuracy] = useState<string>('');
 
   const updateAddress = async (lat: number, lng: number) => {
     try {
@@ -148,6 +150,7 @@ export function MapPicker({ onSelect, onClose }: MapPickerProps) {
 
     // Try to get current location using our utility function
     const setInitialLocation = async () => {
+      setLocationStatus('Detecting your location...');
       try {
         const location = await getCurrentLocation();
         const userLatLng: [number, number] = [location.lat, location.lng];
@@ -155,9 +158,12 @@ export function MapPicker({ onSelect, onClose }: MapPickerProps) {
         marker.setLatLng(userLatLng);
         setSelectedLocation({ lat: userLatLng[0], lng: userLatLng[1] });
         updateAddress(userLatLng[0], userLatLng[1]);
+        setLocationStatus('✅ Location detected successfully');
+        setLocationAccuracy('GPS coordinates obtained');
       } catch (error) {
         console.log('Location tracking failed, using default location');
-        // Default location is already set above
+        setLocationStatus('⚠️ Could not detect precise location');
+        setLocationAccuracy('Using default Philippines location - click map to set manually');
       }
     };
 
@@ -245,7 +251,22 @@ export function MapPicker({ onSelect, onClose }: MapPickerProps) {
           className="w-full h-96 rounded-lg overflow-hidden mb-4"
           style={{ minHeight: '400px' }}
         />
-        
+
+        {/* Location Status */}
+        <div className="bg-blue-50 border border-blue-200 p-4 rounded-lg mb-4">
+          <div className="flex items-center gap-2 mb-2">
+            <div className={`w-2 h-2 rounded-full ${locationStatus.includes('✅') ? 'bg-green-500' : locationStatus.includes('⚠️') ? 'bg-yellow-500' : 'bg-blue-500 animate-pulse'}`}></div>
+            <strong className="text-sm">Location Detection:</strong>
+          </div>
+          <div className="text-sm text-gray-700">{locationStatus}</div>
+          {locationAccuracy && (
+            <div className="text-xs text-gray-600 mt-1">{locationAccuracy}</div>
+          )}
+          <div className="text-xs text-gray-500 mt-2">
+            💡 Tip: For best accuracy, grant location permissions and ensure GPS is enabled on your device.
+          </div>
+        </div>
+
         <div className="bg-gray-100 p-4 rounded-lg mb-4">
           <strong>Selected Location:</strong>
           <div className="mt-2 font-mono text-sm">{address}</div>

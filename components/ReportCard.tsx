@@ -69,9 +69,6 @@ export function ReportCard({
           
           <div className="flex flex-wrap gap-3 text-xs text-gray-500">
             <span>📅 {formatDate(report.timestamp)}</span>
-            {report.severity && (
-              <span>⚠️ {report.severity.charAt(0).toUpperCase() + report.severity.slice(1)}</span>
-            )}
           </div>
 
           {showActions && report.status === 'pending' && !report.id.startsWith('temp_') && (

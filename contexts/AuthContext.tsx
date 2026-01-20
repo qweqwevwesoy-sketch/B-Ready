@@ -43,20 +43,25 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const isOfflineMode = process.env.NEXT_PUBLIC_USE_LOCAL_BACKEND === 'true';
 
   const [user, setUser] = useState<User | null>(null);
-  const [loading, setLoading] = useState(!isOfflineMode); // Start as not loading if offline mode
+  const [loading, setLoading] = useState(true); // Always start as loading
 
   useEffect(() => {
     // Skip Firebase initialization in offline mode
     if (isOfflineMode) {
       console.log('📱 Offline mode: Skipping Firebase authentication');
+      setLoading(false);
       return;
     }
 
+    let isMounted = true; // Prevent state updates after unmount
+
     const unsubscribe = onAuthStateChanged(auth, async (firebaseUser: FirebaseUser | null) => {
+      if (!isMounted) return;
+
       if (firebaseUser) {
         try {
           const userDoc = await getDoc(doc(db, 'users', firebaseUser.uid));
-          if (userDoc.exists()) {
+          if (userDoc.exists() && isMounted) {
             const userData = userDoc.data();
 
             // Handle profile picture URL - check if Firebase URL is accessible
@@ -88,20 +93,24 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
               role: userData.role,
               profilePictureUrl,
             });
-          } else {
+          } else if (isMounted) {
             setUser(null);
           }
         } catch (error) {
           console.error('Error fetching user data:', error);
-          setUser(null);
+          if (isMounted) setUser(null);
         }
-      } else {
+      } else if (isMounted) {
         setUser(null);
       }
-      setLoading(false);
+
+      if (isMounted) setLoading(false);
     });
 
-    return unsubscribe;
+    return () => {
+      isMounted = false;
+      unsubscribe();
+    };
   }, []);
 
   const login = useCallback(async (email: string, password: string) => {

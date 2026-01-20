@@ -1,91 +1,69 @@
 'use client';
 
+import { useState, useEffect } from 'react';
 import { Header } from '@/components/Header';
+import { useAuth } from '@/contexts/AuthContext';
+import type { SafetyTip, EmergencyKitItem } from '@/types';
+import { SafetyTipsAdmin } from '@/components/SafetyTipsAdmin';
 
 export default function SafetyTipsPage() {
-  const tips = [
-    {
-      icon: '🌊',
-      title: 'Flood Safety', 
-      items: [
-        'Move to higher ground immediately when flooding occurs',
-        'Keep emergency supplies ready',
-        'Avoid walking or driving through floodwaters',
-        'Disconnect electrical appliances',
-      ],
-    },
-    {
-      icon: '🔥',
-      title: 'Fire Safety',
-      items: [
-        'Install smoke alarms and check regularly',
-        'Keep fire extinguishers accessible',
-        'Never leave cooking unattended',
-        'Know your escape routes',
-      ],
-    },
-    {
-      icon: '🌋',
-      title: 'Earthquake Safety',
-      items: [
-        'Drop, cover, and hold on during shaking',
-        'Stay away from windows and heavy objects',
-        'Prepare a family emergency plan',
-        'Evacuate if building is unsafe',
-      ],
-    },
-    {
-      icon: '🌀',
-      title: 'Typhoon Safety',
-      items: [
-        'Secure your home and outdoor items',
-        'Monitor weather updates',
-        'Evacuate early if advised',
-        'Keep emergency contacts handy',
-      ],
-    },
-    {
-      icon: '🚨',
-      title: 'General Preparedness',
-      items: [
-        'Know evacuation routes and centers',
-        'Keep important documents waterproof',
-        'Help neighbors, especially elderly',
-        'Report hazards immediately',
-      ],
-    },
-    {
-      icon: '📱',
-      title: 'Digital Safety',
-      items: [
-        'Keep phone charged during emergencies',
-        'Save emergency numbers',
-        'Use B-READY for quick reporting',
-        'Share location with trusted contacts',
-      ],
-    },
-  ];
+  const { user } = useAuth();
+  const [tips, setTips] = useState<SafetyTip[]>([]);
+  const [emergencyKit, setEmergencyKit] = useState<EmergencyKitItem[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [showAdminPanel, setShowAdminPanel] = useState(false);
 
-  const emergencyKit = {
-    essential: [
-      'Water (1 gallon per person per day)',
-      'Non-perishable food',
-      'First aid kit',
-      'Flashlight with batteries',
-    ],
-    documents: [
-      'Identification cards',
-      'Medical records',
-      'Emergency contacts',
-      'Insurance policies',
-    ],
-    supplies: [
-      'Prescription medications',
-      'Personal hygiene items',
-      'Multi-tool or knife',
-      'Portable phone charger',
-    ],
+  const fetchSafetyTips = async () => {
+    try {
+      const response = await fetch('/api/safety-tips');
+      const data = await response.json();
+      if (data.success) {
+        setTips(data.tips);
+        setEmergencyKit(data.emergencyKit);
+
+        // Cache data locally for offline access
+        try {
+          localStorage.setItem('bready_safety_tips', JSON.stringify(data.tips));
+          localStorage.setItem('bready_emergency_kit', JSON.stringify(data.emergencyKit));
+        } catch (storageError) {
+          console.warn('Failed to cache safety tips locally:', storageError);
+        }
+      }
+    } catch (error) {
+      console.error('Error fetching safety tips:', error);
+
+      // Try to load from local cache
+      try {
+        const cachedTips = localStorage.getItem('bready_safety_tips');
+        const cachedKit = localStorage.getItem('bready_emergency_kit');
+
+        if (cachedTips && cachedKit) {
+          setTips(JSON.parse(cachedTips));
+          setEmergencyKit(JSON.parse(cachedKit));
+          console.log('✅ Loaded safety tips from local cache');
+        }
+      } catch (cacheError) {
+        console.error('Error loading from cache:', cacheError);
+      }
+    } finally {
+      setLoading(false);
+    }
   };
+
+  useEffect(() => {
+    fetchSafetyTips();
+  }, []);
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-200">
+        <Header />
+        <div className="flex items-center justify-center min-h-[50vh]">
+          <div className="text-lg">Loading safety tips...</div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-200">
@@ -121,44 +99,43 @@ export default function SafetyTipsPage() {
           <div className="bg-gray-50 rounded-xl p-8">
             <h2 className="text-2xl font-bold mb-6">Emergency Kit Checklist</h2>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              <div>
-                <h3 className="text-xl font-semibold mb-4">Essential Items</h3>
-                <ul className="space-y-2">
-                  {emergencyKit.essential.map((item, idx) => (
-                    <li key={idx} className="flex items-start gap-2">
-                      <span className="text-green-500 font-bold">✓</span>
-                      <span>{item}</span>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-              <div>
-                <h3 className="text-xl font-semibold mb-4">Important Documents</h3>
-                <ul className="space-y-2">
-                  {emergencyKit.documents.map((item, idx) => (
-                    <li key={idx} className="flex items-start gap-2">
-                      <span className="text-green-500 font-bold">✓</span>
-                      <span>{item}</span>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-              <div>
-                <h3 className="text-xl font-semibold mb-4">Additional Supplies</h3>
-                <ul className="space-y-2">
-                  {emergencyKit.supplies.map((item, idx) => (
-                    <li key={idx} className="flex items-start gap-2">
-                      <span className="text-green-500 font-bold">✓</span>
-                      <span>{item}</span>
-                    </li>
-                  ))}
-                </ul>
-              </div>
+              {emergencyKit.map((kitItem) => (
+                <div key={kitItem.id}>
+                  <h3 className="text-xl font-semibold mb-4">{kitItem.title}</h3>
+                  <ul className="space-y-2">
+                    {kitItem.items.map((item, idx) => (
+                      <li key={idx} className="flex items-start gap-2">
+                        <span className="text-green-500 font-bold">✓</span>
+                        <span>{item}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              ))}
             </div>
           </div>
+
+          {/* Admin Controls */}
+          {user?.role === 'admin' && (
+            <div className="mt-8">
+              <button
+                onClick={() => setShowAdminPanel(!showAdminPanel)}
+                className="bg-blue-600 text-white px-6 py-3 rounded-lg font-semibold hover:bg-blue-700 transition-colors"
+              >
+                {showAdminPanel ? 'Hide' : 'Show'} Admin Panel
+              </button>
+
+              {showAdminPanel && (
+                <SafetyTipsAdmin
+                  tips={tips}
+                  emergencyKit={emergencyKit}
+                  onRefresh={fetchSafetyTips}
+                />
+              )}
+            </div>
+          )}
         </div>
       </main>
     </div>
   );
 }
-

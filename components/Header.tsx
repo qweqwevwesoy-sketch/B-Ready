@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
 import { Sidebar } from './Sidebar';
+import Image from 'next/image';
 
 export function Header() {
   const router = useRouter();
@@ -18,8 +19,19 @@ export function Header() {
             className="text-2xl font-bold cursor-pointer flex items-center gap-2"
             onClick={() => router.push('/')}
           >
-            <span>🚨</span>
-            B-READY
+            <div className="flex flex-col">
+              <div className="flex items-center gap-2">
+                <Image
+                  src="/BLogo.png"
+                  alt="B-READY Logo"
+                  width={32}
+                  height={32}
+                  className="w-8 h-8"
+                />
+                <span>B-READY</span>
+              </div>
+              <span className="text-xs opacity-90 -mt-1">Real-time reporting and response</span>
+            </div>
           </h1>
           {user && (
             <button

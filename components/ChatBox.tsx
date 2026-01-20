@@ -48,6 +48,7 @@ export function ChatBox({ reportId, category, onClose, onSendMessage, onSendImag
           sender: isCurrentUser ? 'You' : msg.userName,
           time: new Date(msg.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
           type: msg.userRole === 'admin' ? 'received' : 'sent' as const,
+          imageData: msg.imageData,
         };
       });
     }
@@ -61,6 +62,7 @@ export function ChatBox({ reportId, category, onClose, onSendMessage, onSendImag
         sender: msg.userName,
         time: new Date(msg.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
         type: msg.userRole === 'admin' ? 'received' : 'sent' as const,
+        imageData: msg.imageData,
       }));
     }
 
@@ -223,15 +225,24 @@ export function ChatBox({ reportId, category, onClose, onSendMessage, onSendImag
 
   const compressImage = (file: File): Promise<string> => {
     return new Promise((resolve, reject) => {
+      // Check file size first - if under 500KB, don't compress
+      if (file.size < 500 * 1024) {
+        const reader = new FileReader();
+        reader.onload = (e) => resolve(e.target?.result as string);
+        reader.onerror = () => reject(new Error('Failed to read file'));
+        reader.readAsDataURL(file);
+        return;
+      }
+
       const canvas = document.createElement('canvas');
       const ctx = canvas.getContext('2d');
       const img = new Image();
 
       img.onload = () => {
-        // Calculate new dimensions (max 1200px width/height, maintain aspect ratio)
+        // Calculate new dimensions (max 800px width/height for faster processing)
         let { width, height } = img;
 
-        const maxSize = 1200;
+        const maxSize = 800; // Reduced from 1200 for faster processing
         if (width > height) {
           if (width > maxSize) {
             height = (height * maxSize) / width;
@@ -247,11 +258,11 @@ export function ChatBox({ reportId, category, onClose, onSendMessage, onSendImag
         canvas.width = width;
         canvas.height = height;
 
-        // Draw and compress
+        // Draw and compress with lower quality for faster processing
         ctx?.drawImage(img, 0, 0, width, height);
 
-        // Compress to JPEG with quality 0.8
-        const compressedDataUrl = canvas.toDataURL('image/jpeg', 0.8);
+        // Compress to JPEG with quality 0.7 (reduced from 0.8)
+        const compressedDataUrl = canvas.toDataURL('image/jpeg', 0.7);
         resolve(compressedDataUrl);
       };
 
@@ -275,13 +286,29 @@ export function ChatBox({ reportId, category, onClose, onSendMessage, onSendImag
     const canvas = document.createElement('canvas');
     const video = videoRef.current;
 
-    canvas.width = video.videoWidth;
-    canvas.height = video.videoHeight;
+    // Reduce resolution for faster processing
+    const maxDimension = 800; // Reduced from full video resolution
+    let { videoWidth: width, videoHeight: height } = video;
+
+    // Scale down if too large
+    if (width > maxDimension || height > maxDimension) {
+      if (width > height) {
+        height = (height * maxDimension) / width;
+        width = maxDimension;
+      } else {
+        width = (width * maxDimension) / height;
+        height = maxDimension;
+      }
+    }
+
+    canvas.width = width;
+    canvas.height = height;
 
     const ctx = canvas.getContext('2d');
     if (ctx) {
-      ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-      const dataUrl = canvas.toDataURL('image/jpeg', 0.85);
+      ctx.drawImage(video, 0, 0, width, height);
+      // Use lower quality for faster processing
+      const dataUrl = canvas.toDataURL('image/jpeg', 0.75);
 
       // Add the image to local messages immediately for UI feedback
       const sentImageMessage = {
@@ -374,10 +401,13 @@ export function ChatBox({ reportId, category, onClose, onSendMessage, onSendImag
                   }`}
                 >
                   <div className="text-xs font-semibold mb-1 opacity-90">{msg.sender}</div>
-                  {msg.text && <p>{msg.text}</p>}
-                  {msg.imageData && (
+                  {msg.imageData ? (
+                    // If there's image data, show the image instead of the "[Photo]" placeholder text
                     // eslint-disable-next-line @next/next/no-img-element
-                    <img src={msg.imageData} alt="Captured" className="mt-2 rounded-lg max-w-full" />
+                    <img src={msg.imageData} alt="Captured" className="rounded-lg max-w-full" />
+                  ) : (
+                    // Only show text if there's no image data or if the text is meaningful (not just "[Photo]")
+                    msg.text && msg.text !== '[Photo]' && <p>{msg.text}</p>
                   )}
                   <div className="text-xs mt-2 opacity-70">{msg.time}</div>
                 </div>
@@ -457,8 +487,8 @@ export function ChatBox({ reportId, category, onClose, onSendMessage, onSendImag
         )}
 
         {/* Input Area */}
-        <form onSubmit={handleSend} className="p-4 border-t border-gray-200 bg-white rounded-b-2xl">
-          <div className="flex gap-2">
+        <form onSubmit={handleSend} className="p-4 border-t border-gray-200 bg-white rounded-b-2xl overflow-hidden">
+          <div className="flex flex-wrap gap-2 items-end">
             <input
               type="text"
               name="message"
@@ -474,22 +504,25 @@ export function ChatBox({ reportId, category, onClose, onSendMessage, onSendImag
                 }
               }}
               placeholder={category ? `Describe the ${category.name.toLowerCase()} incident...` : 'Type your message...'}
-              className="flex-1 px-4 py-2 border-2 border-gray-300 rounded-lg focus:border-primary focus:outline-none"
+              className="flex-1 min-w-0 px-3 py-2 text-sm border-2 border-gray-300 rounded-lg focus:border-primary focus:outline-none"
               autoComplete="off"
             />
-            <button
-              type="button"
-              onClick={() => (cameraActive ? stopCamera() : startCamera())}
-              className="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300"
-            >
-              📷
-            </button>
-            <button
-              type="submit"
-              className="px-6 py-2 bg-gradient-to-r from-primary to-primary-dark text-white rounded-lg hover:opacity-90"
-            >
-              Send
-            </button>
+            <div className="flex gap-1 flex-shrink-0">
+              <button
+                type="button"
+                onClick={() => (cameraActive ? stopCamera() : startCamera())}
+                className="w-10 h-10 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 flex items-center justify-center text-lg"
+                title="Take photo"
+              >
+                📷
+              </button>
+              <button
+                type="submit"
+                className="px-4 py-2 bg-gradient-to-r from-primary to-primary-dark text-white rounded-lg hover:opacity-90 text-sm font-medium whitespace-nowrap"
+              >
+                Send
+              </button>
+            </div>
           </div>
         </form>
       </div>

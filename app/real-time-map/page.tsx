@@ -9,7 +9,11 @@ const RealTimeMapPage = dynamic(() => import('./RealTimeMapContent'), {
   loading: () => (
     <div className="min-h-screen flex items-center justify-center">
       <div className="text-center">
-        <div className="text-4xl mb-4">🗺️</div>
+        <img
+          src="/BLogo.png"
+          alt="B-READY Logo"
+          className="w-16 h-16 mx-auto mb-4 animate-pulse"
+        />
         <p>Loading map...</p>
       </div>
     </div>
@@ -21,7 +25,11 @@ export default function Page() {
     <Suspense fallback={
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
-          <div className="text-4xl mb-4">⏳</div>
+          <img
+            src="/BLogo.png"
+            alt="B-READY Logo"
+            className="w-16 h-16 mx-auto mb-4 animate-pulse"
+          />
           <p>Loading...</p>
         </div>
       </div>

@@ -1,0 +1,53 @@
+{
+  "name": "B-READY Emergency Reporting",
+  "short_name": "B-READY",
+  "description": "Real-time emergency reporting, community coordination, and rapid response for a safer barangay. Works offline.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#28599a",
+  "orientation": "portrait-primary",
+  "scope": "/",
+  "lang": "en-PH",
+  "categories": ["emergency", "utilities", "social"],
+  "icons": [
+    {
+      "src": "/BLogo.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/BLogo.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Safety Tips",
+      "short_name": "Safety",
+      "description": "View emergency safety tips",
+      "url": "/safety-tips",
+      "icons": [
+        {
+          "src": "/BLogo.png",
+          "sizes": "96x96"
+        }
+      ]
+    },
+    {
+      "name": "Offline Reporting",
+      "short_name": "Offline",
+      "description": "Report emergencies without internet",
+      "url": "/offline",
+      "icons": [
+        {
+          "src": "/BLogo.png",
+          "sizes": "96x96"
+        }
+      ]
+    }
+  ]
+}

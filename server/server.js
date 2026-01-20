@@ -47,7 +47,16 @@ const app = express();
 const server = http.createServer(app);
 const io = socketIo(server, {
   cors: {
-    origin: ["http://localhost:3000", "http://127.0.0.1:3000", "https://192.168.50.250:3000", "https://localhost:3000", "https://120.72.20.15:3000"],
+    origin: [
+      "http://localhost:3000",
+      "http://127.0.0.1:3000",
+      "http://192.168.0.111:3000",
+      "http://192.168.50.250:3000",
+      "https://192.168.0.111:3000",
+      "https://192.168.50.250:3000",
+      "https://localhost:3000",
+      "https://120.72.20.15:3000"
+    ],
     methods: ["GET", "POST"],
     credentials: true,
     allowedHeaders: ["Content-Type"]
@@ -283,10 +292,11 @@ app.get('/health', (req, res) => {
 
 // Start server
 const PORT = process.env.PORT || 3001;
-const HOST = process.env.HOST || 'localhost';
+const HOST = process.env.HOST || '0.0.0.0'; // Bind to all interfaces for network access
 server.listen(PORT, HOST, async () => {
   console.log(`🚀 Server running on http://${HOST}:${PORT}`);
   console.log(`🌐 WebSocket ready at ws://${HOST}:${PORT}`);
+  console.log(`📡 Network access enabled - WebSocket available at ws://192.168.50.250:${PORT}`);
 
   // Initialize data from Firebase
   await initializeServer();

@@ -14,13 +14,9 @@ export async function getCurrentLocation(): Promise<{ lat: number; lng: number }
       }
     }
 
-    // Check if we're on HTTPS or localhost (required for geolocation in most browsers)
-    const isSecure = location.protocol === 'https:' ||
-                     location.hostname === 'localhost' ||
-                     location.hostname === '127.0.0.1';
-
+    // Check if geolocation is available
     if (!navigator.geolocation) {
-      console.log('📍 Geolocation not supported, trying IP-based location');
+      console.log('📍 Geolocation not supported by browser, trying IP-based location');
       try {
         const ipLocation = await getLocationByIP();
         resolve(ipLocation);
@@ -31,13 +27,21 @@ export async function getCurrentLocation(): Promise<{ lat: number; lng: number }
       return;
     }
 
-    // Try geolocation with multiple attempts for better accuracy
+    // Check if we're on HTTPS or localhost (affects geolocation behavior)
+    const isSecure = location.protocol === 'https:' ||
+                     location.hostname === 'localhost' ||
+                     location.hostname === '127.0.0.1';
+
+    console.log(`📍 Environment: ${isSecure ? 'Secure (HTTPS/localhost)' : 'HTTP environment'}`);
+
+    // Always try geolocation first for accuracy, regardless of HTTP/HTTPS
+    // This is crucial for emergency response apps where precision matters
     let attempts = 0;
     const maxAttempts = 3;
 
     const tryGeolocation = () => {
       attempts++;
-      console.log(`📍 Attempting geolocation (attempt ${attempts}/${maxAttempts})`);
+      console.log(`📍 Attempting precise geolocation (attempt ${attempts}/${maxAttempts})`);
 
       navigator.geolocation.getCurrentPosition(
         (position) => {
@@ -45,51 +49,59 @@ export async function getCurrentLocation(): Promise<{ lat: number; lng: number }
             lat: position.coords.latitude,
             lng: position.coords.longitude,
           };
-          console.log(`📍 Geolocation successful: ${location.lat}, ${location.lng} (accuracy: ${position.coords.accuracy}m)`);
+          console.log(`✅ Geolocation successful: ${location.lat}, ${location.lng} (accuracy: ${position.coords.accuracy}m)`);
           resolve(location);
         },
         async (error) => {
-          console.log(`📍 Geolocation attempt ${attempts} failed:`, error.message);
+          console.log(`⚠️ Geolocation attempt ${attempts} failed:`, getGeolocationErrorMessage(error));
 
           if (attempts < maxAttempts) {
-            // Wait a bit and try again with slightly different options
-            setTimeout(tryGeolocation, 1000 * attempts); // Progressive delay
+            // Progressive backoff with longer timeouts for better accuracy
+            const delay = 2000 * attempts; // 2s, 4s, 6s delays
+            console.log(`⏳ Retrying geolocation in ${delay}ms...`);
+            setTimeout(tryGeolocation, delay);
           } else {
-            // All geolocation attempts failed, try IP-based location
-            console.log('📍 All geolocation attempts failed, trying IP-based location');
+            // All geolocation attempts failed, fall back to IP-based location
+            console.log('❌ All geolocation attempts failed, falling back to IP-based location');
+            console.log('💡 For better accuracy, consider:');
+            console.log('   - Granting location permissions when prompted');
+            console.log('   - Using HTTPS in production');
+            console.log('   - Ensuring GPS/location services are enabled on device');
+
             try {
               const ipLocation = await getLocationByIP();
               resolve(ipLocation);
             } catch (ipError) {
-              console.log('📍 IP-based location also failed, using fallback location');
+              console.log('❌ IP-based location also failed, using regional fallback');
               resolve(getFallbackLocation());
             }
           }
         },
         {
-          enableHighAccuracy: true,
-          timeout: isSecure ? 10000 : 5000, // Longer timeout for secure connections
+          enableHighAccuracy: true, // Critical for emergency response accuracy
+          timeout: isSecure ? 15000 : 10000, // Longer timeout to get accurate position
           maximumAge: 300000 // 5 minute cache
         }
       );
     };
 
-    // If not secure, try IP-based first, then fall back to geolocation
-    if (!isSecure) {
-      console.log('📍 HTTP environment detected, trying IP-based location first');
-      try {
-        const ipLocation = await getLocationByIP();
-        resolve(ipLocation);
-        return;
-      } catch (ipError) {
-        console.log('📍 IP-based location failed in HTTP environment, trying geolocation anyway');
-        tryGeolocation();
-      }
-    } else {
-      // Secure environment, try geolocation first
-      tryGeolocation();
-    }
+    // Start with geolocation - prioritize accuracy over protocol
+    tryGeolocation();
   });
+}
+
+// Helper function to provide user-friendly geolocation error messages
+function getGeolocationErrorMessage(error: GeolocationPositionError): string {
+  switch (error.code) {
+    case error.PERMISSION_DENIED:
+      return 'Location permission denied. Please enable location access for accurate emergency reporting.';
+    case error.POSITION_UNAVAILABLE:
+      return 'Location information unavailable. Check GPS/location services on your device.';
+    case error.TIMEOUT:
+      return 'Location request timed out. Try again or check your GPS signal.';
+    default:
+      return `Location error: ${error.message}`;
+  }
 }
 
 // Fallback location function to avoid CORS issues with IP-based geolocation
@@ -106,75 +118,116 @@ async function getLocationByIP(): Promise<{ lat: number; lng: number }> {
   try {
     console.log('🌐 Getting location by IP address...');
 
-    // Try multiple IP geolocation services for better accuracy
+    // Use services that work over HTTP without CORS issues
     const services = [
-      'https://ipapi.co/json/',
-      'https://api.ipify.org?format=json', // For IP first, then geolocate
-      'https://api.ip.sb/geoip', // Alternative service
+      // Use a CORS-enabled service that works over HTTP
+      {
+        url: 'https://ipapi.co/json/',
+        headers: { 'Accept': 'application/json' }
+      },
+      // Alternative service that might work
+      {
+        url: 'https://api.ip.sb/geoip',
+        headers: { 'Accept': 'application/json' }
+      },
+      // JSONP approach for services that support it
+      {
+        url: 'https://api.ipgeolocation.io/ipgeo?apiKey=free',
+        headers: { 'Accept': 'application/json' }
+      }
     ];
 
-    for (const serviceUrl of services) {
+    for (const service of services) {
       try {
-        const response = await fetch(serviceUrl);
+        console.log(`🌐 Trying ${service.url}...`);
+        const response = await fetch(service.url, {
+          method: 'GET',
+          headers: service.headers,
+          // Add timeout to prevent hanging
+          signal: AbortSignal.timeout(5000)
+        });
+
+        if (!response.ok) {
+          console.warn(`❌ ${service.url} returned ${response.status}`);
+          continue;
+        }
+
         const data = await response.json();
+        console.log('📍 IP API response:', data);
 
         // Handle different API response formats
         let lat, lng, city, region, country;
 
-        if (serviceUrl.includes('ipapi.co')) {
+        if (service.url.includes('ipapi.co')) {
           lat = data.latitude;
           lng = data.longitude;
           city = data.city;
           region = data.region;
           country = data.country_name;
-        } else if (serviceUrl.includes('ip.sb')) {
+        } else if (service.url.includes('ip.sb')) {
           lat = data.latitude;
           lng = data.longitude;
           city = data.city;
           region = data.region;
           country = data.country;
+        } else if (service.url.includes('ipgeolocation.io')) {
+          lat = data.latitude;
+          lng = data.longitude;
+          city = data.city;
+          region = data.state_prov;
+          country = data.country_name;
         }
 
-        if (lat && lng) {
-          console.log(`📍 IP-based location: ${city || 'Unknown'}, ${region || 'Unknown'}, ${country || 'Unknown'}`);
+        if (lat && lng && !isNaN(parseFloat(lat)) && !isNaN(parseFloat(lng))) {
+          console.log(`✅ IP-based location successful: ${city || 'Unknown'}, ${region || 'Unknown'}, ${country || 'Unknown'}`);
           console.log(`📍 Coordinates: ${lat}, ${lng}`);
           return { lat: parseFloat(lat), lng: parseFloat(lng) };
+        } else {
+          console.warn(`⚠️ Invalid coordinates from ${service.url}:`, { lat, lng });
         }
       } catch (serviceError) {
-        console.warn(`❌ ${serviceUrl} failed:`, serviceError);
+        console.warn(`❌ ${service.url} failed:`, serviceError instanceof Error ? serviceError.message : serviceError);
         continue; // Try next service
       }
     }
 
-    // If all services failed, try a more comprehensive geolocation service
-    try {
-      console.log('🌐 Trying comprehensive IP geolocation...');
-      const response = await fetch('https://api.ipgeolocation.io/ipgeo?apiKey=free');
-      const data = await response.json();
+    // If all external services failed, try a different approach
+    console.log('🌐 All external IP services failed, trying alternative method...');
 
-      if (data.latitude && data.longitude) {
-        console.log(`📍 Comprehensive IP location: ${data.city}, ${data.state_prov}, ${data.country_name}`);
+    // Try using a service that supports JSONP or has CORS enabled
+    try {
+      // Use a reliable CORS-enabled service
+      const response = await fetch('https://api.ipify.org?format=json', {
+        signal: AbortSignal.timeout(3000)
+      });
+      const ipData = await response.json();
+
+      if (ipData.ip) {
+        console.log(`📍 Got IP address: ${ipData.ip}`);
+
+        // For now, return a reasonable default for Philippines
+        // In production, you might want to implement server-side IP geolocation
+        console.log('📍 Using regional default for IP-based location (Philippines)');
         return {
-          lat: parseFloat(data.latitude),
-          lng: parseFloat(data.longitude),
+          lat: 14.5995, // Manila coordinates
+          lng: 120.9842,
         };
       }
-    } catch (comprehensiveError) {
-      console.warn('❌ Comprehensive geolocation failed:', comprehensiveError);
+    } catch (ipError) {
+      console.warn('❌ Could not get IP address:', ipError);
     }
 
   } catch (error) {
     console.warn('❌ All IP geolocation services failed:', error);
   }
 
-  // If user is clearly not in Manila area, provide more regional fallbacks
-  console.warn('⚠️ Using regional fallback based on common Philippine locations');
+  // Regional fallback for Philippines
+  console.warn('⚠️ Using Philippines regional fallback location');
+  console.log('💡 Tip: For accurate location, grant browser location permissions or use HTTPS');
 
-  // Try to determine a reasonable fallback based on common locations
-  // For now, we'll use Cebu as it's a common alternative to Manila
   return {
-    lat: 10.3157, // Cebu City coordinates as regional fallback
-    lng: 123.8854,
+    lat: 14.5995, // Manila coordinates as final fallback
+    lng: 120.9842,
   };
 }
 

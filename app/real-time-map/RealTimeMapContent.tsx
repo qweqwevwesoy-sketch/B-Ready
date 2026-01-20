@@ -64,20 +64,8 @@ export default function RealTimeMapContent() {
   const { user, loading: authLoading } = useAuth();
   const { reports } = useSocketContext();
   const [userLocation, setUserLocation] = useState<{ lat: number; lng: number } | null>(null);
-  const [stations, setStations] = useState<Station[]>(() => {
-    // Initialize stations from localStorage
-    if (typeof window !== 'undefined') {
-      try {
-        const savedStations = localStorage.getItem('emergency_stations');
-        if (savedStations) {
-          return JSON.parse(savedStations);
-        }
-      } catch (error) {
-        console.warn('Failed to load stations from localStorage:', error);
-      }
-    }
-    return [];
-  });
+  const [stations, setStations] = useState<Station[]>([]);
+  const [stationsLoading, setStationsLoading] = useState(true);
   const [addingStation, setAddingStation] = useState(false);
   const [newStationName, setNewStationName] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
@@ -95,18 +83,11 @@ export default function RealTimeMapContent() {
   const locationTrackingIntervalRef = useRef<NodeJS.Timeout | null>(null);
   const searchTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
-  // Get today's date for filtering active reports
-  const today = new Date();
-  const todayString = today.toISOString().split('T')[0];
-
-  // Filter active reports from today
+  // Filter all active reports (not just today's)
   const activeReports = reports.filter(report => {
     if (report.status !== 'current') return false;
     if (!report.location) return false;
-
-    // Check if report is from today
-    const reportDate = new Date(report.timestamp).toISOString().split('T')[0];
-    return reportDate === todayString;
+    return true;
   });
 
   // Initialize stationIdCounter based on loaded stations
@@ -199,16 +180,27 @@ export default function RealTimeMapContent() {
     };
   }, [searchQuery]);
 
-  // Save stations to localStorage whenever stations change (skip initial load)
+  // Load stations from API on component mount
   useEffect(() => {
-    if (typeof window !== 'undefined' && stations.length > 0) {
+    const loadStations = async () => {
       try {
-        localStorage.setItem('emergency_stations', JSON.stringify(stations));
+        const response = await fetch('/api/stations');
+        const data = await response.json();
+
+        if (data.success) {
+          setStations(data.stations);
+        } else {
+          console.error('Failed to load stations:', data.error);
+        }
       } catch (error) {
-        console.warn('Failed to save stations to localStorage:', error);
+        console.error('Error loading stations:', error);
+      } finally {
+        setStationsLoading(false);
       }
-    }
-  }, [stations]);
+    };
+
+    loadStations();
+  }, []);
 
   useEffect(() => {
     if (!authLoading && !user) {
@@ -216,8 +208,24 @@ export default function RealTimeMapContent() {
     }
   }, [user, authLoading, router]);
 
-  const removeStation = (stationId: string) => {
-    setStations(prev => prev.filter(s => s.id !== stationId));
+  const removeStation = async (stationId: string) => {
+    try {
+      const response = await fetch(`/api/stations?id=${stationId}`, {
+        method: 'DELETE',
+      });
+
+      const data = await response.json();
+
+      if (data.success) {
+        setStations(prev => prev.filter(s => s.id !== stationId));
+      } else {
+        console.error('Failed to remove station:', data.error);
+        alert('Failed to remove station: ' + data.error);
+      }
+    } catch (error) {
+      console.error('Error removing station:', error);
+      alert('Error removing station');
+    }
   };
 
   const addStation = async (lat: number, lng: number) => {
@@ -231,19 +239,34 @@ export default function RealTimeMapContent() {
       const data = await response.json();
       const address = data.display_name || `Lat: ${lat.toFixed(6)}, Lng: ${lng.toFixed(6)}`;
 
-      const newStation: Station = {
-        id: `station_${stationIdCounter.current++}`,
-        name: newStationName,
-        lat,
-        lng,
-        address,
-      };
+      // Add station via API
+      const apiResponse = await fetch('/api/stations', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          name: newStationName,
+          lat,
+          lng,
+          address,
+          created_by: user?.uid || null,
+        }),
+      });
 
-      setStations(prev => [...prev, newStation]);
-      setNewStationName('');
-      setAddingStation(false);
+      const apiData = await apiResponse.json();
+
+      if (apiData.success) {
+        setStations(prev => [...prev, apiData.station]);
+        setNewStationName('');
+        setAddingStation(false);
+      } else {
+        console.error('Failed to add station:', apiData.error);
+        alert('Failed to add station: ' + apiData.error);
+      }
     } catch (error) {
       console.error('Error adding station:', error);
+      alert('Error adding station');
     }
   };
 
@@ -520,7 +543,7 @@ export default function RealTimeMapContent() {
           <div class="p-2">
             <h3 class="font-bold">${station.name}</h3>
             <p class="text-sm text-gray-600">${station.address}</p>
-            ${user?.role === 'admin' ? '<button class="mt-2 px-2 py-1 bg-red-500 text-white text-xs rounded" onclick="window.removeStation(\'' + station.id + '\')">Remove</button>' : ''}
+            ${user?.role === 'admin' ? '<button class="mt-2 px-2 py-1 bg-red-500 text-white text-xs rounded" onclick="window.removeStation(\'' + station.id + '\')">Remove</button>' : '<p class="text-xs text-gray-500 mt-1">Emergency Response Station</p>'}
           </div>
         `);
 
@@ -679,12 +702,10 @@ export default function RealTimeMapContent() {
                 <div className="w-4 h-4 bg-green-500 rounded-full"></div>
                 <span className="text-sm">Your Location</span>
               </div>
-              {user.role === 'admin' && (
-                <div className="flex items-center gap-2">
-                  <div className="w-4 h-4 bg-blue-500 rounded-full"></div>
-                  <span className="text-sm">Emergency Station</span>
-                </div>
-              )}
+              <div className="flex items-center gap-2">
+                <div className="w-4 h-4 bg-blue-500 rounded-full"></div>
+                <span className="text-sm">Emergency Station</span>
+              </div>
             </div>
 
             {/* Location Status & Controls */}
@@ -840,14 +861,12 @@ export default function RealTimeMapContent() {
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div className="bg-red-50 p-4 rounded-lg">
               <div className="text-2xl font-bold text-red-600">{activeReports.length}</div>
-              <div className="text-sm text-red-600">Active Emergencies Today</div>
+              <div className="text-sm text-red-600">Active Emergencies</div>
             </div>
-            {user.role === 'admin' && (
-              <div className="bg-blue-50 p-4 rounded-lg">
-                <div className="text-2xl font-bold text-blue-600">{stations.length}</div>
-                <div className="text-sm text-blue-600">Emergency Stations</div>
-              </div>
-            )}
+            <div className="bg-blue-50 p-4 rounded-lg">
+              <div className="text-2xl font-bold text-blue-600">{stations.length}</div>
+              <div className="text-sm text-blue-600">Emergency Stations</div>
+            </div>
             <div className="bg-green-50 p-4 rounded-lg">
               <div className="text-2xl font-bold text-green-600">{userLocation ? '1' : '0'}</div>
               <div className="text-sm text-green-600">Your Location Tracked</div>

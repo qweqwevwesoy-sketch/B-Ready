@@ -39,6 +39,8 @@ export function SocketProvider({ children }: { children: React.ReactNode }) {
 
     if (!socket || !connected) return;
 
+    const isMountedRef = { current: true }; // Prevent state updates after component unmount
+
     const handleInitialReports = (reportsData: Report[]) => {
       console.log('📋 Received initial reports:', reportsData.length);
       setReports(reportsData);

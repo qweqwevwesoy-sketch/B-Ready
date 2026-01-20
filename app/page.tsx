@@ -1,10 +1,28 @@
 'use client';
 
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { Header } from '@/components/Header';
+import { AnonymousChatBox } from '@/components/AnonymousChatBox';
 
 export default function LandingPage() {
   const router = useRouter();
+  const [showAnonymousChat, setShowAnonymousChat] = useState(false);
+  const [isOffline, setIsOffline] = useState(() => !navigator.onLine);
+
+  useEffect(() => {
+
+    const handleOnline = () => setIsOffline(false);
+    const handleOffline = () => setIsOffline(true);
+
+    window.addEventListener('online', handleOnline);
+    window.addEventListener('offline', handleOffline);
+
+    return () => {
+      window.removeEventListener('online', handleOnline);
+      window.removeEventListener('offline', handleOffline);
+    };
+  }, []);
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-200">
@@ -20,8 +38,13 @@ export default function LandingPage() {
         </div>
         
         <div className="text-center text-white z-10 max-w-4xl px-4">
-          <div className="text-6xl mb-6 animate-pulse">🚨</div>
-          <h1 className="text-5xl md:text-6xl font-bold mb-4">B-READY</h1>
+          <img
+            src="/BLogo.png"
+            alt="B-READY Logo"
+            className="w-24 h-24 mx-auto mb-6 animate-pulse"
+          />
+          <h1 className="text-5xl md:text-6xl font-bold mb-4">
+            B-READY</h1>
           <p className="text-2xl md:text-3xl mb-6 opacity-90">
             Barangay Disaster Reporting & Response System
           </p>
@@ -86,6 +109,55 @@ export default function LandingPage() {
           </button>
         </div>
       </section>
+
+      {/* Anonymous Report Button */}
+      <button
+        onClick={() => setShowAnonymousChat(true)}
+        className="fixed bottom-6 right-6 bg-red-600 hover:bg-red-700 text-white p-4 rounded-full shadow-lg z-40 transition-all duration-300 hover:scale-110"
+        title="Report Emergency Anonymously"
+      >
+        <span className="text-2xl">🚨</span>
+      </button>
+
+      {/* Offline Message Overlay */}
+      {isOffline && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl p-8 max-w-md w-full text-center shadow-2xl">
+            <div className="text-6xl mb-4">📱</div>
+            <h2 className="text-2xl font-bold text-gray-800 mb-4">
+              Can't open page
+            </h2>
+            <p className="text-gray-600 mb-6">
+              Your phone is not connected to the internet. You can still access Safety Tips and emergency reporting features.
+            </p>
+            <div className="space-y-3">
+              <button
+                onClick={() => router.push('/safety-tips')}
+                className="w-full px-6 py-3 bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-700 transition-colors"
+              >
+                🛡️ View Safety Tips
+              </button>
+              <button
+                onClick={() => router.push('/offline')}
+                className="w-full px-6 py-3 bg-red-600 text-white rounded-lg font-semibold hover:bg-red-700 transition-colors"
+              >
+                🚨 Emergency Reporting
+              </button>
+              <button
+                onClick={() => setIsOffline(false)}
+                className="w-full px-6 py-3 bg-gray-200 text-gray-700 rounded-lg font-semibold hover:bg-gray-300 transition-colors"
+              >
+                Continue Browsing
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Anonymous Chat Modal */}
+      {showAnonymousChat && (
+        <AnonymousChatBox onClose={() => setShowAnonymousChat(false)} />
+      )}
     </div>
   );
 }
