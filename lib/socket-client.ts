@@ -20,9 +20,9 @@ export function useSocket() {
       return envSocketUrl;
     }
 
-    // For Vercel deployments, disable WebSocket connection
-    if (window.location.hostname.includes('vercel.app')) {
-      console.log('🔌 WebSocket disabled for Vercel deployment');
+    // For Vercel and Render deployments, disable WebSocket connection
+    if (window.location.hostname.includes('vercel.app') || window.location.hostname.includes('onrender.com')) {
+      console.log('🔌 WebSocket disabled for cloud deployment (Vercel/Render)');
       return null; // Return null to indicate no WebSocket server
     }
 
