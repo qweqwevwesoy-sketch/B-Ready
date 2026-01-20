@@ -20,6 +20,12 @@ export function useSocket() {
       return envSocketUrl;
     }
 
+    // For Vercel deployments, disable WebSocket connection
+    if (window.location.hostname.includes('vercel.app')) {
+      console.log('🔌 WebSocket disabled for Vercel deployment');
+      return null; // Return null to indicate no WebSocket server
+    }
+
     // If we're running on localhost, use localhost
     if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
       return 'http://localhost:3001';
@@ -46,6 +52,12 @@ export function useSocket() {
   }, []);
 
   useEffect(() => {
+    // Don't create socket connection if URL is null (Vercel deployment)
+    if (socketUrl === null) {
+      setSocket(null);
+      return;
+    }
+
     const socketInstance = io(socketUrl, {
       autoConnect: true,
       reconnection: true,
