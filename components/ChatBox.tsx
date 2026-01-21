@@ -43,12 +43,15 @@ export function ChatBox({ reportId, category, onClose, onSendMessage, onSendImag
       // Convert stored messages to display format
       onlineMessages = chatMessages[reportId].map(msg => {
         const isCurrentUser = user && msg.userName === `${user.firstName} ${user.lastName}`;
+
         return {
           text: msg.text,
           sender: isCurrentUser ? 'You' : msg.userName,
           time: new Date(msg.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-          type: msg.userRole === 'admin' ? 'received' : 'sent' as const,
+          type: (isCurrentUser ? 'sent' : 'received') as const,
           imageData: msg.imageData,
+          userName: msg.userName, // Keep original username for profile lookup
+          userRole: msg.userRole,
         };
       });
     }
@@ -587,29 +590,8 @@ export function ChatBox({ reportId, category, onClose, onSendMessage, onSendImag
                 {/* Profile Picture for received messages */}
                 {msg.type === 'received' && (
                   <div className="flex-shrink-0">
-                    {user && msg.sender !== 'B-READY Support' ? (
-                      user.profilePictureUrl ? (
-                        // eslint-disable-next-line @next/next/no-img-element
-                        <img
-                          src={user.profilePictureUrl}
-                          alt="Profile"
-                          className="w-8 h-8 rounded-full object-cover border border-gray-200"
-                          onError={(e) => {
-                            (e.target as HTMLImageElement).style.display = 'none';
-                            const parent = (e.target as HTMLElement).parentElement;
-                            if (parent) {
-                              const fallback = parent.querySelector('.chat-avatar-fallback') as HTMLElement;
-                              if (fallback) fallback.style.display = 'flex';
-                            }
-                          }}
-                        />
-                      ) : null
-                    ) : null}
-                    <div
-                      className="w-8 h-8 rounded-full bg-gradient-to-br from-primary to-primary-dark text-white flex items-center justify-center font-bold text-sm chat-avatar-fallback"
-                      style={{ display: (!user?.profilePictureUrl || msg.sender === 'B-READY Support') ? 'flex' : 'none' }}
-                    >
-                      {msg.sender === 'B-READY Support' ? '🚨' : msg.sender.charAt(0)}
+                    <div className="w-8 h-8 rounded-full bg-gradient-to-br from-primary to-primary-dark text-white flex items-center justify-center font-bold text-sm">
+                      {msg.sender === 'B-READY Support' ? '🚨' : (msg.userName || msg.sender).charAt(0).toUpperCase()}
                     </div>
                   </div>
                 )}
@@ -636,26 +618,7 @@ export function ChatBox({ reportId, category, onClose, onSendMessage, onSendImag
                 {/* Profile Picture for sent messages */}
                 {msg.type === 'sent' && (
                   <div className="flex-shrink-0">
-                    {user?.profilePictureUrl ? (
-                      // eslint-disable-next-line @next/next/no-img-element
-                      <img
-                        src={user.profilePictureUrl}
-                        alt="Profile"
-                        className="w-8 h-8 rounded-full object-cover border border-gray-200"
-                        onError={(e) => {
-                          (e.target as HTMLImageElement).style.display = 'none';
-                          const parent = (e.target as HTMLElement).parentElement;
-                          if (parent) {
-                            const fallback = parent.querySelector('.chat-sent-avatar-fallback') as HTMLElement;
-                            if (fallback) fallback.style.display = 'flex';
-                          }
-                        }}
-                      />
-                    ) : null}
-                    <div
-                      className="w-8 h-8 rounded-full bg-gradient-to-br from-primary to-primary-dark text-white flex items-center justify-center font-bold text-sm chat-sent-avatar-fallback"
-                      style={{ display: user?.profilePictureUrl ? 'none' : 'flex' }}
-                    >
+                    <div className="w-8 h-8 rounded-full bg-gradient-to-br from-primary to-primary-dark text-white flex items-center justify-center font-bold text-sm">
                       {user?.firstName.charAt(0)}{user?.lastName.charAt(0)}
                     </div>
                   </div>
