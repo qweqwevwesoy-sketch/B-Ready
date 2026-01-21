@@ -92,6 +92,58 @@ export function ChatBox({ reportId, category, onClose, onSendMessage, onSendImag
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
 
+  const startInstantCamera = () => {
+    console.log('📸 Instant camera mode - opening file picker immediately');
+
+    // Create file input with camera capture intent
+    const fileInput = document.createElement('input');
+    fileInput.type = 'file';
+    fileInput.accept = 'image/*';
+    fileInput.capture = 'environment'; // Use rear camera on mobile
+    fileInput.style.display = 'none'; // Hide the input
+
+    fileInput.onchange = async (e) => {
+      const file = (e.target as HTMLInputElement).files?.[0];
+      if (file) {
+        console.log('📸 File selected instantly:', file.name, `(${file.size} bytes)`);
+
+        try {
+          // Process the image immediately (no waiting)
+          const compressedDataUrl = await compressImage(file);
+
+          // Add to messages instantly
+          const instantImageMessage = {
+            text: '[Photo]',
+            sender: 'You',
+            time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+            type: 'sent' as const,
+            imageData: compressedDataUrl,
+          };
+          setLocalMessages(prev => [...prev, instantImageMessage]);
+
+          // Send immediately if callback exists
+          if (onSendImage) {
+            onSendImage(compressedDataUrl);
+          }
+
+          console.log('✅ Instant photo processed and sent');
+        } catch (error) {
+          console.error('❌ Error processing instant photo:', error);
+          alert('Error processing photo. Please try again.');
+        }
+      }
+    };
+
+    // Add to DOM and trigger click immediately
+    document.body.appendChild(fileInput);
+    fileInput.click();
+
+    // Remove from DOM after use
+    setTimeout(() => {
+      document.body.removeChild(fileInput);
+    }, 100);
+  };
+
   const startCamera = async () => {
     try {
       console.log('🎥 Requesting camera access...');
@@ -703,7 +755,7 @@ export function ChatBox({ reportId, category, onClose, onSendMessage, onSendImag
             <div className="flex gap-1 flex-shrink-0">
               <button
                 type="button"
-                onClick={() => (cameraActive ? stopCamera() : startCamera())}
+                onClick={startInstantCamera}
                 className="w-10 h-10 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 flex items-center justify-center text-lg"
                 title="Take photo"
               >
