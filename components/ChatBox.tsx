@@ -618,7 +618,26 @@ export function ChatBox({ reportId, category, onClose, onSendMessage, onSendImag
                 {/* Profile Picture for sent messages */}
                 {msg.type === 'sent' && (
                   <div className="flex-shrink-0">
-                    <div className="w-8 h-8 rounded-full bg-gradient-to-br from-primary to-primary-dark text-white flex items-center justify-center font-bold text-sm">
+                    {user?.profilePictureUrl ? (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img
+                        src={user.profilePictureUrl}
+                        alt="Your Profile"
+                        className="w-8 h-8 rounded-full object-cover border border-gray-200"
+                        onError={(e) => {
+                          (e.target as HTMLImageElement).style.display = 'none';
+                          const parent = (e.target as HTMLElement).parentElement;
+                          if (parent) {
+                            const fallback = parent.querySelector('.sent-avatar-fallback') as HTMLElement;
+                            if (fallback) fallback.style.display = 'flex';
+                          }
+                        }}
+                      />
+                    ) : null}
+                    <div
+                      className="w-8 h-8 rounded-full bg-gradient-to-br from-primary to-primary-dark text-white flex items-center justify-center font-bold text-sm sent-avatar-fallback"
+                      style={{ display: user?.profilePictureUrl ? 'none' : 'flex' }}
+                    >
                       {user?.firstName.charAt(0)}{user?.lastName.charAt(0)}
                     </div>
                   </div>
