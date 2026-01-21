@@ -27,9 +27,11 @@ declare global {
 
 export function GoogleTranslate() {
   const [showTranslate, setShowTranslate] = useState(false);
+  const [isInitialized, setIsInitialized] = useState(false);
 
   useEffect(() => {
-    if (showTranslate && !window.google) {
+    // Only initialize Google Translate once
+    if (!isInitialized && !window.google) {
       window.googleTranslateElementInit = function() {
         if (window.google && window.google.translate) {
           new window.google.translate.TranslateElement(
@@ -41,6 +43,7 @@ export function GoogleTranslate() {
             },
             'google_translate_element'
           );
+          setIsInitialized(true);
         }
       };
 
@@ -50,7 +53,26 @@ export function GoogleTranslate() {
       script.onerror = () => console.error('Failed to load Google Translate');
       document.head.appendChild(script);
     }
-  }, [showTranslate]);
+  }, [isInitialized]);
+
+  // Show the translate widget on first click
+  useEffect(() => {
+    if (showTranslate && !isInitialized) {
+      // First time - let the useEffect above handle initialization
+    } else if (showTranslate && isInitialized) {
+      // Already initialized, just show the element
+      const element = document.getElementById('google_translate_element');
+      if (element) {
+        element.style.display = 'block';
+      }
+    } else if (!showTranslate && isInitialized) {
+      // Hide the element
+      const element = document.getElementById('google_translate_element');
+      if (element) {
+        element.style.display = 'none';
+      }
+    }
+  }, [showTranslate, isInitialized]);
 
   return (
     <div className="fixed bottom-6 left-6 z-40">
