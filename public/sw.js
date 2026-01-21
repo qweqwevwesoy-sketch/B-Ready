@@ -3,8 +3,8 @@ const OFFLINE_URL = '/offline';
 
 // Critical pages and assets to cache immediately
 const CRITICAL_CACHE_URLS = [
-  '/offline',
-  '/offline/status',
+  '/',
+  '/safety-tips',
   '/manifest.json',
   '/BLogo.png',
   '/BLogo.svg',
@@ -120,13 +120,7 @@ async function handleNavigationRequest(request) {
       return cachedResponse;
     }
 
-    // For Next.js, try serving the offline page
-    const offlineResponse = await caches.match(OFFLINE_URL);
-    if (offlineResponse) {
-      return offlineResponse;
-    }
-
-    // Final fallback - basic offline page
+    // Final fallback - simple offline message
     return new Response(
       `<html>
         <head>
@@ -173,10 +167,11 @@ async function handleNavigationRequest(request) {
           <div class="container">
             <h1>📱 You're Offline</h1>
             <p>You are currently not connected to the internet.</p>
-            <p>You can still report emergencies using the offline mode.</p>
-            <a href="/offline" class="btn">🚨 Emergency Reporting</a>
+            <p>The main pages are cached and available offline:</p>
+            <a href="/" class="btn">🏠 Home Page</a>
+            <a href="/safety-tips" class="btn">🛡️ Safety Tips</a>
             <p style="margin-top: 30px; font-size: 0.9em; opacity: 0.8;">
-              Please check your internet connection and try again.
+              Emergency reporting is available on the home page even when offline.
             </p>
           </div>
         </body>
