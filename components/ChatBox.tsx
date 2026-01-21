@@ -167,13 +167,43 @@ export function ChatBox({ reportId, category, onClose, onSendMessage, onSendImag
       }
 
       streamRef.current = stream;
-      setCameraReady(true);
+
       if (videoRef.current) {
         console.log('📺 Setting video srcObject');
         videoRef.current.srcObject = stream;
-        await videoRef.current.play();
-        console.log('▶️ Video playing');
+
+        try {
+          // Force the video to be visible and play
+          videoRef.current.style.display = 'block';
+          videoRef.current.style.visibility = 'visible';
+          videoRef.current.style.opacity = '1';
+
+          await videoRef.current.play();
+          console.log('▶️ Video playing');
+
+          // Add a small delay to ensure video loads
+          setTimeout(() => {
+            if (videoRef.current && videoRef.current.videoWidth > 0) {
+              console.log('📹 Video fully loaded with dimensions:', videoRef.current.videoWidth, 'x', videoRef.current.videoHeight);
+              setCameraReady(true);
+            } else {
+              console.warn('⚠️ Video loaded but no dimensions yet, waiting...');
+              // Force ready state after a longer delay
+              setTimeout(() => {
+                console.log('⏰ Forcing camera ready state');
+                setCameraReady(true);
+              }, 1000);
+            }
+          }, 500);
+
+        } catch (playError) {
+          console.error('❌ Video play failed:', playError);
+          // Still set as active but not ready
+          setCameraActive(true);
+          setCameraReady(false);
+        }
       }
+
       setCameraActive(true);
     } catch (err) {
       console.error('❌ Error accessing camera:', err);
@@ -281,66 +311,139 @@ export function ChatBox({ reportId, category, onClose, onSendMessage, onSendImag
   };
 
   const capturePhoto = () => {
-    if (!videoRef.current || !streamRef.current) {
-      console.error('❌ No video element or stream available for capture');
+    if (!streamRef.current) {
+      console.error('❌ No camera stream available for capture');
+      alert('No camera stream available. Please restart the camera.');
       return;
     }
 
     const video = videoRef.current;
     console.log('📸 Attempting to capture photo...');
-    console.log('Video dimensions:', video.videoWidth, 'x', video.videoHeight);
-    console.log('Video ready state:', video.readyState);
 
-    // Check if video has valid dimensions
-    if (video.videoWidth === 0 || video.videoHeight === 0) {
-      console.error('❌ Video has no dimensions - camera not ready');
-      alert('Camera not ready yet. Please wait for the video to load.');
-      return;
+    if (video) {
+      console.log('Video dimensions:', video.videoWidth, 'x', video.videoHeight);
+      console.log('Video ready state:', video.readyState);
+      console.log('Video visibility:', video.style.visibility);
+      console.log('Video display:', video.style.display);
     }
+
+    // Try multiple capture methods
+    let capturedDataUrl = null;
 
     try {
-      const canvas = document.createElement('canvas');
+      // Method 1: Use video element if it has dimensions
+      if (video && video.videoWidth > 0 && video.videoHeight > 0) {
+        console.log('📸 Using video element capture method');
+        const canvas = document.createElement('canvas');
+        canvas.width = video.videoWidth;
+        canvas.height = video.videoHeight;
 
-      // Use actual video dimensions for best quality
-      const width = video.videoWidth;
-      const height = video.videoHeight;
-
-      canvas.width = width;
-      canvas.height = height;
-
-      const ctx = canvas.getContext('2d');
-      if (ctx) {
-        // Draw the current video frame
-        ctx.drawImage(video, 0, 0, width, height);
-
-        // Convert to data URL
-        const dataUrl = canvas.toDataURL('image/jpeg', 0.85);
-        console.log('✅ Photo captured successfully, size:', Math.round((dataUrl.length - 'data:image/jpeg;base64,'.length) * 3 / 4), 'bytes');
-
-        // Add the image to local messages immediately for UI feedback
-        const sentImageMessage = {
-          text: '[Photo]', // Placeholder text for image
-          sender: 'You',
-          time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-          type: 'sent' as const,
-          imageData: dataUrl,
-        };
-        setLocalMessages(prev => [...prev, sentImageMessage]);
-
-        // Send the image if callback exists
-        if (onSendImage) {
-          onSendImage(dataUrl);
+        const ctx = canvas.getContext('2d');
+        if (ctx) {
+          ctx.drawImage(video, 0, 0, video.videoWidth, video.videoHeight);
+          capturedDataUrl = canvas.toDataURL('image/jpeg', 0.85);
+          console.log('✅ Video capture successful');
         }
-
-        stopCamera();
-      } else {
-        console.error('❌ Could not get canvas context');
-        alert('Could not capture photo. Please try again.');
       }
+
+      // Method 2: Fallback - capture from stream directly (if video fails)
+      if (!capturedDataUrl) {
+        console.log('📸 Using stream capture fallback method');
+        const canvas = document.createElement('canvas');
+        const videoTrack = streamRef.current.getVideoTracks()[0];
+
+        if (videoTrack) {
+          const settings = videoTrack.getSettings();
+          canvas.width = settings.width || 640;
+          canvas.height = settings.height || 480;
+
+          const ctx = canvas.getContext('2d');
+          if (ctx) {
+            // Create a temporary video element for capture
+            const tempVideo = document.createElement('video');
+            tempVideo.srcObject = streamRef.current;
+            tempVideo.muted = true;
+            tempVideo.playsInline = true;
+
+            // Wait for the temporary video to load
+            tempVideo.onloadeddata = () => {
+              try {
+                ctx.drawImage(tempVideo, 0, 0, canvas.width, canvas.height);
+                capturedDataUrl = canvas.toDataURL('image/jpeg', 0.85);
+                console.log('✅ Stream capture successful');
+                processCapturedImage(capturedDataUrl);
+              } catch (fallbackError) {
+                console.error('❌ Stream capture failed:', fallbackError);
+                fallbackToFileUpload();
+              }
+            };
+
+            tempVideo.onerror = () => {
+              console.error('❌ Temporary video load failed');
+              fallbackToFileUpload();
+            };
+
+            // Trigger play on temp video
+            tempVideo.play().catch(() => {
+              console.error('❌ Could not play temporary video');
+              fallbackToFileUpload();
+            });
+
+            return; // Exit here, let the async handler call processCapturedImage
+          }
+        }
+      }
+
+      // If we have a captured image, process it
+      if (capturedDataUrl) {
+        processCapturedImage(capturedDataUrl);
+      } else {
+        console.error('❌ All capture methods failed');
+        fallbackToFileUpload();
+      }
+
     } catch (error) {
       console.error('❌ Error during photo capture:', error);
-      alert('Error capturing photo. Please try again.');
+      fallbackToFileUpload();
     }
+  };
+
+  const processCapturedImage = (dataUrl: string) => {
+    console.log('✅ Photo captured successfully, size:', Math.round((dataUrl.length - 'data:image/jpeg;base64,'.length) * 3 / 4), 'bytes');
+
+    // Add the image to local messages immediately for UI feedback
+    const sentImageMessage = {
+      text: '[Photo]',
+      sender: 'You',
+      time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+      type: 'sent' as const,
+      imageData: dataUrl,
+    };
+    setLocalMessages(prev => [...prev, sentImageMessage]);
+
+    // Send the image if callback exists
+    if (onSendImage) {
+      onSendImage(dataUrl);
+    }
+
+    stopCamera();
+  };
+
+  const fallbackToFileUpload = () => {
+    console.log('📁 Falling back to file upload');
+    alert('Camera capture failed. Please select an image file instead.');
+
+    const fileInput = document.createElement('input');
+    fileInput.type = 'file';
+    fileInput.accept = 'image/*';
+    fileInput.capture = 'environment';
+    fileInput.onchange = (e) => {
+      const file = (e.target as HTMLInputElement).files?.[0];
+      if (file) {
+        handleFileUpload(file);
+      }
+    };
+    fileInput.click();
   };
 
   const handleSend = (e: React.FormEvent) => {
