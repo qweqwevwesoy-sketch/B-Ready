@@ -1,0 +1,506 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Camera Debug - B-READY ChatBox</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+
+        .container {
+            background: white;
+            border-radius: 12px;
+            padding: 20px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+
+        h1 {
+            color: #333;
+            margin-bottom: 20px;
+        }
+
+        .status {
+            padding: 10px;
+            border-radius: 6px;
+            margin: 10px 0;
+            font-weight: bold;
+        }
+
+        .status.success { background: #d4edda; color: #155724; border: 1px solid #c3e6cb; }
+        .status.error { background: #f8d7da; color: #721c24; border: 1px solid #f5c6cb; }
+        .status.info { background: #d1ecf1; color: #0c5460; border: 1px solid #bee5eb; }
+
+        .camera-container {
+            margin: 20px 0;
+            border-radius: 8px;
+            overflow: hidden;
+            background: #000;
+            position: relative;
+        }
+
+        video {
+            width: 100%;
+            display: block;
+            border-radius: 8px;
+        }
+
+        .camera-placeholder {
+            width: 100%;
+            height: 300px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            background: #333;
+            border-radius: 8px;
+        }
+
+        .button-group {
+            display: flex;
+            gap: 10px;
+            margin: 15px 0;
+            flex-wrap: wrap;
+        }
+
+        button {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 500;
+            transition: all 0.2s;
+        }
+
+        button:hover {
+            opacity: 0.8;
+        }
+
+        .btn-primary { background: #007bff; color: white; }
+        .btn-success { background: #28a745; color: white; }
+        .btn-danger { background: #dc3545; color: white; }
+        .btn-secondary { background: #6c757d; color: white; }
+
+        .logs {
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 6px;
+            padding: 15px;
+            margin: 20px 0;
+            max-height: 300px;
+            overflow-y: auto;
+            font-family: monospace;
+            font-size: 12px;
+        }
+
+        .logs h3 {
+            margin: 0 0 10px 0;
+            color: #333;
+        }
+
+        .image-preview {
+            margin: 20px 0;
+            text-align: center;
+        }
+
+        img {
+            max-width: 100%;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .protocol-info {
+            background: #fff3cd;
+            border: 1px solid #ffeaa7;
+            color: #856404;
+            padding: 10px;
+            border-radius: 6px;
+            margin: 10px 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>📷 Camera Debug - B-READY ChatBox</h1>
+
+        <div class="protocol-info">
+            <strong>Page Protocol:</strong> <span id="protocol">Loading...</span><br>
+            <strong>Secure Context:</strong> <span id="secure-context">Loading...</span>
+        </div>
+
+        <div id="status" class="status info">Ready to test camera</div>
+
+        <div class="button-group">
+            <button id="start-camera" class="btn-primary">🎥 Start Camera</button>
+            <button id="stop-camera" class="btn-danger" disabled>⏹️ Stop Camera</button>
+            <button id="capture-photo" class="btn-success" disabled>📸 Capture Photo</button>
+            <button id="upload-file" class="btn-secondary">📁 Upload File</button>
+        </div>
+
+        <div class="camera-container">
+            <div id="camera-placeholder" class="camera-placeholder">
+                📷 Camera not active<br>
+                <small>Click "Start Camera" to begin</small>
+            </div>
+            <video id="video" autoplay playsinline muted style="display: none;"></video>
+        </div>
+
+        <div id="image-preview" class="image-preview" style="display: none;">
+            <h3>📸 Captured Image:</h3>
+            <img id="captured-image" alt="Captured photo">
+            <p><small>Image size: <span id="image-size">0</span> bytes</small></p>
+        </div>
+
+        <div class="logs">
+            <h3>📋 Debug Logs:</h3>
+            <div id="logs">Ready...</div>
+        </div>
+    </div>
+
+    <script>
+        // DOM elements
+        const statusDiv = document.getElementById('status');
+        const logsDiv = document.getElementById('logs');
+        const video = document.getElementById('video');
+        const placeholder = document.getElementById('camera-placeholder');
+        const imagePreview = document.getElementById('image-preview');
+        const capturedImage = document.getElementById('captured-image');
+        const imageSize = document.getElementById('image-size');
+
+        // Buttons
+        const startBtn = document.getElementById('start-camera');
+        const stopBtn = document.getElementById('stop-camera');
+        const captureBtn = document.getElementById('capture-photo');
+        const uploadBtn = document.getElementById('upload-file');
+
+        // State
+        let stream = null;
+        let cameraActive = false;
+        let cameraReady = false;
+
+        // Protocol detection
+        document.getElementById('protocol').textContent = location.protocol;
+        document.getElementById('secure-context').textContent =
+            (location.protocol === 'https:' || location.hostname === 'localhost' || location.hostname === '127.0.0.1' || location.hostname.startsWith('192.168.'))
+            ? 'Yes' : 'No';
+
+        // Logging function
+        function log(message, type = 'info') {
+            const timestamp = new Date().toLocaleTimeString();
+            const logEntry = `[${timestamp}] ${message}\n`;
+            logsDiv.textContent += logEntry;
+            logsDiv.scrollTop = logsDiv.scrollHeight;
+
+            console.log(`[${type.toUpperCase()}] ${message}`);
+        }
+
+        // Status updates
+        function updateStatus(message, type = 'info') {
+            statusDiv.textContent = message;
+            statusDiv.className = `status ${type}`;
+            log(`Status: ${message}`, type);
+        }
+
+        // Camera functions
+        async function startCamera() {
+            try {
+                updateStatus('🎥 Requesting camera access...', 'info');
+
+                // Check if mediaDevices is available
+                if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+                    throw new Error('Camera API not available');
+                }
+
+                // Check if we're on HTTPS (required for camera access in most browsers)
+                // Allow HTTP for localhost development
+                const isSecureContext = location.protocol === 'https:' ||
+                                       location.hostname === 'localhost' ||
+                                       location.hostname === '127.0.0.1' ||
+                                       location.hostname.startsWith('192.168.');
+
+                if (!isSecureContext) {
+                    log('⚠️ Not in secure context, trying file upload fallback', 'warn');
+                    throw new Error('Not in secure context - camera access blocked');
+                }
+
+                log('🔍 Checking camera permissions...', 'info');
+
+                // Try different camera configurations
+                let selectedStream;
+                const constraints = [
+                    // Try rear camera first
+                    { video: { facingMode: 'environment', width: { ideal: 1280 }, height: { ideal: 720 } } },
+                    // Try front camera
+                    { video: { facingMode: 'user', width: { ideal: 1280 }, height: { ideal: 720 } } },
+                    // Try any camera
+                    { video: { width: { ideal: 1280 }, height: { ideal: 720 } } },
+                    // Basic video
+                    { video: true }
+                ];
+
+                for (const constraint of constraints) {
+                    try {
+                        log(`🎥 Trying camera constraints: ${JSON.stringify(constraint)}`, 'info');
+                        selectedStream = await navigator.mediaDevices.getUserMedia(constraint);
+                        log(`✅ Camera access granted with constraints: ${JSON.stringify(constraint)}`, 'success');
+                        break;
+                    } catch (error) {
+                        log(`⚠️ Camera constraint failed: ${constraint.video ? JSON.stringify(constraint.video) : 'video: true'} - ${error.message}`, 'warn');
+                    }
+                }
+
+                if (!selectedStream) {
+                    throw new Error('Unable to access any camera on this device.');
+                }
+
+                stream = selectedStream;
+                cameraActive = true;
+
+                log('📺 Setting video srcObject', 'info');
+                video.srcObject = stream;
+
+                video.style.display = 'block';
+                placeholder.style.display = 'none';
+
+                // Wait for video to load
+                await new Promise((resolve) => {
+                    video.onloadeddata = () => {
+                        log('▶️ Video playing successfully', 'success');
+                        cameraReady = true;
+                        resolve();
+                    };
+                    video.onerror = (e) => {
+                        log(`🎥 Video error: ${e}`, 'error');
+                        resolve();
+                    };
+                });
+
+                updateStatus('📷 Camera ready! Click "Capture Photo"', 'success');
+
+                // Update button states
+                startBtn.disabled = true;
+                stopBtn.disabled = false;
+                captureBtn.disabled = false;
+
+            } catch (err) {
+                log(`❌ Error accessing camera: ${err.message}`, 'error');
+                updateStatus(`❌ Camera Error: ${err.message}`, 'error');
+
+                // Final fallback: file upload
+                log('📁 Falling back to file upload', 'info');
+                handleFileUpload();
+            }
+        }
+
+        function stopCamera() {
+            if (stream) {
+                stream.getTracks().forEach(track => track.stop());
+                stream = null;
+            }
+
+            cameraActive = false;
+            cameraReady = false;
+
+            video.style.display = 'none';
+            placeholder.style.display = 'flex';
+
+            updateStatus('⏹️ Camera stopped', 'info');
+
+            // Update button states
+            startBtn.disabled = false;
+            stopBtn.disabled = true;
+            captureBtn.disabled = true;
+        }
+
+        function capturePhoto() {
+            if (!video || !stream || !cameraReady) {
+                updateStatus('❌ Camera not ready', 'error');
+                return;
+            }
+
+            try {
+                updateStatus('📸 Capturing photo...', 'info');
+
+                const canvas = document.createElement('canvas');
+                const ctx = canvas.getContext('2d');
+
+                // Get video dimensions
+                const { videoWidth: width, videoHeight: height } = video;
+
+                // Reduce resolution for faster processing
+                const maxDimension = 800;
+                let newWidth = width;
+                let newHeight = height;
+
+                // Scale down if too large
+                if (width > maxDimension || height > maxDimension) {
+                    if (width > height) {
+                        newHeight = (height * maxDimension) / width;
+                        newWidth = maxDimension;
+                    } else {
+                        newWidth = (width * maxDimension) / height;
+                        newHeight = maxDimension;
+                    }
+                }
+
+                canvas.width = newWidth;
+                canvas.height = newHeight;
+
+                if (ctx) {
+                    ctx.drawImage(video, 0, 0, newWidth, newHeight);
+
+                    // Capture as JPEG with quality 0.75
+                    const dataUrl = canvas.toDataURL('image/jpeg', 0.75);
+
+                    // Calculate approximate file size
+                    const sizeInBytes = Math.round((dataUrl.length - 'data:image/jpeg;base64,'.length) * 3 / 4);
+
+                    // Display captured image
+                    capturedImage.src = dataUrl;
+                    imageSize.textContent = sizeInBytes.toLocaleString();
+                    imagePreview.style.display = 'block';
+
+                    updateStatus(`✅ Photo captured! (${sizeInBytes.toLocaleString()} bytes)`, 'success');
+                    log(`📸 Photo captured successfully - Size: ${sizeInBytes} bytes`, 'success');
+
+                    stopCamera();
+                }
+            } catch (error) {
+                log(`❌ Error capturing photo: ${error.message}`, 'error');
+                updateStatus('❌ Failed to capture photo', 'error');
+            }
+        }
+
+        function handleFileUpload() {
+            const fileInput = document.createElement('input');
+            fileInput.type = 'file';
+            fileInput.accept = 'image/*';
+            fileInput.capture = 'environment';
+
+            fileInput.onchange = (e) => {
+                const file = e.target.files[0];
+                if (file) {
+                    processUploadedFile(file);
+                }
+            };
+
+            fileInput.click();
+        }
+
+        async function processUploadedFile(file) {
+            try {
+                log(`📁 Processing uploaded file: ${file.name} (${file.size} bytes)`, 'info');
+
+                // Compress the image
+                const compressedDataUrl = await compressImage(file);
+
+                // Calculate sizes
+                const originalSize = file.size;
+                const compressedSize = Math.round((compressedDataUrl.length - 'data:image/jpeg;base64,'.length) * 3 / 4);
+
+                // Display the image
+                capturedImage.src = compressedDataUrl;
+                imageSize.textContent = `${compressedSize.toLocaleString()} (compressed from ${originalSize.toLocaleString()})`;
+                imagePreview.style.display = 'block';
+
+                updateStatus(`✅ File uploaded and compressed!`, 'success');
+                log(`📁 File processed successfully - Original: ${originalSize} bytes, Compressed: ${compressedSize} bytes`, 'success');
+
+            } catch (error) {
+                log(`❌ Error processing file: ${error.message}`, 'error');
+                updateStatus('❌ Failed to process file', 'error');
+            }
+        }
+
+        function compressImage(file) {
+            return new Promise((resolve, reject) => {
+                // Check file size first - if under 500KB, don't compress
+                if (file.size < 500 * 1024) {
+                    const reader = new FileReader();
+                    reader.onload = (e) => resolve(e.target.result);
+                    reader.onerror = () => reject(new Error('Failed to read file'));
+                    reader.readAsDataURL(file);
+                    return;
+                }
+
+                const canvas = document.createElement('canvas');
+                const ctx = canvas.getContext('2d');
+                const img = new Image();
+
+                img.onload = () => {
+                    // Calculate new dimensions (max 800px width/height)
+                    let { width, height } = img;
+
+                    const maxSize = 800;
+                    if (width > height) {
+                        if (width > maxSize) {
+                            height = (height * maxSize) / width;
+                            width = maxSize;
+                        }
+                    } else {
+                        if (height > maxSize) {
+                            width = (width * maxSize) / height;
+                            height = maxSize;
+                        }
+                    }
+
+                    canvas.width = width;
+                    canvas.height = height;
+
+                    // Draw and compress
+                    ctx.drawImage(img, 0, 0, width, height);
+                    const compressedDataUrl = canvas.toDataURL('image/jpeg', 0.7);
+                    resolve(compressedDataUrl);
+                };
+
+                img.onerror = () => reject(new Error('Failed to load image'));
+                img.src = URL.createObjectURL(file);
+            });
+        }
+
+        // Event listeners
+        startBtn.addEventListener('click', startCamera);
+        stopBtn.addEventListener('click', stopCamera);
+        captureBtn.addEventListener('click', capturePhoto);
+        uploadBtn.addEventListener('click', handleFileUpload);
+
+        // Initial log
+        log('🚀 Camera Debug Tool Ready', 'success');
+        log(`🌐 Page URL: ${location.href}`, 'info');
+        log(`📱 User Agent: ${navigator.userAgent}`, 'info');
+        log(`📷 Camera API Available: ${!!(navigator.mediaDevices && navigator.mediaDevices.getUserMedia)}`, 'info');
+
+        // Test basic media access
+        if (navigator.mediaDevices && navigator.mediaDevices.enumerateDevices) {
+            navigator.mediaDevices.enumerateDevices()
+                .then(devices => {
+                    const videoDevices = devices.filter(device => device.kind === 'videoinput');
+                    log(`📹 Available cameras: ${videoDevices.length}`, 'info');
+                    videoDevices.forEach((device, index) => {
+                        log(`  ${index + 1}. ${device.label || 'Camera ' + (index + 1)} (${device.deviceId})`, 'info');
+                    });
+                })
+                .catch(error => {
+                    log(`❌ Could not enumerate devices: ${error.message}`, 'warn');
+                });
+        }
+
+        // Check permissions API
+        if (navigator.permissions && navigator.permissions.query) {
+            navigator.permissions.query({ name: 'camera' })
+                .then(result => {
+                    log(`📷 Camera permission status: ${result.state}`, 'info');
+                })
+                .catch(error => {
+                    log(`❌ Could not check camera permission: ${error.message}`, 'warn');
+                });
+        }
+    </script>
+</body>
+</html>

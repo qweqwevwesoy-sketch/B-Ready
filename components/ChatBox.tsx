@@ -447,40 +447,57 @@ export function ChatBox({ reportId, category, onClose, onSendMessage, onSendImag
 
         {/* Camera Preview */}
         {cameraActive && (
-          <div className="p-4 bg-gray-900">
-            <div className="relative w-full rounded-lg mb-4 bg-black">
+          <div className="p-4 bg-gray-900 relative z-10">
+            <div className="relative w-full rounded-lg mb-4 bg-black overflow-hidden" style={{ minHeight: '250px' }}>
               <video
                 ref={videoRef}
                 autoPlay
                 playsInline
                 muted
-                className="w-full rounded-lg"
-                style={{ minHeight: '200px', objectFit: 'cover' }}
-                onLoadedData={() => console.log('🎥 Video loaded successfully')}
-                onError={(e) => console.error('🎥 Video error:', e)}
+                className="w-full h-full object-cover rounded-lg"
+                style={{
+                  minHeight: '250px',
+                  maxHeight: '400px',
+                  display: cameraReady ? 'block' : 'none'
+                }}
+                onLoadedData={() => {
+                  console.log('🎥 Video loaded successfully');
+                  setCameraReady(true);
+                }}
+                onError={(e) => {
+                  console.error('🎥 Video error:', e);
+                  // Try to show error state
+                  setCameraReady(false);
+                }}
               />
               {!cameraReady && (
-                <div className="absolute inset-0 flex items-center justify-center text-white text-center p-4">
+                <div className="absolute inset-0 flex items-center justify-center text-white text-center p-4 bg-black rounded-lg">
                   <div>
                     <div className="text-4xl mb-2">📷</div>
                     <p>Camera initializing...</p>
+                    <p className="text-sm mt-2">Please wait...</p>
                   </div>
+                </div>
+              )}
+              {cameraReady && (
+                <div className="absolute bottom-2 left-2 bg-black/50 text-white text-xs px-2 py-1 rounded">
+                  📹 Live Camera
                 </div>
               )}
             </div>
             <div className="flex gap-2 justify-center">
               <button
                 onClick={capturePhoto}
-                className="px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600"
+                className="px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 disabled:opacity-50"
                 disabled={!cameraReady}
               >
-                📸 Capture
+                📸 Capture Photo
               </button>
               <button
                 onClick={stopCamera}
                 className="px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600"
               >
-                Cancel
+                ❌ Cancel
               </button>
             </div>
           </div>
