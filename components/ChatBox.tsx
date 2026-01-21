@@ -183,18 +183,33 @@ export function ChatBox({ reportId, category, onClose, onSendMessage, onSendImag
 
           // Add a small delay to ensure video loads
           setTimeout(() => {
-            if (videoRef.current && videoRef.current.videoWidth > 0) {
-              console.log('📹 Video fully loaded with dimensions:', videoRef.current.videoWidth, 'x', videoRef.current.videoHeight);
-              setCameraReady(true);
-            } else {
-              console.warn('⚠️ Video loaded but no dimensions yet, waiting...');
-              // Force ready state after a longer delay
-              setTimeout(() => {
-                console.log('⏰ Forcing camera ready state');
+            if (videoRef.current) {
+              console.log('📹 Video check - Width:', videoRef.current.videoWidth, 'Height:', videoRef.current.videoHeight, 'ReadyState:', videoRef.current.readyState);
+
+              // Force the video to be visible regardless
+              videoRef.current.style.display = 'block';
+              videoRef.current.style.visibility = 'visible';
+              videoRef.current.style.opacity = '1';
+
+              if (videoRef.current.videoWidth > 0 && videoRef.current.videoHeight > 0) {
+                console.log('✅ Video has dimensions - setting ready');
                 setCameraReady(true);
-              }, 1000);
+              } else {
+                console.warn('⚠️ Video has no dimensions, but forcing ready anyway');
+                // Force ready state even without dimensions
+                setCameraReady(true);
+              }
+            } else {
+              console.error('❌ Video ref is null during check');
+              setCameraReady(false);
             }
-          }, 500);
+          }, 300);
+
+          // Additional fallback - force ready after 2 seconds
+          setTimeout(() => {
+            console.log('⏰ Fallback: Forcing camera ready after 2 seconds');
+            setCameraReady(true);
+          }, 2000);
 
         } catch (playError) {
           console.error('❌ Video play failed:', playError);
@@ -579,8 +594,11 @@ export function ChatBox({ reportId, category, onClose, onSendMessage, onSendImag
                   position: 'absolute',
                   top: 0,
                   left: 0,
-                  zIndex: 10000,
-                  backgroundColor: 'black'
+                  zIndex: 1,
+                  backgroundColor: 'black',
+                  display: 'block',
+                  visibility: 'visible',
+                  opacity: 1
                 }}
                 onLoadedData={() => {
                   console.log('🎥 Video loaded successfully');
@@ -592,7 +610,7 @@ export function ChatBox({ reportId, category, onClose, onSendMessage, onSendImag
                 }}
               />
               {!cameraReady && (
-                <div className="absolute inset-0 flex items-center justify-center text-white text-center p-4 bg-black rounded-lg" style={{ zIndex: 10001 }}>
+                <div className="absolute inset-0 flex items-center justify-center text-white text-center p-4 bg-black/75 rounded-lg" style={{ zIndex: 10001, backdropFilter: 'blur(2px)' }}>
                   <div>
                     <div className="text-4xl mb-2">📷</div>
                     <p>Camera initializing...</p>
