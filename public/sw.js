@@ -1,217 +1,254 @@
-const CACHE_NAME = 'b-ready-v1.0.0';
+const CACHE_NAME = 'b-ready-v2.0.0';
 const OFFLINE_URL = '/offline';
 
-// Assets to cache
-const STATIC_CACHE_URLS = [
-  '/',
-  '/safety-tips',
+// Critical pages and assets to cache immediately
+const CRITICAL_CACHE_URLS = [
   '/offline',
   '/offline/status',
   '/manifest.json',
   '/BLogo.png',
   '/BLogo.svg',
-  '/globals.css',
-  // Add other critical assets
 ];
 
-// Install event - cache static assets
+// Install event - cache critical assets
 self.addEventListener('install', (event) => {
   console.log('🚀 Service Worker installing');
   event.waitUntil(
     caches.open(CACHE_NAME).then((cache) => {
-      console.log('📦 Caching static assets');
-      return cache.addAll(STATIC_CACHE_URLS);
+      console.log('📦 Caching critical assets');
+      return cache.addAll(CRITICAL_CACHE_URLS);
     })
   );
   self.skipWaiting();
 });
 
-// Activate event - clean up old caches
+// Activate event - clean up old caches and claim clients
 self.addEventListener('activate', (event) => {
   console.log('✅ Service Worker activating');
   event.waitUntil(
-    caches.keys().then((cacheNames) => {
-      return Promise.all(
-        cacheNames.map((cacheName) => {
-          if (cacheName !== CACHE_NAME) {
-            console.log('🗑️ Deleting old cache:', cacheName);
-            return caches.delete(cacheName);
-          }
-        })
-      );
-    })
+    Promise.all([
+      // Clean up old caches
+      caches.keys().then((cacheNames) => {
+        return Promise.all(
+          cacheNames.map((cacheName) => {
+            if (cacheName !== CACHE_NAME) {
+              console.log('🗑️ Deleting old cache:', cacheName);
+              return caches.delete(cacheName);
+            }
+          })
+        );
+      }),
+      // Take control of all clients
+      self.clients.claim()
+    ])
   );
-  self.clients.claim();
 });
 
-// Fetch event - serve cached content when offline
+// Message handler for communication with main thread
+self.addEventListener('message', (event) => {
+  if (event.data && event.data.type === 'SKIP_WAITING') {
+    self.skipWaiting();
+  }
+});
+
+// Fetch event - handle different types of requests
 self.addEventListener('fetch', (event) => {
-  // Only handle GET requests
-  if (event.request.method !== 'GET') return;
-
   const url = new URL(event.request.url);
+  const isNavigation = event.request.mode === 'navigate';
+  const isApiCall = url.pathname.startsWith('/api/');
 
-  // Handle API calls differently - try network first, fallback to cache
-  if (url.pathname.startsWith('/api/')) {
-    event.respondWith(
-      fetch(event.request)
-        .then((response) => {
-          // Clone the response for caching
-          const responseClone = response.clone();
-
-          // Cache successful API responses (except auth-related)
-          if (response.status === 200 && !url.pathname.includes('/auth')) {
-            caches.open(CACHE_NAME).then((cache) => {
-              cache.put(event.request, responseClone);
-            });
-          }
-
-          return response;
-        })
-        .catch(() => {
-          // Network failed, try cache
-          return caches.match(event.request).then((cachedResponse) => {
-            if (cachedResponse) {
-              return cachedResponse;
-            }
-            // Return offline response for API calls
-            return new Response(JSON.stringify({
-              success: false,
-              offline: true,
-              message: 'You are currently offline. This feature requires an internet connection.'
-            }), {
-              status: 503,
-              headers: { 'Content-Type': 'application/json' }
-            });
-          });
-        })
-    );
+  // Handle API calls
+  if (isApiCall && event.request.method === 'GET') {
+    event.respondWith(handleApiRequest(event.request));
     return;
   }
 
-  // Handle page requests - network first, then cache, then offline page
-  if (event.request.headers.get('accept').includes('text/html')) {
-    event.respondWith(
-      fetch(event.request)
-        .then((response) => {
-          // Cache successful page responses
-          if (response.status === 200) {
-            const responseClone = response.clone();
-            caches.open(CACHE_NAME).then((cache) => {
-              cache.put(event.request, responseClone);
-            });
-          }
-          return response;
-        })
-        .catch(() => {
-          // Network failed, try cache first for critical pages
-          return caches.match(event.request).then((cachedResponse) => {
-            if (cachedResponse) {
-              return cachedResponse;
-            }
-
-            // For critical pages like home and safety tips, try to serve cached versions
-            const url = new URL(event.request.url);
-            if (url.pathname === '/' || url.pathname === '/safety-tips') {
-              // Try to serve the cached version of these critical pages
-              return caches.match(url.pathname).then((criticalCachedResponse) => {
-                if (criticalCachedResponse) {
-                  return criticalCachedResponse;
-                }
-                // If no cached version, fall back to offline page
-                return caches.match(OFFLINE_URL).then((offlineResponse) => {
-                  return offlineResponse || new Response(
-                    `<html><body style="font-family: Arial, sans-serif; text-align: center; padding: 50px;">
-                      <h1>📱 You're Offline</h1>
-                      <p>You are currently not connected to the internet.</p>
-                      <p>You can still access the <a href="/safety-tips">Safety Tips</a> when they're cached, or use the offline emergency reporting.</p>
-                      <p><a href="/offline">Go to Offline Mode</a></p>
-                    </body></html>`,
-                    {
-                      status: 503,
-                      headers: { 'Content-Type': 'text/html' }
-                    }
-                  );
-                });
-              });
-            }
-
-            // For all other pages, serve offline page
-            return caches.match(OFFLINE_URL).then((offlineResponse) => {
-              return offlineResponse || new Response('Offline - Please check your internet connection', {
-                status: 503,
-                headers: { 'Content-Type': 'text/plain' }
-              });
-            });
-          });
-        })
-    );
+  // Handle navigation requests (page loads)
+  if (isNavigation) {
+    event.respondWith(handleNavigationRequest(event.request));
     return;
   }
 
-  // For all other requests (CSS, JS, images, etc.) - cache first, then network
-  event.respondWith(
-    caches.match(event.request).then((cachedResponse) => {
-      if (cachedResponse) {
-        return cachedResponse;
-      }
-
-      return fetch(event.request).then((response) => {
-        // Cache successful responses
-        if (response.status === 200) {
-          const responseClone = response.clone();
-          caches.open(CACHE_NAME).then((cache) => {
-            cache.put(event.request, responseClone);
-          });
-        }
-        return response;
-      }).catch(() => {
-        // Return a basic offline response for failed asset requests
-        if (event.request.destination === 'image') {
-          return new Response('', { status: 404 });
-        }
-        return new Response('Offline', { status: 503 });
-      });
-    })
-  );
+  // Handle static assets
+  event.respondWith(handleStaticAsset(event.request));
 });
 
-// Background sync for offline reports
+// Handle API requests with offline fallback
+async function handleApiRequest(request) {
+  try {
+    // Try network first for API calls
+    const response = await fetch(request);
+    return response;
+  } catch (error) {
+    console.log('🌐 API request failed, checking cache:', request.url);
+
+    // Try to serve from cache
+    const cachedResponse = await caches.match(request);
+    if (cachedResponse) {
+      return cachedResponse;
+    }
+
+    // Return offline API response
+    return new Response(JSON.stringify({
+      success: false,
+      offline: true,
+      message: 'You are currently offline. This feature requires an internet connection.'
+    }), {
+      status: 503,
+      headers: { 'Content-Type': 'application/json' }
+    });
+  }
+}
+
+// Handle navigation requests with offline page fallback
+async function handleNavigationRequest(request) {
+  try {
+    // Try network first
+    const response = await fetch(request);
+    if (response.status === 200) {
+      // Cache successful page responses for future offline use
+      const cache = await caches.open(CACHE_NAME);
+      cache.put(request, response.clone());
+    }
+    return response;
+  } catch (error) {
+    console.log('🌐 Navigation failed, trying cache:', request.url);
+
+    // Try to serve from cache
+    const cachedResponse = await caches.match(request);
+    if (cachedResponse) {
+      return cachedResponse;
+    }
+
+    // For Next.js, try serving the offline page
+    const offlineResponse = await caches.match(OFFLINE_URL);
+    if (offlineResponse) {
+      return offlineResponse;
+    }
+
+    // Final fallback - basic offline page
+    return new Response(
+      `<html>
+        <head>
+          <title>B-READY - Offline</title>
+          <meta name="viewport" content="width=device-width, initial-scale=1">
+          <style>
+            body {
+              font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+              text-align: center;
+              padding: 50px;
+              background: linear-gradient(135deg, #ff6b6b, #ffa500);
+              color: white;
+              min-height: 100vh;
+              margin: 0;
+            }
+            .container {
+              max-width: 500px;
+              margin: 0 auto;
+              background: rgba(255, 255, 255, 0.1);
+              padding: 40px;
+              border-radius: 20px;
+              backdrop-filter: blur(10px);
+            }
+            h1 { font-size: 3em; margin-bottom: 20px; }
+            p { font-size: 1.2em; margin: 20px 0; }
+            .btn {
+              display: inline-block;
+              padding: 15px 30px;
+              background: white;
+              color: #ff6b6b;
+              text-decoration: none;
+              border-radius: 50px;
+              font-weight: bold;
+              margin: 10px;
+              transition: all 0.3s ease;
+            }
+            .btn:hover {
+              transform: translateY(-2px);
+              box-shadow: 0 10px 20px rgba(0,0,0,0.2);
+            }
+          </style>
+        </head>
+        <body>
+          <div class="container">
+            <h1>📱 You're Offline</h1>
+            <p>You are currently not connected to the internet.</p>
+            <p>You can still report emergencies using the offline mode.</p>
+            <a href="/offline" class="btn">🚨 Emergency Reporting</a>
+            <p style="margin-top: 30px; font-size: 0.9em; opacity: 0.8;">
+              Please check your internet connection and try again.
+            </p>
+          </div>
+        </body>
+      </html>`,
+      {
+        status: 200,
+        headers: { 'Content-Type': 'text/html' }
+      }
+    );
+  }
+}
+
+// Handle static assets with cache-first strategy
+async function handleStaticAsset(request) {
+  // Try cache first for static assets
+  const cachedResponse = await caches.match(request);
+  if (cachedResponse) {
+    return cachedResponse;
+  }
+
+  try {
+    // Fetch from network
+    const response = await fetch(request);
+    if (response.status === 200) {
+      // Cache successful responses
+      const cache = await caches.open(CACHE_NAME);
+      cache.put(request, response.clone());
+    }
+    return response;
+  } catch (error) {
+    // For images, return empty response
+    if (request.destination === 'image') {
+      return new Response('', { status: 404 });
+    }
+
+    // For other assets, return error
+    return new Response('Offline', { status: 503 });
+  }
+}
+
+// Background sync for offline reports (placeholder - actual sync handled by main thread)
 self.addEventListener('sync', (event) => {
   if (event.tag === 'sync-reports') {
-    event.waitUntil(syncOfflineReports());
+    console.log('🔄 Background sync triggered for reports');
+    // Sync is handled by the main thread through the offline manager
+    // This is just a placeholder to acknowledge the sync event
+    event.waitUntil(Promise.resolve());
   }
 });
 
-// Function to sync offline reports when back online
-async function syncOfflineReports() {
+// Periodic sync for maintenance tasks
+self.addEventListener('periodicsync', (event) => {
+  if (event.tag === 'maintenance') {
+    event.waitUntil(performMaintenance());
+  }
+});
+
+// Maintenance tasks
+async function performMaintenance() {
   try {
-    // Get offline reports from localStorage (simplified implementation)
-    const stored = localStorage.getItem('bready_offline_reports');
-    const offlineReports = stored ? JSON.parse(stored) : [];
+    // Clean up old caches
+    const cacheNames = await caches.keys();
+    const oldCaches = cacheNames.filter(name =>
+      name.startsWith('b-ready-v') &&
+      name !== CACHE_NAME
+    );
 
-    for (const report of offlineReports) {
-      try {
-        const response = await fetch('/api/reports', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(report),
-        });
+    await Promise.all(oldCaches.map(name => caches.delete(name)));
 
-        if (response.ok) {
-          // Mark as synced and remove from offline storage
-          const reports = JSON.parse(localStorage.getItem('bready_offline_reports') || '[]');
-          const updated = reports.map(r =>
-            r.offlineId === report.offlineId ? { ...r, synced: true } : r
-          );
-          localStorage.setItem('bready_offline_reports', JSON.stringify(updated));
-        }
-      } catch (error) {
-        console.error('Failed to sync report:', report.offlineId, error);
-      }
-    }
+    console.log('🧹 Maintenance completed');
   } catch (error) {
-    console.error('Background sync failed:', error);
+    console.error('Maintenance failed:', error);
   }
 }
 

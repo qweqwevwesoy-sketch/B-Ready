@@ -1,4 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { storeOfflineReport } from '@/lib/offline-manager';
+import { offlineService } from '@/lib/offline-service';
 
 console.log('🚀 Anonymous Reports API route loaded');
 
@@ -33,17 +35,60 @@ export async function POST(request: NextRequest) {
       icon: '🚨',
     };
 
-    // For now, we'll just return success since the AnonymousChatBox handles localStorage
-    // In a production environment, you might want to store this in a database
-    // or send it to a backend service for processing
+    // Check if we're offline or should use local backend
+    const isOffline = !navigator.onLine || offlineService.shouldUseLocalBackend();
 
-    console.log('✅ Anonymous report created:', reportData.id);
+    if (isOffline) {
+      console.log('📱 Offline mode detected, storing report locally');
 
-    return NextResponse.json({
-      success: true,
-      report: reportData,
-      message: 'Anonymous report submitted successfully'
-    });
+      // Store offline report using the offline manager
+      const offlineReport = storeOfflineReport(reportData);
+
+      console.log('✅ Anonymous report stored offline:', offlineReport.offlineId);
+
+      return NextResponse.json({
+        success: true,
+        report: offlineReport,
+        message: 'Anonymous report stored offline and will sync when connection is restored',
+        offline: true
+      });
+    } else {
+      // Online mode - try to submit to backend service
+      console.log('🌐 Online mode, attempting to submit report');
+
+      try {
+        const result = await offlineService.createReport(reportData);
+
+        if (result.success) {
+          console.log('✅ Anonymous report submitted to backend:', result.id);
+          return NextResponse.json({
+            success: true,
+            report: reportData,
+            message: 'Anonymous report submitted successfully'
+          });
+        } else {
+          console.warn('⚠️ Backend submission failed, falling back to offline storage');
+          // Fall back to offline storage
+          const offlineReport = storeOfflineReport(reportData);
+          return NextResponse.json({
+            success: true,
+            report: offlineReport,
+            message: 'Report stored locally due to backend issues',
+            offline: true
+          });
+        }
+      } catch (backendError) {
+        console.error('❌ Backend submission error:', backendError);
+        // Fall back to offline storage
+        const offlineReport = storeOfflineReport(reportData);
+        return NextResponse.json({
+          success: true,
+          report: offlineReport,
+          message: 'Report stored locally due to connection issues',
+          offline: true
+        });
+      }
+    }
   } catch (error) {
     console.error('❌ Error creating anonymous report:', error);
     return NextResponse.json(
