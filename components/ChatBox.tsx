@@ -281,51 +281,65 @@ export function ChatBox({ reportId, category, onClose, onSendMessage, onSendImag
   };
 
   const capturePhoto = () => {
-    if (!videoRef.current || !streamRef.current) return;
-
-    const canvas = document.createElement('canvas');
-    const video = videoRef.current;
-
-    // Reduce resolution for faster processing
-    const maxDimension = 800; // Reduced from full video resolution
-    let { videoWidth: width, videoHeight: height } = video;
-
-    // Scale down if too large
-    if (width > maxDimension || height > maxDimension) {
-      if (width > height) {
-        height = (height * maxDimension) / width;
-        width = maxDimension;
-      } else {
-        width = (width * maxDimension) / height;
-        height = maxDimension;
-      }
+    if (!videoRef.current || !streamRef.current) {
+      console.error('❌ No video element or stream available for capture');
+      return;
     }
 
-    canvas.width = width;
-    canvas.height = height;
+    const video = videoRef.current;
+    console.log('📸 Attempting to capture photo...');
+    console.log('Video dimensions:', video.videoWidth, 'x', video.videoHeight);
+    console.log('Video ready state:', video.readyState);
 
-    const ctx = canvas.getContext('2d');
-    if (ctx) {
-      ctx.drawImage(video, 0, 0, width, height);
-      // Use lower quality for faster processing
-      const dataUrl = canvas.toDataURL('image/jpeg', 0.75);
+    // Check if video has valid dimensions
+    if (video.videoWidth === 0 || video.videoHeight === 0) {
+      console.error('❌ Video has no dimensions - camera not ready');
+      alert('Camera not ready yet. Please wait for the video to load.');
+      return;
+    }
 
-      // Add the image to local messages immediately for UI feedback
-      const sentImageMessage = {
-        text: '[Photo]', // Placeholder text for image
-        sender: 'You',
-        time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-        type: 'sent' as const,
-        imageData: dataUrl,
-      };
-      setLocalMessages(prev => [...prev, sentImageMessage]);
+    try {
+      const canvas = document.createElement('canvas');
 
-      // Send the image if callback exists
-      if (onSendImage) {
-        onSendImage(dataUrl);
+      // Use actual video dimensions for best quality
+      const width = video.videoWidth;
+      const height = video.videoHeight;
+
+      canvas.width = width;
+      canvas.height = height;
+
+      const ctx = canvas.getContext('2d');
+      if (ctx) {
+        // Draw the current video frame
+        ctx.drawImage(video, 0, 0, width, height);
+
+        // Convert to data URL
+        const dataUrl = canvas.toDataURL('image/jpeg', 0.85);
+        console.log('✅ Photo captured successfully, size:', Math.round((dataUrl.length - 'data:image/jpeg;base64,'.length) * 3 / 4), 'bytes');
+
+        // Add the image to local messages immediately for UI feedback
+        const sentImageMessage = {
+          text: '[Photo]', // Placeholder text for image
+          sender: 'You',
+          time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+          type: 'sent' as const,
+          imageData: dataUrl,
+        };
+        setLocalMessages(prev => [...prev, sentImageMessage]);
+
+        // Send the image if callback exists
+        if (onSendImage) {
+          onSendImage(dataUrl);
+        }
+
+        stopCamera();
+      } else {
+        console.error('❌ Could not get canvas context');
+        alert('Could not capture photo. Please try again.');
       }
-
-      stopCamera();
+    } catch (error) {
+      console.error('❌ Error during photo capture:', error);
+      alert('Error capturing photo. Please try again.');
     }
   };
 
@@ -447,18 +461,23 @@ export function ChatBox({ reportId, category, onClose, onSendMessage, onSendImag
 
         {/* Camera Preview */}
         {cameraActive && (
-          <div className="p-4 bg-gray-900 relative z-10">
-            <div className="relative w-full rounded-lg mb-4 bg-black overflow-hidden" style={{ minHeight: '250px' }}>
+          <div className="p-4 bg-gray-900 relative z-10" style={{ position: 'relative', zIndex: 9999 }}>
+            <div className="relative w-full rounded-lg mb-4 bg-black overflow-hidden" style={{ minHeight: '250px', position: 'relative' }}>
               <video
                 ref={videoRef}
                 autoPlay
                 playsInline
                 muted
-                className="w-full h-full object-cover rounded-lg"
+                className="w-full rounded-lg"
                 style={{
                   minHeight: '250px',
                   maxHeight: '400px',
-                  display: cameraReady ? 'block' : 'none'
+                  objectFit: 'cover',
+                  position: 'absolute',
+                  top: 0,
+                  left: 0,
+                  zIndex: 10000,
+                  backgroundColor: 'black'
                 }}
                 onLoadedData={() => {
                   console.log('🎥 Video loaded successfully');
@@ -466,12 +485,11 @@ export function ChatBox({ reportId, category, onClose, onSendMessage, onSendImag
                 }}
                 onError={(e) => {
                   console.error('🎥 Video error:', e);
-                  // Try to show error state
                   setCameraReady(false);
                 }}
               />
               {!cameraReady && (
-                <div className="absolute inset-0 flex items-center justify-center text-white text-center p-4 bg-black rounded-lg">
+                <div className="absolute inset-0 flex items-center justify-center text-white text-center p-4 bg-black rounded-lg" style={{ zIndex: 10001 }}>
                   <div>
                     <div className="text-4xl mb-2">📷</div>
                     <p>Camera initializing...</p>
@@ -480,7 +498,7 @@ export function ChatBox({ reportId, category, onClose, onSendMessage, onSendImag
                 </div>
               )}
               {cameraReady && (
-                <div className="absolute bottom-2 left-2 bg-black/50 text-white text-xs px-2 py-1 rounded">
+                <div className="absolute bottom-2 left-2 bg-black/50 text-white text-xs px-2 py-1 rounded" style={{ zIndex: 10002 }}>
                   📹 Live Camera
                 </div>
               )}
