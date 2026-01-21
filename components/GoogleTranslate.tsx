@@ -70,8 +70,8 @@ export function GoogleTranslate() {
         id="google_translate_element"
         className="bg-white rounded-lg shadow-lg border border-gray-200 overflow-hidden"
         style={{
-          minWidth: '200px',
-          maxWidth: '300px'
+          minWidth: '70px',
+          maxWidth: '120px'
         }}
       />
     </div>
