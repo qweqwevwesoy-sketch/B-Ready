@@ -52,8 +52,16 @@ export function useSocket() {
   }, []);
 
   useEffect(() => {
-    // Don't create socket connection if URL is null (Vercel deployment)
-    if (socketUrl === null) {
+    // For Firebase deployments, initialize Firebase Realtime Database
+    if (socketUrl && socketUrl.includes('firebaseio.com')) {
+      console.log('🔥 Firebase real-time features enabled');
+      // Firebase handles connections differently - no Socket.IO needed
+      setSocket(null);
+      return;
+    }
+
+    // Don't create socket connection if no valid URL
+    if (!socketUrl) {
       setSocket(null);
       return;
     }
