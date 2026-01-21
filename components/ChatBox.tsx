@@ -471,6 +471,43 @@ export function ChatBox({ reportId, category, onClose, onSendMessage, onSendImag
 
   return (
     <div className="fixed inset-0 bg-black/70 z-50 flex items-center justify-center p-4">
+      {/* Hidden video element for camera access - outside modal */}
+      {cameraActive && (
+        <div style={{
+          position: 'fixed',
+          top: '-9999px',
+          left: '-9999px',
+          width: '1px',
+          height: '1px',
+          overflow: 'hidden',
+          opacity: 0,
+          pointerEvents: 'none',
+          zIndex: -1
+        }}>
+          <video
+            ref={videoRef}
+            autoPlay
+            playsInline
+            muted
+            style={{
+              width: '1px',
+              height: '1px',
+              position: 'absolute',
+              top: 0,
+              left: 0
+            }}
+            onLoadedData={() => {
+              console.log('🎥 Hidden video loaded successfully');
+              setCameraReady(true);
+            }}
+            onError={(e) => {
+              console.error('🎥 Hidden video error:', e);
+              setCameraReady(false);
+            }}
+          />
+        </div>
+      )}
+
       <div className="bg-white rounded-2xl w-full max-w-md h-[85vh] max-h-[700px] flex flex-col shadow-2xl">
         {/* Header */}
         <div className="bg-gradient-to-r from-primary to-primary-dark text-white p-4 rounded-t-2xl flex justify-between items-center">
