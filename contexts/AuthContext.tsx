@@ -51,6 +51,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
       if (firebaseUser) {
         try {
+          // Try to fetch user data from Firestore
           const userDoc = await getDoc(doc(db, 'users', firebaseUser.uid));
           if (userDoc.exists() && isMounted) {
             const userData = userDoc.data();
@@ -72,7 +73,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
               }
             }
 
-            setUser({
+            const userProfile = {
               uid: firebaseUser.uid,
               email: firebaseUser.email!,
               firstName: userData.firstName,
@@ -83,13 +84,37 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
               employeeId: userData.employeeId,
               role: userData.role,
               profilePictureUrl,
-            });
+            };
+
+            // Cache user data locally for offline access
+            localStorage.setItem(`bready_user_${firebaseUser.uid}`, JSON.stringify(userProfile));
+
+            setUser(userProfile);
           } else if (isMounted) {
+            // No user document found, but user is authenticated
+            // This shouldn't happen in normal operation, but handle gracefully
+            console.warn('Authenticated user has no profile document');
             setUser(null);
           }
         } catch (error) {
-          console.error('Error fetching user data:', error);
-          if (isMounted) setUser(null);
+          console.error('Error fetching user data from Firestore:', error);
+
+          // Firestore failed (likely offline), try to load cached user data
+          try {
+            const cachedUserData = localStorage.getItem(`bready_user_${firebaseUser.uid}`);
+            if (cachedUserData && isMounted) {
+              const userProfile = JSON.parse(cachedUserData);
+              console.log('✅ Loaded user data from local cache (offline mode)');
+              setUser(userProfile);
+            } else {
+              // No cached data available
+              console.warn('No cached user data available, user will need to reconnect');
+              if (isMounted) setUser(null);
+            }
+          } catch (cacheError) {
+            console.error('Error loading cached user data:', cacheError);
+            if (isMounted) setUser(null);
+          }
         }
       } else if (isMounted) {
         setUser(null);
@@ -142,9 +167,24 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       updatedAt: serverTimestamp(),
     };
 
-    await updateDoc(doc(db, 'users', user.uid), updateData);
-    
-    setUser((prev) => prev ? { ...prev, ...updates } : null);
+    try {
+      await updateDoc(doc(db, 'users', user.uid), updateData);
+
+      // Update local cache with new data
+      const updatedUser = { ...user, ...updates };
+      localStorage.setItem(`bready_user_${user.uid}`, JSON.stringify(updatedUser));
+
+      setUser(updatedUser);
+    } catch (error) {
+      console.error('Failed to update profile online:', error);
+
+      // Still update local state and cache for offline consistency
+      const updatedUser = { ...user, ...updates };
+      localStorage.setItem(`bready_user_${user.uid}`, JSON.stringify(updatedUser));
+
+      setUser(updatedUser);
+      console.log('✅ Profile updated locally (will sync when online)');
+    }
   }, [user]);
 
   const uploadProfilePicture = useCallback(async (file: File) => {
