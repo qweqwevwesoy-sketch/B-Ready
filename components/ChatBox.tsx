@@ -14,13 +14,16 @@ interface ChatBoxProps {
   onSendImage?: (imageData: string) => void;
 }
 
-const getInitialMessage = (category: Category | null | undefined): { text: string; sender: string; time: string; type: 'sent' | 'received'; imageData?: string } => ({
+const getInitialMessage = (category: Category | null | undefined) => ({
   text: category
     ? `Hello! How can we help you today? You're reporting a ${category.name.toLowerCase()} incident.`
     : 'Hello! How can we help you today?',
   sender: 'B-READY Support',
   time: 'Just now',
   type: 'received' as const,
+  imageData: undefined,
+  userName: 'B-READY Support',
+  userRole: 'admin'
 });
 
 export function ChatBox({ reportId, category, onClose, onSendMessage, onSendImage }: ChatBoxProps) {
@@ -30,14 +33,30 @@ export function ChatBox({ reportId, category, onClose, onSendMessage, onSendImag
   const [cameraActive, setCameraActive] = useState(false);
   const [cameraReady, setCameraReady] = useState(false);
   const [capturedImage, setCapturedImage] = useState<string | null>(null);
-  const [localMessages, setLocalMessages] = useState<Array<{ text: string; sender: string; time: string; type: 'sent' | 'received'; imageData?: string }>>([]);
+  const [localMessages, setLocalMessages] = useState<Array<{
+    text: string;
+    sender: string;
+    time: string;
+    type: 'sent' | 'received';
+    imageData?: string;
+    userName?: string;
+    userRole?: string;
+  }>>([]);
   const videoRef = useRef<HTMLVideoElement>(null);
   const streamRef = useRef<MediaStream | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const isOffline = useOfflineStatus();
 
   const messages = useMemo(() => {
-    let onlineMessages: Array<{ text: string; sender: string; time: string; type: 'sent' | 'received'; imageData?: string }> = [];
+    let onlineMessages: Array<{
+      text: string;
+      sender: string;
+      time: string;
+      type: 'sent' | 'received';
+      imageData?: string;
+      userName?: string;
+      userRole?: string;
+    }> = [];
 
     if (reportId && chatMessages[reportId]) {
       // Convert stored messages to display format
@@ -48,24 +67,34 @@ export function ChatBox({ reportId, category, onClose, onSendMessage, onSendImag
           text: msg.text,
           sender: isCurrentUser ? 'You' : msg.userName,
           time: new Date(msg.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-          type: (isCurrentUser ? 'sent' : 'received') as const,
+          type: (isCurrentUser ? 'sent' : 'received'),
           imageData: msg.imageData,
-          userName: msg.userName, // Keep original username for profile lookup
+          userName: msg.userName,
           userRole: msg.userRole,
         };
       });
     }
 
     // Add offline messages if available
-    let offlineMessages: Array<{ text: string; sender: string; time: string; type: 'sent' | 'received'; imageData?: string }> = [];
+    let offlineMessages: Array<{
+      text: string;
+      sender: string;
+      time: string;
+      type: 'sent' | 'received';
+      imageData?: string;
+      userName?: string;
+      userRole?: string;
+    }> = [];
     if (reportId) {
       const offlineMsgs = getOfflineMessagesForReport(reportId);
       offlineMessages = offlineMsgs.map(msg => ({
         text: msg.text,
         sender: msg.userName,
         time: new Date(msg.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-        type: msg.userRole === 'admin' ? 'received' : 'sent' as const,
+        type: msg.userRole === 'admin' ? 'received' : 'sent',
         imageData: msg.imageData,
+        userName: msg.userName,
+        userRole: msg.userRole,
       }));
     }
 
@@ -526,42 +555,6 @@ export function ChatBox({ reportId, category, onClose, onSendMessage, onSendImag
 
   return (
     <div className="fixed inset-0 bg-black/70 z-50 flex items-center justify-center p-4">
-      {/* Hidden video element for camera access - outside modal */}
-      {cameraActive && (
-        <div style={{
-          position: 'fixed',
-          top: '-9999px',
-          left: '-9999px',
-          width: '1px',
-          height: '1px',
-          overflow: 'hidden',
-          opacity: 0,
-          pointerEvents: 'none',
-          zIndex: -1
-        }}>
-          <video
-            ref={videoRef}
-            autoPlay
-            playsInline
-            muted
-            style={{
-              width: '1px',
-              height: '1px',
-              position: 'absolute',
-              top: 0,
-              left: 0
-            }}
-            onLoadedData={() => {
-              console.log('🎥 Hidden video loaded successfully');
-              setCameraReady(true);
-            }}
-            onError={(e) => {
-              console.error('🎥 Hidden video error:', e);
-              setCameraReady(false);
-            }}
-          />
-        </div>
-      )}
 
       <div className="bg-white rounded-2xl w-full max-w-md h-[85vh] max-h-[700px] flex flex-col shadow-2xl">
         {/* Header */}

@@ -130,6 +130,15 @@ async function handleNavigationRequest(request) {
 
 // Handle static assets with cache-first strategy
 async function handleStaticAsset(request) {
+  // Only cache GET requests - Cache API doesn't support other methods
+  if (request.method !== 'GET') {
+    try {
+      return await fetch(request);
+    } catch (error) {
+      return new Response('Method not allowed for caching', { status: 405 });
+    }
+  }
+
   // Try cache first for static assets
   const cachedResponse = await caches.match(request);
   if (cachedResponse) {
