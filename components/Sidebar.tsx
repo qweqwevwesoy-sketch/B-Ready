@@ -4,6 +4,30 @@ import { useEffect, useState } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
 
+interface GoogleTranslateElement {
+  TranslateElement: {
+    new (options: {
+      pageLanguage: string;
+      includedLanguages: string;
+      layout: number;
+      autoDisplay: boolean;
+    }, elementId: string): void;
+    InlineLayout: {
+      SIMPLE: number;
+      HORIZONTAL: number;
+    };
+  };
+}
+
+declare global {
+  interface Window {
+    google?: {
+      translate: GoogleTranslateElement;
+    };
+    googleTranslateElementInit: () => void;
+  }
+}
+
 interface SidebarProps {
   isOpen: boolean;
   onClose: () => void;
@@ -14,6 +38,41 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
   const pathname = usePathname();
   const { user, logout } = useAuth();
   const [isOffline, setIsOffline] = useState(() => !navigator.onLine);
+  const [translateInitialized, setTranslateInitialized] = useState(false);
+
+  const initializeGoogleTranslate = () => {
+    // Define the initialization function
+    window.googleTranslateElementInit = function() {
+      if (window.google && window.google.translate) {
+        try {
+          new window.google.translate.TranslateElement(
+            {
+              pageLanguage: 'en',
+              includedLanguages: 'en,tl,ceb,es,fr,zh-CN,ja,ko,hi,de,it,pt,ru,ar',
+              layout: window.google.translate.TranslateElement.InlineLayout.SIMPLE,
+              autoDisplay: false,
+            },
+            'google_translate_element'
+          );
+          setTranslateInitialized(true);
+        } catch (error) {
+          console.error('Failed to initialize Google Translate in sidebar:', error);
+        }
+      }
+    };
+
+    // Load the script if not already loaded
+    if (!window.google) {
+      const script = document.createElement('script');
+      script.src = 'https://translate.google.com/translate_a/element.js?cb=googleTranslateElementInit';
+      script.async = true;
+      script.onerror = () => console.error('Failed to load Google Translate script in sidebar');
+      document.head.appendChild(script);
+    } else {
+      // Script already loaded, initialize immediately
+      window.googleTranslateElementInit();
+    }
+  };
 
   useEffect(() => {
     if (isOpen) {
@@ -25,6 +84,13 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
       document.body.style.overflow = 'unset';
     };
   }, [isOpen]);
+
+  // Initialize Google Translate when sidebar opens
+  useEffect(() => {
+    if (isOpen && !translateInitialized) {
+      initializeGoogleTranslate();
+    }
+  }, [isOpen, translateInitialized]);
 
   useEffect(() => {
     const handleOnline = () => setIsOffline(false);
@@ -53,7 +119,7 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
   if (!user) return null;
 
   // When offline, only show Safety Tips
-  const navItems = isOffline ? [
+  const mainNavItems = isOffline ? [
     { path: '/safety-tips', label: 'Safety Tips', icon: '⚠️' },
   ] : [
     { path: '/dashboard', label: 'Home Dashboard', icon: '🏠' },
@@ -61,6 +127,11 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
     { path: '/profile', label: 'Account Settings', icon: '👤' },
     { path: '/safety-tips', label: 'Safety Tips', icon: '⚠️' },
     ...(user.role === 'admin' ? [{ path: '/status-update', label: 'Status Update', icon: '📊' }] : []),
+  ];
+
+  // Bottom items (always visible)
+  const bottomNavItems = [
+    { id: 'translate', label: 'Translate', icon: '🌐', isComponent: true },
   ];
 
   return (
@@ -131,8 +202,9 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
             </div>
           </div>
 
-          <nav className="space-y-2">
-            {navItems.map((item) => (
+          {/* Main navigation items */}
+          <nav className="space-y-2 mb-4">
+            {mainNavItems.map((item) => (
               <button
                 key={item.path}
                 onClick={() => handleNavigation(item.path)}
@@ -146,6 +218,15 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
                 <span>{item.label}</span>
               </button>
             ))}
+          </nav>
+
+          {/* Bottom section with Translate and Logout */}
+          <div className="border-t border-gray-200 pt-4 space-y-2">
+            {/* Google Translate Widget */}
+            <div className="mb-4">
+              <div id="google_translate_element" className="text-center"></div>
+            </div>
+
             <button
               onClick={handleLogout}
               className="w-full text-left p-4 rounded-lg transition-all flex items-center gap-3 hover:bg-red-50 text-red-600"
@@ -153,7 +234,7 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
               <span className="text-xl">🚪</span>
               <span>Logout</span>
             </button>
-          </nav>
+          </div>
         </div>
       </aside>
     </>

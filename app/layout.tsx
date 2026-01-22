@@ -4,7 +4,6 @@ import "./globals.css";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { SocketProvider } from "@/contexts/SocketContext";
 import { NotificationContainer } from "@/components/NotificationManager";
-import { GoogleTranslate } from "@/components/GoogleTranslate";
 import { ServiceWorker } from "@/components/ServiceWorker";
 import { OfflineBanner } from "@/components/OfflineBanner";
 import WebSocketConfig from "@/components/WebSocketConfig";
@@ -50,7 +49,6 @@ export default function RootLayout({
           <SocketProvider>
             {children}
             <NotificationContainer />
-            <GoogleTranslate />
             <ServiceWorker />
             <WebSocketConfig />
           </SocketProvider>
