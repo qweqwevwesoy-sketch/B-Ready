@@ -120,67 +120,11 @@ async function handleNavigationRequest(request) {
       return cachedResponse;
     }
 
-    // Final fallback - simple offline message
-    return new Response(
-      `<html>
-        <head>
-          <title>B-READY - Offline</title>
-          <meta name="viewport" content="width=device-width, initial-scale=1">
-          <style>
-            body {
-              font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-              text-align: center;
-              padding: 50px;
-              background: linear-gradient(135deg, #ff6b6b, #ffa500);
-              color: white;
-              min-height: 100vh;
-              margin: 0;
-            }
-            .container {
-              max-width: 500px;
-              margin: 0 auto;
-              background: rgba(255, 255, 255, 0.1);
-              padding: 40px;
-              border-radius: 20px;
-              backdrop-filter: blur(10px);
-            }
-            h1 { font-size: 3em; margin-bottom: 20px; }
-            p { font-size: 1.2em; margin: 20px 0; }
-            .btn {
-              display: inline-block;
-              padding: 15px 30px;
-              background: white;
-              color: #ff6b6b;
-              text-decoration: none;
-              border-radius: 50px;
-              font-weight: bold;
-              margin: 10px;
-              transition: all 0.3s ease;
-            }
-            .btn:hover {
-              transform: translateY(-2px);
-              box-shadow: 0 10px 20px rgba(0,0,0,0.2);
-            }
-          </style>
-        </head>
-        <body>
-          <div class="container">
-            <h1>📱 You're Offline</h1>
-            <p>You are currently not connected to the internet.</p>
-            <p>The main pages are cached and available offline:</p>
-            <a href="/" class="btn">🏠 Home Page</a>
-            <a href="/safety-tips" class="btn">🛡️ Safety Tips</a>
-            <p style="margin-top: 30px; font-size: 0.9em; opacity: 0.8;">
-              Emergency reporting is available on the home page even when offline.
-            </p>
-          </div>
-        </body>
-      </html>`,
-      {
-        status: 200,
-        headers: { 'Content-Type': 'text/html' }
-      }
-    );
+    // No cached version available - return offline response
+    return new Response('Offline - This page is not available without internet connection', {
+      status: 503,
+      headers: { 'Content-Type': 'text/plain' }
+    });
   }
 }
 

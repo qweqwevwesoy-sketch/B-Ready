@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
 
@@ -13,6 +13,7 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
   const router = useRouter();
   const pathname = usePathname();
   const { user, logout } = useAuth();
+  const [isOffline, setIsOffline] = useState(() => !navigator.onLine);
 
   useEffect(() => {
     if (isOpen) {
@@ -25,6 +26,19 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
     };
   }, [isOpen]);
 
+  useEffect(() => {
+    const handleOnline = () => setIsOffline(false);
+    const handleOffline = () => setIsOffline(true);
+
+    window.addEventListener('online', handleOnline);
+    window.addEventListener('offline', handleOffline);
+
+    return () => {
+      window.removeEventListener('online', handleOnline);
+      window.removeEventListener('offline', handleOffline);
+    };
+  }, []);
+
   const handleNavigation = (path: string) => {
     router.push(path);
     onClose();
@@ -33,12 +47,15 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
   const handleLogout = async () => {
     await logout();
     router.push('/');
-    onClose(); 
+    onClose();
   };
 
   if (!user) return null;
 
-  const navItems = [
+  // When offline, only show Safety Tips
+  const navItems = isOffline ? [
+    { path: '/safety-tips', label: 'Safety Tips', icon: '⚠️' },
+  ] : [
     { path: '/dashboard', label: 'Home Dashboard', icon: '🏠' },
     { path: '/real-time-map', label: 'Real Time Map', icon: '🗺️' },
     { path: '/profile', label: 'Account Settings', icon: '👤' },
