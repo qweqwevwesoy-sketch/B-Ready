@@ -39,19 +39,10 @@ interface SignupData {
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
-  // Check if we're using local backend (offline mode)
-  const isOfflineMode = process.env.NEXT_PUBLIC_USE_LOCAL_BACKEND === 'true';
-
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true); // Always start as loading
 
   useEffect(() => {
-    // Skip Firebase initialization in offline mode
-    if (isOfflineMode) {
-      console.log('📱 Offline mode: Skipping Firebase authentication');
-      setLoading(false);
-      return;
-    }
 
     let isMounted = true; // Prevent state updates after unmount
 
@@ -114,16 +105,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const login = useCallback(async (email: string, password: string) => {
-    if (isOfflineMode) {
-      throw new Error('Authentication is not available in offline mode. Please use the offline reporting system.');
-    }
     await signInWithEmailAndPassword(auth, email, password);
-  }, [isOfflineMode]);
+  }, []);
 
   const signup = useCallback(async (userData: SignupData) => {
-    if (isOfflineMode) {
-      throw new Error('Registration is not available in offline mode. Please use the offline reporting system.');
-    }
     const userCredential = await createUserWithEmailAndPassword(auth, userData.email, userData.password);
     const firebaseUser = userCredential.user;
 
@@ -142,7 +127,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     };
 
     await setDoc(doc(db, 'users', firebaseUser.uid), userProfile);
-  }, [isOfflineMode]);
+  }, []);
 
   const logout = useCallback(async () => {
     await auth.signOut();
