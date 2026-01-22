@@ -130,12 +130,13 @@ async function handleNavigationRequest(request) {
 
 // Handle static assets with cache-first strategy
 async function handleStaticAsset(request) {
-  // Only cache GET requests - Cache API doesn't support other methods
+  // Only cache GET requests - POST, PUT, DELETE, etc. cannot be cached
   if (request.method !== 'GET') {
+    // For non-GET requests, just fetch from network
     try {
       return await fetch(request);
     } catch (error) {
-      return new Response('Method not allowed for caching', { status: 405 });
+      return new Response('Offline', { status: 503 });
     }
   }
 
@@ -149,7 +150,7 @@ async function handleStaticAsset(request) {
     // Fetch from network
     const response = await fetch(request);
     if (response.status === 200) {
-      // Cache successful responses
+      // Cache successful GET responses
       const cache = await caches.open(CACHE_NAME);
       cache.put(request, response.clone());
     }

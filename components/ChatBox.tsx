@@ -14,16 +14,13 @@ interface ChatBoxProps {
   onSendImage?: (imageData: string) => void;
 }
 
-const getInitialMessage = (category: Category | null | undefined) => ({
+const getInitialMessage = (category: Category | null | undefined): { text: string; sender: string; time: string; type: 'sent' | 'received'; imageData?: string } => ({
   text: category
     ? `Hello! How can we help you today? You're reporting a ${category.name.toLowerCase()} incident.`
     : 'Hello! How can we help you today?',
   sender: 'B-READY Support',
   time: 'Just now',
   type: 'received' as const,
-  imageData: undefined,
-  userName: 'B-READY Support',
-  userRole: 'admin'
 });
 
 export function ChatBox({ reportId, category, onClose, onSendMessage, onSendImage }: ChatBoxProps) {
@@ -33,30 +30,14 @@ export function ChatBox({ reportId, category, onClose, onSendMessage, onSendImag
   const [cameraActive, setCameraActive] = useState(false);
   const [cameraReady, setCameraReady] = useState(false);
   const [capturedImage, setCapturedImage] = useState<string | null>(null);
-  const [localMessages, setLocalMessages] = useState<Array<{
-    text: string;
-    sender: string;
-    time: string;
-    type: 'sent' | 'received';
-    imageData?: string;
-    userName?: string;
-    userRole?: string;
-  }>>([]);
+  const [localMessages, setLocalMessages] = useState<Array<{ text: string; sender: string; time: string; type: 'sent' | 'received'; imageData?: string }>>([]);
   const videoRef = useRef<HTMLVideoElement>(null);
   const streamRef = useRef<MediaStream | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const isOffline = useOfflineStatus();
 
   const messages = useMemo(() => {
-    let onlineMessages: Array<{
-      text: string;
-      sender: string;
-      time: string;
-      type: 'sent' | 'received';
-      imageData?: string;
-      userName?: string;
-      userRole?: string;
-    }> = [];
+    let onlineMessages: Array<{ text: string; sender: string; time: string; type: 'sent' | 'received'; imageData?: string }> = [];
 
     if (reportId && chatMessages[reportId]) {
       // Convert stored messages to display format
@@ -67,34 +48,24 @@ export function ChatBox({ reportId, category, onClose, onSendMessage, onSendImag
           text: msg.text,
           sender: isCurrentUser ? 'You' : msg.userName,
           time: new Date(msg.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-          type: (isCurrentUser ? 'sent' : 'received'),
+          type: (isCurrentUser ? 'sent' : 'received') as const,
           imageData: msg.imageData,
-          userName: msg.userName,
+          userName: msg.userName, // Keep original username for profile lookup
           userRole: msg.userRole,
         };
       });
     }
 
     // Add offline messages if available
-    let offlineMessages: Array<{
-      text: string;
-      sender: string;
-      time: string;
-      type: 'sent' | 'received';
-      imageData?: string;
-      userName?: string;
-      userRole?: string;
-    }> = [];
+    let offlineMessages: Array<{ text: string; sender: string; time: string; type: 'sent' | 'received'; imageData?: string }> = [];
     if (reportId) {
       const offlineMsgs = getOfflineMessagesForReport(reportId);
       offlineMessages = offlineMsgs.map(msg => ({
         text: msg.text,
         sender: msg.userName,
         time: new Date(msg.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-        type: msg.userRole === 'admin' ? 'received' : 'sent',
+        type: msg.userRole === 'admin' ? 'received' : 'sent' as const,
         imageData: msg.imageData,
-        userName: msg.userName,
-        userRole: msg.userRole,
       }));
     }
 
@@ -125,55 +96,57 @@ export function ChatBox({ reportId, category, onClose, onSendMessage, onSendImag
   }, [messages]);
 
   const startInstantCamera = () => {
-    console.log('📸 Instant camera mode - opening file picker immediately');
+    console.log('📸 Instant camera mode - opening file picker');
 
-    // Create file input with camera capture intent
+    // Detect if we're on a mobile device
+    const isMobile = /Android|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) ||
+                     window.innerWidth < 768 ||
+                     'ontouchstart' in window;
+
+    console.log('📱 Device type:', isMobile ? 'Mobile' : 'Desktop');
+
+    // For desktop computers, skip camera and go straight to file picker
+    // Computer cameras don't work the same way as mobile cameras
+    if (!isMobile) {
+      console.log('💻 Desktop detected - using file picker only');
+      const fileInput = document.createElement('input');
+      fileInput.type = 'file';
+      fileInput.accept = 'image/*';
+      fileInput.multiple = false;
+      fileInput.style.display = 'none';
+
+      fileInput.onchange = async (e) => {
+        const file = (e.target as HTMLInputElement).files?.[0];
+        if (file) {
+          console.log('📸 File selected on desktop:', file.name, `(${file.size} bytes)`);
+          await handleFileUpload(file);
+        }
+      };
+
+      document.body.appendChild(fileInput);
+      fileInput.click();
+      setTimeout(() => document.body.removeChild(fileInput), 100);
+      return;
+    }
+
+    // For mobile devices, use camera capture
     const fileInput = document.createElement('input');
     fileInput.type = 'file';
     fileInput.accept = 'image/*';
     fileInput.capture = 'environment'; // Use rear camera on mobile
-    fileInput.style.display = 'none'; // Hide the input
+    fileInput.style.display = 'none';
 
     fileInput.onchange = async (e) => {
       const file = (e.target as HTMLInputElement).files?.[0];
       if (file) {
-        console.log('📸 File selected instantly:', file.name, `(${file.size} bytes)`);
-
-        try {
-          // Process the image immediately (no waiting)
-          const compressedDataUrl = await compressImage(file);
-
-          // Add to messages instantly
-          const instantImageMessage = {
-            text: '[Photo]',
-            sender: 'You',
-            time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-            type: 'sent' as const,
-            imageData: compressedDataUrl,
-          };
-          setLocalMessages(prev => [...prev, instantImageMessage]);
-
-          // Send immediately if callback exists
-          if (onSendImage) {
-            onSendImage(compressedDataUrl);
-          }
-
-          console.log('✅ Instant photo processed and sent');
-        } catch (error) {
-          console.error('❌ Error processing instant photo:', error);
-          alert('Error processing photo. Please try again.');
-        }
+        console.log('📸 File selected instantly on mobile:', file.name, `(${file.size} bytes)`);
+        await handleFileUpload(file);
       }
     };
 
-    // Add to DOM and trigger click immediately
     document.body.appendChild(fileInput);
     fileInput.click();
-
-    // Remove from DOM after use
-    setTimeout(() => {
-      document.body.removeChild(fileInput);
-    }, 100);
+    setTimeout(() => document.body.removeChild(fileInput), 100);
   };
 
   const startCamera = async () => {
@@ -555,6 +528,42 @@ export function ChatBox({ reportId, category, onClose, onSendMessage, onSendImag
 
   return (
     <div className="fixed inset-0 bg-black/70 z-50 flex items-center justify-center p-4">
+      {/* Hidden video element for camera access - outside modal */}
+      {cameraActive && (
+        <div style={{
+          position: 'fixed',
+          top: '-9999px',
+          left: '-9999px',
+          width: '1px',
+          height: '1px',
+          overflow: 'hidden',
+          opacity: 0,
+          pointerEvents: 'none',
+          zIndex: -1
+        }}>
+          <video
+            ref={videoRef}
+            autoPlay
+            playsInline
+            muted
+            style={{
+              width: '1px',
+              height: '1px',
+              position: 'absolute',
+              top: 0,
+              left: 0
+            }}
+            onLoadedData={() => {
+              console.log('🎥 Hidden video loaded successfully');
+              setCameraReady(true);
+            }}
+            onError={(e) => {
+              console.error('🎥 Hidden video error:', e);
+              setCameraReady(false);
+            }}
+          />
+        </div>
+      )}
 
       <div className="bg-white rounded-2xl w-full max-w-md h-[85vh] max-h-[700px] flex flex-col shadow-2xl">
         {/* Header */}
@@ -584,7 +593,7 @@ export function ChatBox({ reportId, category, onClose, onSendMessage, onSendImag
                 {msg.type === 'received' && (
                   <div className="flex-shrink-0">
                     <div className="w-8 h-8 rounded-full bg-gradient-to-br from-primary to-primary-dark text-white flex items-center justify-center font-bold text-sm">
-                      {msg.sender === 'B-READY Support' ? '🚨' : (msg.userName || msg.sender).charAt(0).toUpperCase()}
+                      {msg.sender === 'B-READY Support' ? '🚨' : msg.sender.charAt(0).toUpperCase()}
                     </div>
                   </div>
                 )}
@@ -730,7 +739,7 @@ export function ChatBox({ reportId, category, onClose, onSendMessage, onSendImag
             <div className="flex gap-1 flex-shrink-0">
               <button
                 type="button"
-                onClick={startCamera}
+                onClick={startInstantCamera}
                 className="w-10 h-10 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 flex items-center justify-center text-lg"
                 title="Take photo"
               >
