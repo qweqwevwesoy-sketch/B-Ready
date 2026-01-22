@@ -145,96 +145,99 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
       <aside
         className={`fixed top-0 right-0 w-80 h-full bg-white/95 backdrop-blur-lg shadow-xl z-50 transform transition-transform duration-300 ease-in-out ${
           isOpen ? 'translate-x-0' : 'translate-x-full'
-        }`}
+        } flex flex-col`}
       >
-        <div className="p-6">
-          <div className="flex justify-between items-center mb-6">
-            <h2 className="text-xl font-bold">Menu</h2>
-            <button
-              onClick={onClose}
-              className="text-gray-500 hover:text-gray-700 text-2xl"
-            >
-              ×
-            </button>
-          </div>
+        {/* Top section - fixed to top */}
+        <div className="flex-shrink-0">
+          <div className="p-6">
+            <div className="flex justify-between items-center mb-6">
+              <h2 className="text-xl font-bold">Menu</h2>
+              <button
+                onClick={onClose}
+                className="text-gray-500 hover:text-gray-700 text-2xl"
+              >
+                ×
+              </button>
+            </div>
 
-          <div className="bg-primary/10 p-4 rounded-lg mb-6 border-l-4 border-primary">
-            <div className="flex items-center gap-3">
-              {user.profilePictureUrl ? (
-                <>
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img
-                    src={user.profilePictureUrl}
-                    alt="Profile"
-                    className="w-12 h-12 rounded-full object-cover border-2 border-white"
-                    onError={(e) => {
-                      // If Firebase image fails to load due to CORS, try localStorage fallback
-                      const localKey = `profile_pic_${user.uid}`;
-                      const localPicture = localStorage.getItem(localKey);
-                      if (localPicture && localPicture !== user.profilePictureUrl) {
-                        (e.target as HTMLImageElement).src = localPicture;
-                      } else {
-                        // Hide the image and show initials instead
-                        (e.target as HTMLImageElement).style.display = 'none';
-                        const parent = (e.target as HTMLElement).parentElement;
-                        if (parent) {
-                          const initialsDiv = parent.querySelector('.sidebar-initials-fallback') as HTMLElement;
-                          if (initialsDiv) initialsDiv.style.display = 'flex';
+            <div className="bg-primary/10 p-4 rounded-lg mb-6 border-l-4 border-primary">
+              <div className="flex items-center gap-3">
+                {user.profilePictureUrl ? (
+                  <>
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img
+                      src={user.profilePictureUrl}
+                      alt="Profile"
+                      className="w-12 h-12 rounded-full object-cover border-2 border-white"
+                      onError={(e) => {
+                        // If Firebase image fails to load due to CORS, try localStorage fallback
+                        const localKey = `profile_pic_${user.uid}`;
+                        const localPicture = localStorage.getItem(localKey);
+                        if (localPicture && localPicture !== user.profilePictureUrl) {
+                          (e.target as HTMLImageElement).src = localPicture;
+                        } else {
+                          // Hide the image and show initials instead
+                          (e.target as HTMLElement).style.display = 'none';
+                          const parent = (e.target as HTMLElement).parentElement;
+                          if (parent) {
+                            const initialsDiv = parent.querySelector('.sidebar-initials-fallback') as HTMLElement;
+                            if (initialsDiv) initialsDiv.style.display = 'flex';
+                          }
                         }
-                      }
-                    }}
-                  />
-                  <div className="w-12 h-12 rounded-full bg-gradient-to-br from-primary to-primary-dark text-white flex items-center justify-center font-bold text-lg sidebar-initials-fallback hidden">
+                      }}
+                    />
+                    <div className="w-12 h-12 rounded-full bg-gradient-to-br from-primary to-primary-dark text-white flex items-center justify-center font-bold text-lg sidebar-initials-fallback hidden">
+                      {user.firstName.charAt(0)}{user.lastName.charAt(0)}
+                    </div>
+                  </>
+                ) : (
+                  <div className="w-12 h-12 rounded-full bg-gradient-to-br from-primary to-primary-dark text-white flex items-center justify-center font-bold text-lg">
                     {user.firstName.charAt(0)}{user.lastName.charAt(0)}
                   </div>
-                </>
-              ) : (
-                <div className="w-12 h-12 rounded-full bg-gradient-to-br from-primary to-primary-dark text-white flex items-center justify-center font-bold text-lg">
-                  {user.firstName.charAt(0)}{user.lastName.charAt(0)}
+                )}
+                <div>
+                  <h3 className="font-semibold">{user.firstName} {user.lastName}</h3>
+                  <p className="text-sm text-gray-600 bg-primary/10 px-2 py-1 rounded-full inline-block">
+                    {user.role === 'admin' ? 'Administrator' : 'Resident'}
+                  </p>
                 </div>
-              )}
-              <div>
-                <h3 className="font-semibold">{user.firstName} {user.lastName}</h3>
-                <p className="text-sm text-gray-600 bg-primary/10 px-2 py-1 rounded-full inline-block">
-                  {user.role === 'admin' ? 'Administrator' : 'Resident'}
-                </p>
               </div>
             </div>
+
+            {/* Main navigation items */}
+            <nav className="space-y-2">
+              {mainNavItems.map((item) => (
+                <button
+                  key={item.path}
+                  onClick={() => handleNavigation(item.path)}
+                  className={`w-full text-left p-4 rounded-lg transition-all flex items-center gap-3 ${
+                    pathname === item.path
+                      ? 'bg-primary/15 text-primary border-l-4 border-primary'
+                      : 'hover:bg-gray-100 text-gray-700'
+                  }`}
+                >
+                  <span className="text-xl">{item.icon}</span>
+                  <span>{item.label}</span>
+                </button>
+              ))}
+            </nav>
+          </div>
+        </div>
+
+        {/* Bottom section - fixed to bottom */}
+        <div className="flex-shrink-0 mt-auto p-6 border-t border-gray-200">
+          {/* Google Translate Widget - 80px height */}
+          <div className="mb-4 h-20 overflow-hidden rounded-lg border border-gray-200">
+            <div id="google_translate_element" className="text-center h-full flex items-center justify-center"></div>
           </div>
 
-          {/* Main navigation items */}
-          <nav className="space-y-2 mb-4">
-            {mainNavItems.map((item) => (
-              <button
-                key={item.path}
-                onClick={() => handleNavigation(item.path)}
-                className={`w-full text-left p-4 rounded-lg transition-all flex items-center gap-3 ${
-                  pathname === item.path
-                    ? 'bg-primary/15 text-primary border-l-4 border-primary'
-                    : 'hover:bg-gray-100 text-gray-700'
-                }`}
-              >
-                <span className="text-xl">{item.icon}</span>
-                <span>{item.label}</span>
-              </button>
-            ))}
-          </nav>
-
-          {/* Bottom section with Translate and Logout */}
-          <div className="border-t border-gray-200 pt-4 space-y-2">
-            {/* Google Translate Widget */}
-            <div className="mb-4">
-              <div id="google_translate_element" className="text-center"></div>
-            </div>
-
-            <button
-              onClick={handleLogout}
-              className="w-full text-left p-4 rounded-lg transition-all flex items-center gap-3 hover:bg-red-50 text-red-600"
-            >
-              <span className="text-xl">🚪</span>
-              <span>Logout</span>
-            </button>
-          </div>
+          <button
+            onClick={handleLogout}
+            className="w-full text-left p-4 rounded-lg transition-all flex items-center gap-3 hover:bg-red-50 text-red-600"
+          >
+            <span className="text-xl">🚪</span>
+            <span>Logout</span>
+          </button>
         </div>
       </aside>
     </>
