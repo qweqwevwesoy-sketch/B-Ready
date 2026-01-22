@@ -730,7 +730,7 @@ export function ChatBox({ reportId, category, onClose, onSendMessage, onSendImag
             <div className="flex gap-1 flex-shrink-0">
               <button
                 type="button"
-                onClick={startInstantCamera}
+                onClick={startCamera}
                 className="w-10 h-10 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 flex items-center justify-center text-lg"
                 title="Take photo"
               >
