@@ -1,6 +1,35 @@
 import { NextRequest, NextResponse } from 'next/server';
+import admin from 'firebase-admin';
 
-console.log('🚀 Stations API route loaded');
+console.log('🚀 Stations API route loaded - Firebase version');
+
+// Initialize Firebase Admin (reuse if already initialized)
+if (!admin.apps.length) {
+  try {
+    const serviceAccount = {
+      type: "service_account",
+      project_id: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID!,
+      private_key_id: process.env.FIREBASE_PRIVATE_KEY_ID!,
+      private_key: process.env.FIREBASE_PRIVATE_KEY!.replace(/\\n/g, '\n'),
+      client_email: process.env.FIREBASE_CLIENT_EMAIL!,
+      client_id: process.env.FIREBASE_CLIENT_ID!,
+      auth_uri: "https://accounts.google.com/o/oauth2/auth",
+      token_uri: "https://oauth2.googleapis.com/token",
+      auth_provider_x509_cert_url: "https://www.googleapis.com/oauth2/v1/certs",
+      client_x509_cert_url: process.env.FIREBASE_CLIENT_X509_CERT_URL!
+    };
+
+    admin.initializeApp({
+      credential: admin.credential.cert(serviceAccount as admin.ServiceAccount),
+      projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID
+    });
+    console.log('✅ Firebase Admin initialized in stations API');
+  } catch (firebaseError) {
+    console.warn('⚠️ Firebase Admin initialization failed:', firebaseError instanceof Error ? firebaseError.message : String(firebaseError));
+  }
+}
+
+const db = admin.apps.length > 0 ? admin.firestore() : null;
 
 interface Station {
   id: string;
@@ -9,85 +38,64 @@ interface Station {
   lng: number;
   address: string;
   created_by?: string;
+  created_at?: string;
+  updated_at?: string;
 }
 
 // GET /api/stations - Get all stations
 export async function GET() {
-  console.log('📡 GET /api/stations called');
+  console.log('📡 GET /api/stations called - Firebase version');
 
   try {
-    // Try to load from database, fallback to mock data if database fails
-    const mysqlConnection = await import('@/lib/mysql-connection').then(mod => mod.mysqlConnection);
-
-    try {
-      const rows = await mysqlConnection.query(
-        'SELECT id, name, lat, lng, address, created_by, created_at FROM emergency_stations ORDER BY created_at ASC'
-      );
-
-      const stations: Station[] = rows.map(row => ({
-        id: row.id,
-        name: row.name,
-        lat: parseFloat(row.lat),
-        lng: parseFloat(row.lng),
-        address: row.address || '',
-        created_by: row.created_by
-      }));
-
-      console.log('✅ Returning database stations:', stations.length);
-      return NextResponse.json({ success: true, stations });
-    } catch (dbError) {
-      console.warn('⚠️ Database not available, using mock data:', dbError);
+    if (!db) {
+      console.warn('⚠️ Firebase not available, returning empty stations');
+      return NextResponse.json({ success: true, stations: [] });
     }
-  } catch (importError) {
-    console.warn('⚠️ Cannot import database connection, using mock data:', importError);
+
+    const stationsRef = db.collection('stations');
+    const snapshot = await stationsRef.get();
+
+    const stations: Station[] = [];
+    snapshot.forEach(doc => {
+      const data = doc.data();
+      stations.push({
+        id: doc.id,
+        name: data.name || '',
+        lat: parseFloat(data.lat) || 0,
+        lng: parseFloat(data.lng) || 0,
+        address: data.address || '',
+        created_by: data.created_by,
+        created_at: data.created_at?.toDate?.()?.toISOString() || data.created_at,
+        updated_at: data.updated_at?.toDate?.()?.toISOString() || data.updated_at
+      });
+    });
+
+    console.log('✅ Returning Firebase stations:', stations.length);
+    return NextResponse.json({ success: true, stations });
+  } catch (error) {
+    console.error('❌ Error loading stations from Firebase:', error);
+    return NextResponse.json(
+      { success: false, error: 'Failed to load stations from Firebase' },
+      { status: 500 }
+    );
   }
-
-  // Fallback to mock data
-  const mockStations: Station[] = [
-    {
-      id: 'station_1',
-      name: 'Manila Central Fire Station',
-      lat: 14.5995,
-      lng: 120.9842,
-      address: 'Manila, Metro Manila, Philippines'
-    },
-    {
-      id: 'station_2',
-      name: 'Cebu City Fire Station',
-      lat: 10.3157,
-      lng: 123.8854,
-      address: 'Cebu City, Cebu, Philippines'
-    },
-    {
-      id: 'station_3',
-      name: 'Davao City Fire Station',
-      lat: 7.1907,
-      lng: 125.4553,
-      address: 'Davao City, Davao del Sur, Philippines'
-    },
-    {
-      id: 'station_4',
-      name: 'Baguio Emergency Response Center',
-      lat: 16.4023,
-      lng: 120.5960,
-      address: 'Baguio City, Benguet, Philippines'
-    }
-  ];
-
-  console.log('✅ Returning mock stations:', mockStations.length);
-  return NextResponse.json({ success: true, stations: mockStations });
 }
 
 // POST /api/stations - Add a new station (admin only)
 export async function POST(request: NextRequest) {
-  console.log('📡 POST /api/stations called');
+  console.log('📡 POST /api/stations called - Firebase version');
 
   try {
-    const mysqlConnection = await import('@/lib/mysql-connection').then(mod => mod.mysqlConnection);
+    if (!db) {
+      return NextResponse.json(
+        { success: false, error: 'Firebase not available' },
+        { status: 503 }
+      );
+    }
 
     const { name, lat, lng, address, created_by } = await request.json();
 
-    if (!name || !lat || !lng) {
+    if (!name || lat === undefined || lng === undefined) {
       return NextResponse.json(
         { success: false, error: 'Name, latitude, and longitude are required' },
         { status: 400 }
@@ -97,29 +105,32 @@ export async function POST(request: NextRequest) {
     // Generate a unique ID
     const stationId = `station_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
 
-    // Ensure database tables are created
-    await mysqlConnection.createTables();
-
-    await mysqlConnection.query(
-      'INSERT INTO emergency_stations (id, name, lat, lng, address, created_by) VALUES (?, ?, ?, ?, ?, ?)',
-      [stationId, name, lat, lng, address || '', created_by || null]
-    );
-
-    const newStation: Station = {
-      id: stationId,
+    const stationData = {
       name,
       lat: parseFloat(lat),
       lng: parseFloat(lng),
       address: address || '',
-      created_by
+      created_by: created_by || null,
+      created_at: admin.firestore.Timestamp.fromDate(new Date()),
+      updated_at: admin.firestore.Timestamp.fromDate(new Date())
     };
 
-    console.log('✅ Station added to database:', stationId);
+    // Add to Firebase
+    await db.collection('stations').doc(stationId).set(stationData);
+
+    const newStation: Station = {
+      id: stationId,
+      ...stationData,
+      created_at: stationData.created_at.toDate().toISOString(),
+      updated_at: stationData.updated_at.toDate().toISOString()
+    };
+
+    console.log('✅ Station added to Firebase:', stationId);
     return NextResponse.json({ success: true, station: newStation });
   } catch (error) {
-    console.error('❌ Error adding station:', error);
+    console.error('❌ Error adding station to Firebase:', error);
     return NextResponse.json(
-      { success: false, error: 'Failed to add station - database may not be running' },
+      { success: false, error: 'Failed to add station to Firebase' },
       { status: 500 }
     );
   }
@@ -127,10 +138,15 @@ export async function POST(request: NextRequest) {
 
 // DELETE /api/stations?id=station_id - Delete a station (admin only)
 export async function DELETE(request: NextRequest) {
-  console.log('📡 DELETE /api/stations called');
+  console.log('📡 DELETE /api/stations called - Firebase version');
 
   try {
-    const mysqlConnection = await import('@/lib/mysql-connection').then(mod => mod.mysqlConnection);
+    if (!db) {
+      return NextResponse.json(
+        { success: false, error: 'Firebase not available' },
+        { status: 503 }
+      );
+    }
 
     const { searchParams } = new URL(request.url);
     const stationId = searchParams.get('id');
@@ -142,33 +158,15 @@ export async function DELETE(request: NextRequest) {
       );
     }
 
-    // Don't allow deleting default stations (they have specific IDs)
-    const defaultStationIds = ['station_1', 'station_2', 'station_3', 'station_4'];
-    if (defaultStationIds.includes(stationId)) {
-      return NextResponse.json(
-        { success: false, error: 'Cannot delete default stations' },
-        { status: 400 }
-      );
-    }
+    // Delete from Firebase
+    await db.collection('stations').doc(stationId).delete();
 
-    const result = await mysqlConnection.execute(
-      'DELETE FROM emergency_stations WHERE id = ?',
-      [stationId]
-    );
-
-    if (result.affectedRows === 0) {
-      return NextResponse.json(
-        { success: false, error: 'Station not found' },
-        { status: 404 }
-      );
-    }
-
-    console.log('✅ Station deleted from database:', stationId);
+    console.log('✅ Station deleted from Firebase:', stationId);
     return NextResponse.json({ success: true });
   } catch (error) {
-    console.error('❌ Error deleting station:', error);
+    console.error('❌ Error deleting station from Firebase:', error);
     return NextResponse.json(
-      { success: false, error: 'Failed to delete station - database may not be running' },
+      { success: false, error: 'Failed to delete station from Firebase' },
       { status: 500 }
     );
   }
