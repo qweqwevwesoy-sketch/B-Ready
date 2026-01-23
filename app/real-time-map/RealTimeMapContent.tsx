@@ -284,107 +284,91 @@ export default function RealTimeMapContent() {
   useEffect(() => {
     if (!mapContainerRef.current || mapRef.current || mapInitializedRef.current) return;
 
-    // Initialize map and get user location first
-    const initMap = async () => {
-      if (!mapContainerRef.current || mapRef.current || mapInitializedRef.current) return;
+  // Initialize map immediately without waiting for location
+  const initMap = async () => {
+    if (!mapContainerRef.current || mapRef.current || mapInitializedRef.current) return;
 
-      // Mark as initialized to prevent duplicate initialization
-      mapInitializedRef.current = true;
+    // Mark as initialized to prevent duplicate initialization
+    mapInitializedRef.current = true;
 
-      // Check if container has dimensions and is empty (not already initialized)
-      const rect = mapContainerRef.current.getBoundingClientRect();
-      if (rect.width === 0 || rect.height === 0) {
-        // Container not ready yet, try again
-        setTimeout(initMap, 100);
-        return;
-      }
+    // Check if container has dimensions and is empty (not already initialized)
+    const rect = mapContainerRef.current.getBoundingClientRect();
+    if (rect.width === 0 || rect.height === 0) {
+      // Container not ready yet, try again
+      setTimeout(initMap, 100);
+      return;
+    }
 
-      try {
-        // First get user location to center the map properly
-        let initialLocation;
-        try {
-          initialLocation = await getCurrentLocation();
-        } catch (locationError) {
-          console.warn('Could not get initial location, using Philippines center');
-          initialLocation = { lat: 14.5995, lng: 120.9842 }; // Philippines center
+    try {
+      // Initialize map immediately with Philippines center (no location wait)
+      const initialCenter = { lat: 14.5995, lng: 120.9842 }; // Philippines center
+      const map = L.map(mapContainerRef.current!).setView([initialCenter.lat, initialCenter.lng], 10);
+      mapRef.current = map;
+      setMapReady(true); // Mark map as ready immediately
+
+      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '© OpenStreetMap contributors',
+        maxZoom: 19,
+      }).addTo(map);
+
+      // Force map to recalculate size after initialization
+      setTimeout(() => {
+        if (map) {
+          map.invalidateSize();
         }
+      }, 100);
 
-        // Initialize map centered on user location or Philippines
-        const map = L.map(mapContainerRef.current!).setView([initialLocation.lat, initialLocation.lng], 14);
-        mapRef.current = map;
-        setMapReady(true); // Mark map as ready
+      // Start location tracking in background (don't wait for it)
+      const trackUserLocation = async () => {
+        try {
+          const location = await getCurrentLocation();
+          setUserLocation(location);
 
-        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-          attribution: '© OpenStreetMap contributors',
-          maxZoom: 19,
-        }).addTo(map);
+          // Add user location marker and center map on first successful location
+          if (map && !userMarkerRef.current) {
+            const userIcon = L.divIcon({
+              html: '<div style="background-color: #10b981; width: 20px; height: 20px; border-radius: 50%; border: 3px solid white; box-shadow: 0 2px 4px rgba(0,0,0,0.3);"></div>',
+              className: 'user-location-marker',
+              iconSize: [20, 20],
+              iconAnchor: [10, 10],
+            });
 
-        // Force map to recalculate size after initialization
-        setTimeout(() => {
-          if (map) {
-            map.invalidateSize();
+            const marker = L.marker([location.lat, location.lng], {
+              icon: userIcon,
+              zIndexOffset: 1000
+            }).addTo(map);
+            marker.bindPopup('<strong>You are here</strong><br><small>Location updated in real-time</small>');
+            userMarkerRef.current = marker;
+
+            // Center map on user location when first detected
+            map.setView([location.lat, location.lng], 14);
+          } else if (map && userMarkerRef.current) {
+            // Update existing marker position
+            userMarkerRef.current.setLatLng([location.lat, location.lng]);
           }
-        }, 100);
 
-        // Add user location marker (green) and start tracking
-        const trackUserLocation = async () => {
-          try {
-            const location = await getCurrentLocation();
-            setUserLocation(location);
-
-            // Make sure map is fully initialized before updating
-            if (map) {
-              if (userMarkerRef.current) {
-                // Update existing marker
-                userMarkerRef.current.setLatLng([location.lat, location.lng]);
-              } else {
-                // Create new marker with highest z-index to stay on top
-                const userIcon = L.divIcon({
-                  html: '<div style="background-color: #10b981; width: 20px; height: 20px; border-radius: 50%; border: 3px solid white; box-shadow: 0 2px 4px rgba(0,0,0,0.3);"></div>',
-                  className: 'user-location-marker',
-                  iconSize: [20, 20],
-                  iconAnchor: [10, 10],
-                });
-
-                const marker = L.marker([location.lat, location.lng], {
-                  icon: userIcon,
-                  zIndexOffset: 1000 // High z-index to ensure it stays on top
-                }).addTo(map);
-                marker.bindPopup('<strong>You are here</strong><br><small>Location updated in real-time</small>');
-                userMarkerRef.current = marker;
-              }
-
-              // Center map on user location only on first load, not on updates
-              if (!userLocation) {
-                map.setView([location.lat, location.lng], 16); // Closer zoom for better accuracy
-              }
-            } else {
-              console.warn('Map not ready for location update');
-            }
-
-            // Continue tracking location with proper interval - more frequent updates
-            if (locationTrackingIntervalRef.current) {
-              clearTimeout(locationTrackingIntervalRef.current);
-            }
-            locationTrackingIntervalRef.current = setTimeout(trackUserLocation, 15000); // Update every 15 seconds for better accuracy
-          } catch (error) {
-            console.log('Location tracking error:', error);
-            // Retry in 5 seconds with exponential backoff
-            if (locationTrackingIntervalRef.current) {
-              clearTimeout(locationTrackingIntervalRef.current);
-            }
-            locationTrackingIntervalRef.current = setTimeout(trackUserLocation, 5000);
+          // Continue tracking location
+          if (locationTrackingIntervalRef.current) {
+            clearTimeout(locationTrackingIntervalRef.current);
           }
-        };
+          locationTrackingIntervalRef.current = setTimeout(trackUserLocation, 15000);
+        } catch (error) {
+          console.log('Location tracking error:', error);
+          // Retry in 5 seconds
+          if (locationTrackingIntervalRef.current) {
+            clearTimeout(locationTrackingIntervalRef.current);
+          }
+          locationTrackingIntervalRef.current = setTimeout(trackUserLocation, 5000);
+        }
+      };
 
-        // Start location tracking immediately
-        trackUserLocation();
+      // Start location tracking in background
+      trackUserLocation();
 
-        // Note: Click handlers are managed by the useEffect below to avoid conflicts
-      } catch (error) {
-        console.error('Error initializing map:', error);
-      }
-    };
+    } catch (error) {
+      console.error('Error initializing map:', error);
+    }
+  };
 
     // Use requestAnimationFrame for better timing
     const checkReady = () => {
@@ -663,7 +647,7 @@ export default function RealTimeMapContent() {
             {/* Search Results */}
             {showResults && searchResults.length > 0 && (
               <div className="absolute top-full left-0 right-0 bg-white border border-gray-300 rounded-lg shadow-lg z-10 max-h-60 overflow-y-auto">
-                {searchResults.map((result: SearchResult, index: number) => (
+                {searchResults.map((result, index) => (
                   <button
                     key={index}
                     onClick={() => selectSearchResult(result)}
