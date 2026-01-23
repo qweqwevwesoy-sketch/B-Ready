@@ -1,35 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
-import admin from 'firebase-admin';
 
-console.log('🚀 Stations API route loaded - Firebase version');
+console.log('🚀 Stations API route loaded - Deployed version');
 
-// Initialize Firebase Admin (reuse if already initialized)
-if (!admin.apps.length) {
-  try {
-    const serviceAccount = {
-      type: "service_account",
-      project_id: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID!,
-      private_key_id: process.env.FIREBASE_PRIVATE_KEY_ID!,
-      private_key: process.env.FIREBASE_PRIVATE_KEY!.replace(/\\n/g, '\n'),
-      client_email: process.env.FIREBASE_CLIENT_EMAIL!,
-      client_id: process.env.FIREBASE_CLIENT_ID!,
-      auth_uri: "https://accounts.google.com/o/oauth2/auth",
-      token_uri: "https://oauth2.googleapis.com/token",
-      auth_provider_x509_cert_url: "https://www.googleapis.com/oauth2/v1/certs",
-      client_x509_cert_url: process.env.FIREBASE_CLIENT_X509_CERT_URL!
-    };
-
-    admin.initializeApp({
-      credential: admin.credential.cert(serviceAccount as admin.ServiceAccount),
-      projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID
-    });
-    console.log('✅ Firebase Admin initialized in stations API');
-  } catch (firebaseError) {
-    console.warn('⚠️ Firebase Admin initialization failed:', firebaseError instanceof Error ? firebaseError.message : String(firebaseError));
-  }
-}
-
-const db = admin.apps.length > 0 ? admin.firestore() : null;
+// For deployed environments, use localStorage simulation
+// In production, stations are managed by the WebSocket server
 
 interface Station {
   id: string;
@@ -42,57 +16,52 @@ interface Station {
   updated_at?: string;
 }
 
+// In-memory storage for deployed version (will be replaced by WebSocket data)
+let stations: Station[] = [
+  {
+    id: 'station_default_1',
+    name: 'Manila Central Fire Station',
+    lat: 14.5995,
+    lng: 120.9842,
+    address: 'Manila, Metro Manila, Philippines',
+    created_at: new Date().toISOString(),
+    updated_at: new Date().toISOString()
+  },
+  {
+    id: 'station_default_2',
+    name: 'Cebu City Fire Station',
+    lat: 10.3157,
+    lng: 123.8854,
+    address: 'Cebu City, Cebu, Philippines',
+    created_at: new Date().toISOString(),
+    updated_at: new Date().toISOString()
+  },
+  {
+    id: 'station_default_3',
+    name: 'Davao City Fire Station',
+    lat: 7.1907,
+    lng: 125.4553,
+    address: 'Davao City, Davao del Sur, Philippines',
+    created_at: new Date().toISOString(),
+    updated_at: new Date().toISOString()
+  }
+];
+
 // GET /api/stations - Get all stations
 export async function GET() {
-  console.log('📡 GET /api/stations called - Firebase version');
+  console.log('📡 GET /api/stations called - Deployed version');
 
-  try {
-    if (!db) {
-      console.warn('⚠️ Firebase not available, returning empty stations');
-      return NextResponse.json({ success: true, stations: [] });
-    }
-
-    const stationsRef = db.collection('stations');
-    const snapshot = await stationsRef.get();
-
-    const stations: Station[] = [];
-    snapshot.forEach(doc => {
-      const data = doc.data();
-      stations.push({
-        id: doc.id,
-        name: data.name || '',
-        lat: parseFloat(data.lat) || 0,
-        lng: parseFloat(data.lng) || 0,
-        address: data.address || '',
-        created_by: data.created_by,
-        created_at: data.created_at?.toDate?.()?.toISOString() || data.created_at,
-        updated_at: data.updated_at?.toDate?.()?.toISOString() || data.updated_at
-      });
-    });
-
-    console.log('✅ Returning Firebase stations:', stations.length);
-    return NextResponse.json({ success: true, stations });
-  } catch (error) {
-    console.error('❌ Error loading stations from Firebase:', error);
-    return NextResponse.json(
-      { success: false, error: 'Failed to load stations from Firebase' },
-      { status: 500 }
-    );
-  }
+  // In deployed version, return the in-memory stations
+  // Real data comes from WebSocket server
+  console.log('✅ Returning stations:', stations.length);
+  return NextResponse.json({ success: true, stations });
 }
 
 // POST /api/stations - Add a new station (admin only)
 export async function POST(request: NextRequest) {
-  console.log('📡 POST /api/stations called - Firebase version');
+  console.log('📡 POST /api/stations called - Deployed version');
 
   try {
-    if (!db) {
-      return NextResponse.json(
-        { success: false, error: 'Firebase not available' },
-        { status: 503 }
-      );
-    }
-
     const { name, lat, lng, address, created_by } = await request.json();
 
     if (!name || lat === undefined || lng === undefined) {
@@ -105,32 +74,26 @@ export async function POST(request: NextRequest) {
     // Generate a unique ID
     const stationId = `station_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
 
-    const stationData = {
+    const newStation: Station = {
+      id: stationId,
       name,
       lat: parseFloat(lat),
       lng: parseFloat(lng),
       address: address || '',
       created_by: created_by || null,
-      created_at: admin.firestore.Timestamp.fromDate(new Date()),
-      updated_at: admin.firestore.Timestamp.fromDate(new Date())
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString()
     };
 
-    // Add to Firebase
-    await db.collection('stations').doc(stationId).set(stationData);
+    // Add to in-memory storage
+    stations.push(newStation);
 
-    const newStation: Station = {
-      id: stationId,
-      ...stationData,
-      created_at: stationData.created_at.toDate().toISOString(),
-      updated_at: stationData.updated_at.toDate().toISOString()
-    };
-
-    console.log('✅ Station added to Firebase:', stationId);
+    console.log('✅ Station added to memory:', stationId);
     return NextResponse.json({ success: true, station: newStation });
   } catch (error) {
-    console.error('❌ Error adding station to Firebase:', error);
+    console.error('❌ Error adding station:', error);
     return NextResponse.json(
-      { success: false, error: 'Failed to add station to Firebase' },
+      { success: false, error: 'Failed to add station' },
       { status: 500 }
     );
   }
@@ -138,16 +101,9 @@ export async function POST(request: NextRequest) {
 
 // DELETE /api/stations?id=station_id - Delete a station (admin only)
 export async function DELETE(request: NextRequest) {
-  console.log('📡 DELETE /api/stations called - Firebase version');
+  console.log('📡 DELETE /api/stations called - Deployed version');
 
   try {
-    if (!db) {
-      return NextResponse.json(
-        { success: false, error: 'Firebase not available' },
-        { status: 503 }
-      );
-    }
-
     const { searchParams } = new URL(request.url);
     const stationId = searchParams.get('id');
 
@@ -158,15 +114,32 @@ export async function DELETE(request: NextRequest) {
       );
     }
 
-    // Delete from Firebase
-    await db.collection('stations').doc(stationId).delete();
+    // Don't allow deleting default stations
+    const defaultStationIds = ['station_default_1', 'station_default_2', 'station_default_3'];
+    if (defaultStationIds.includes(stationId)) {
+      return NextResponse.json(
+        { success: false, error: 'Cannot delete default stations' },
+        { status: 400 }
+      );
+    }
 
-    console.log('✅ Station deleted from Firebase:', stationId);
+    // Remove from in-memory storage
+    const initialLength = stations.length;
+    stations = stations.filter(s => s.id !== stationId);
+
+    if (stations.length === initialLength) {
+      return NextResponse.json(
+        { success: false, error: 'Station not found' },
+        { status: 404 }
+      );
+    }
+
+    console.log('✅ Station deleted from memory:', stationId);
     return NextResponse.json({ success: true });
   } catch (error) {
-    console.error('❌ Error deleting station from Firebase:', error);
+    console.error('❌ Error deleting station:', error);
     return NextResponse.json(
-      { success: false, error: 'Failed to delete station from Firebase' },
+      { success: false, error: 'Failed to delete station' },
       { status: 500 }
     );
   }
