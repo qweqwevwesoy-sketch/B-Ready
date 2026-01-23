@@ -74,6 +74,7 @@ const io = socketIo(server, {
 const users = new Map();
 const reports = new Map();
 const messages = new Map();
+const stations = new Map();
 
 // Load reports from Firebase on startup
 async function loadReportsFromFirebase() {
@@ -149,11 +150,60 @@ async function saveMessageToFirebase(message) {
   }
 }
 
+// Load stations from Firebase
+async function loadStationsFromFirebase() {
+  try {
+    const stationsRef = db.collection('stations');
+    const snapshot = await stationsRef.get();
+    snapshot.forEach(doc => {
+      const data = doc.data();
+      // Convert Firestore Timestamps back to ISO strings
+      const station = {
+        id: doc.id,
+        ...data,
+        created_at: data.created_at?.toDate?.()?.toISOString() || data.created_at,
+        updated_at: data.updated_at?.toDate?.()?.toISOString() || data.updated_at
+      };
+      stations.set(doc.id, station);
+    });
+    console.log(`📍 Loaded ${stations.size} stations from Firebase`);
+  } catch (error) {
+    console.error('❌ Error loading stations from Firebase:', error);
+  }
+}
+
+// Save station to Firebase
+async function saveStationToFirebase(station) {
+  try {
+    const stationRef = db.collection('stations').doc(station.id);
+    await stationRef.set({
+      ...station,
+      created_at: admin.firestore.Timestamp.fromDate(new Date(station.created_at || new Date())),
+      updated_at: admin.firestore.Timestamp.fromDate(new Date())
+    });
+    console.log('💾 Station saved to Firebase:', station.id);
+  } catch (error) {
+    console.error('❌ Error saving station to Firebase:', error);
+  }
+}
+
+// Delete station from Firebase
+async function deleteStationFromFirebase(stationId) {
+  try {
+    const stationRef = db.collection('stations').doc(stationId);
+    await stationRef.delete();
+    console.log('🗑️ Station deleted from Firebase:', stationId);
+  } catch (error) {
+    console.error('❌ Error deleting station from Firebase:', error);
+  }
+}
+
 // Initialize data loading
 async function initializeServer() {
   if (!useLocalBackend && db) {
     await loadReportsFromFirebase();
     await loadMessagesFromFirebase();
+    await loadStationsFromFirebase();
   } else {
     console.log('📱 Offline mode: Skipping Firebase data loading');
   }
@@ -280,6 +330,70 @@ io.on('connection', (socket) => {
 
     // Broadcast the complete message (with id and timestamp) to all users in this report's room
     io.to(`report_${reportId}`).emit('new_chat_message', message);
+  });
+
+  // Get stations
+  socket.on('get_stations', () => {
+    console.log('📍 Sending stations to client');
+    socket.emit('stations_list', Array.from(stations.values()));
+  });
+
+  // Add station
+  socket.on('add_station', async (stationData) => {
+    console.log('📍 Adding new station:', stationData.name);
+
+    const stationId = stationData.id || `station_${Date.now()}`;
+    const fullStation = {
+      ...stationData,
+      id: stationId,
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString()
+    };
+
+    stations.set(stationId, fullStation);
+
+    // Save to Firebase only if not in offline mode
+    if (!useLocalBackend && db) {
+      await saveStationToFirebase(fullStation);
+    }
+
+    // Notify everyone
+    io.emit('station_added', fullStation);
+
+    // Send confirmation
+    socket.emit('station_added', {
+      success: true,
+      station: fullStation
+    });
+  });
+
+  // Delete station
+  socket.on('delete_station', async (stationId) => {
+    console.log('🗑️ Deleting station:', stationId);
+
+    if (stations.has(stationId)) {
+      stations.delete(stationId);
+
+      // Delete from Firebase only if not in offline mode
+      if (!useLocalBackend && db) {
+        await deleteStationFromFirebase(stationId);
+      }
+
+      // Notify everyone
+      io.emit('station_deleted', { id: stationId });
+
+      // Send confirmation
+      socket.emit('station_deleted', {
+        success: true,
+        id: stationId
+      });
+    } else {
+      console.log('❌ Station not found:', stationId);
+      socket.emit('station_delete_error', {
+        id: stationId,
+        error: 'Station not found'
+      });
+    }
   });
 
   // Disconnect

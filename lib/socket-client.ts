@@ -167,4 +167,16 @@ export const socketEvents = {
   updateReport: (socket: Socket, data: { reportId: string; status: string; notes?: string }) => {
     socket.emit('update_report', data);
   },
+
+  getStations: (socket: Socket) => {
+    socket.emit('get_stations');
+  },
+
+  addStation: (socket: Socket, stationData: { name: string; lat: number; lng: number; address: string; created_by?: string }) => {
+    socket.emit('add_station', stationData);
+  },
+
+  deleteStation: (socket: Socket, stationId: string) => {
+    socket.emit('delete_station', stationId);
+  },
 };

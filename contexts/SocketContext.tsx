@@ -5,6 +5,16 @@ import { useSocketConnection, socketEvents } from '@/lib/socket-client';
 import type { Socket } from 'socket.io-client';
 import type { Report } from '@/types';
 
+interface Station {
+  id: string;
+  name: string;
+  lat: number;
+  lng: number;
+  address: string;
+  created_at?: string;
+  updated_at?: string;
+}
+
 interface SocketContextType {
   socket: Socket | null;
   connected: boolean;
@@ -17,6 +27,10 @@ interface SocketContextType {
   sendChatMessage: (reportId: string, text: string, userName: string, userRole: string, imageData?: string) => void;
   chatMessages: { [reportId: string]: Array<{ id: string; text: string; userName: string; userRole: string; timestamp: string; reportId: string; imageData?: string }> };
   setChatMessages: React.Dispatch<React.SetStateAction<{ [reportId: string]: Array<{ id: string; text: string; userName: string; userRole: string; timestamp: string; reportId: string; imageData?: string }> }>>;
+  stations: Station[];
+  setStations: React.Dispatch<React.SetStateAction<Station[]>>;
+  addStation: (stationData: { name: string; lat: number; lng: number; address: string; created_by?: string }) => void;
+  deleteStation: (stationId: string) => void;
 }
  
 const SocketContext = createContext<SocketContextType | undefined>(undefined);
@@ -29,6 +43,7 @@ export function SocketProvider({ children }: { children: React.ReactNode }) {
   const { socket, connected, connectionError } = isOfflineMode ? { socket: null, connected: false, connectionError: null } : socketConnection;
 
   const [reports, setReports] = useState<Report[]>([]);
+  const [stations, setStations] = useState<Station[]>([]);
   const [chatMessages, setChatMessages] = useState<{ [reportId: string]: Array<{ id: string; text: string; userName: string; userRole: string; timestamp: string; reportId: string }> }>({});
 
   useEffect(() => {
@@ -95,6 +110,29 @@ export function SocketProvider({ children }: { children: React.ReactNode }) {
       }));
     };
 
+    const handleStationsList = (stationsData: Station[]) => {
+      console.log('📍 Received stations:', stationsData.length);
+      setStations(stationsData);
+    };
+
+    const handleStationAdded = (station: Station) => {
+      console.log('📍 Station added:', station.name);
+      setStations((prev) => {
+        const existingIndex = prev.findIndex((s) => s.id === station.id);
+        if (existingIndex === -1) {
+          return [...prev, station];
+        }
+        const updated = [...prev];
+        updated[existingIndex] = station;
+        return updated;
+      });
+    };
+
+    const handleStationDeleted = (data: { id: string }) => {
+      console.log('🗑️ Station deleted:', data.id);
+      setStations((prev) => prev.filter((s) => s.id !== data.id));
+    };
+
     const handleNewChatMessage = (message: { id: string; reportId: string; text: string; userName: string; userRole: string; timestamp: string }) => {
       setChatMessages((prev) => {
         const reportMessages = prev[message.reportId] || [];
@@ -111,9 +149,13 @@ export function SocketProvider({ children }: { children: React.ReactNode }) {
     socket.on('report_submitted', handleReportSubmitted);
     socket.on('chat_history', handleChatHistory);
     socket.on('new_chat_message', handleNewChatMessage);
+    socket.on('stations_list', handleStationsList);
+    socket.on('station_added', handleStationAdded);
+    socket.on('station_deleted', handleStationDeleted);
 
     // Request initial reports
     socketEvents.getReports(socket);
+    socketEvents.getStations(socket);
 
     return () => {
       socket.off('initial_reports', handleInitialReports);
@@ -122,6 +164,9 @@ export function SocketProvider({ children }: { children: React.ReactNode }) {
       socket.off('report_submitted', handleReportSubmitted);
       socket.off('chat_history', handleChatHistory);
       socket.off('new_chat_message', handleNewChatMessage);
+      socket.off('stations_list', handleStationsList);
+      socket.off('station_added', handleStationAdded);
+      socket.off('station_deleted', handleStationDeleted);
     };
   }, [socket, connected]);
 
@@ -149,6 +194,18 @@ export function SocketProvider({ children }: { children: React.ReactNode }) {
     }
   }, [socket, connected]);
 
+  const addStation = useCallback((stationData: { name: string; lat: number; lng: number; address: string; created_by?: string }) => {
+    if (socket && connected) {
+      socketEvents.addStation(socket, stationData);
+    }
+  }, [socket, connected]);
+
+  const deleteStation = useCallback((stationId: string) => {
+    if (socket && connected) {
+      socketEvents.deleteStation(socket, stationId);
+    }
+  }, [socket, connected]);
+
   return (
     <SocketContext.Provider value={{
       socket,
@@ -162,6 +219,10 @@ export function SocketProvider({ children }: { children: React.ReactNode }) {
       sendChatMessage,
       chatMessages,
       setChatMessages,
+      stations,
+      setStations,
+      addStation,
+      deleteStation,
     }}>
       {children}
     </SocketContext.Provider>
