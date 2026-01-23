@@ -1,15 +1,74 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
 import { Sidebar } from './Sidebar';
 import Image from 'next/image';
 
+declare global {
+  interface Window {
+    google?: {
+      translate: {
+        TranslateElement: {
+          new (options: {
+            pageLanguage: string;
+            includedLanguages: string;
+            layout: number;
+            autoDisplay: boolean;
+          }, elementId: string): void;
+          InlineLayout: {
+            SIMPLE: number;
+            HORIZONTAL: number;
+          };
+        };
+      };
+    };
+    googleTranslateElementInit: () => void;
+  }
+}
+
 export function Header() {
   const router = useRouter();
   const { user } = useAuth();
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [translateInitialized, setTranslateInitialized] = useState(false);
+
+  // Initialize Google Translate for header
+  useEffect(() => {
+    if (user && !translateInitialized) {
+      const initializeHeaderTranslate = () => {
+        if (window.google && window.google.translate) {
+          try {
+            new window.google.translate.TranslateElement(
+              {
+                pageLanguage: 'en',
+                includedLanguages: 'en,tl,ceb,es,fr,zh-CN,ja,ko,hi,de,it,pt,ru,ar',
+                layout: window.google.translate.TranslateElement.InlineLayout.SIMPLE,
+                autoDisplay: false,
+              },
+              'header_translate_element'
+            );
+            setTranslateInitialized(true);
+          } catch (error) {
+            console.error('Failed to initialize Google Translate in header:', error);
+          }
+        }
+      };
+
+      // Load script if not already loaded
+      if (!window.google) {
+        const script = document.createElement('script');
+        script.src = 'https://translate.google.com/translate_a/element.js?cb=googleTranslateElementInit';
+        script.async = true;
+        script.onload = initializeHeaderTranslate;
+        script.onerror = () => console.error('Failed to load Google Translate script');
+        document.head.appendChild(script);
+      } else {
+        initializeHeaderTranslate();
+      }
+    }
+  }, [user, translateInitialized]);
 
   return (
     <> 
@@ -34,12 +93,19 @@ export function Header() {
             </div>
           </h1>
           {user && (
-            <button
-              className="bg-white/10 hover:bg-white/20 p-2 rounded-lg transition-colors"
-              onClick={() => setSidebarOpen(!sidebarOpen)}
-            >
-              ☰
-            </button>
+            <div className="flex items-center gap-2">
+              {/* Google Translate - moved here */}
+              <div className="h-8 overflow-hidden">
+                <div id="header_translate_element" className="text-xs scale-75 origin-top-left"></div>
+              </div>
+
+              <button
+                className="bg-white/10 hover:bg-white/20 p-2 rounded-lg transition-colors"
+                onClick={() => setSidebarOpen(!sidebarOpen)}
+              >
+                ☰
+              </button>
+            </div>
           )}
         </nav>
       </header>

@@ -175,6 +175,7 @@ function DashboardContent({ searchParams }: { searchParams: URLSearchParams }) {
         timestamp: timestamp,
         userId: user.uid,
         userName: `${user.firstName} ${user.lastName}`,
+        userPhone: user.phone,
         severity: 'medium',
         status: 'pending',
         category: category.name,

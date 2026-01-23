@@ -113,11 +113,10 @@ export default function LandingPage() {
       {/* Anonymous Report Button */}
       <button
         onClick={() => setShowAnonymousChat(true)}
-        className="fixed bottom-6 right-6 bg-blue-600 hover:bg-blue-700 text-white p-4 rounded-full shadow-lg z-40 transition-all duration-300 hover:scale-110 flex items-center gap-2"
+        className="fixed bottom-6 right-6 w-16 h-16 bg-gradient-to-r from-primary to-primary-dark text-white rounded-full shadow-2xl hover:shadow-3xl transform hover:scale-105 transition-all duration-200 z-40 flex items-center justify-center text-2xl font-bold"
         title="Report Emergency Anonymously"
       >
-        <span className="text-xl">+</span>
-        <span className="text-lg">💬</span>
+        +
       </button>
 
       {/* Offline Message Overlay */}

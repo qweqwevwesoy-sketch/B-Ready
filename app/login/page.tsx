@@ -105,6 +105,18 @@ export default function LoginPage() {
                   )}
                 </button>
               </div>
+              <div className="mt-2 text-right">
+                <button
+                  type="button"
+                  onClick={() => {
+                    // TODO: Implement forgot password functionality
+                    alert('Forgot password functionality coming soon! Please contact support for password reset.');
+                  }}
+                  className="text-sm text-primary hover:text-primary-dark underline"
+                >
+                  Forgot Password?
+                </button>
+              </div>
             </div>
 
             <button

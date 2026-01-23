@@ -68,6 +68,7 @@ export default function RealTimeMapContent() {
   const [stationsLoading, setStationsLoading] = useState(true);
   const [addingStation, setAddingStation] = useState(false);
   const [newStationName, setNewStationName] = useState('');
+  const [newStationPhone, setNewStationPhone] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
   const [searchResults, setSearchResults] = useState<SearchResult[]>([]);
   const [showResults, setShowResults] = useState(false);
@@ -250,6 +251,7 @@ export default function RealTimeMapContent() {
           lat,
           lng,
           address,
+          phone: newStationPhone || null,
           created_by: user?.uid || null,
         }),
       });
@@ -282,137 +284,33 @@ export default function RealTimeMapContent() {
   };
 
   useEffect(() => {
-    if (!mapContainerRef.current || mapRef.current || mapInitializedRef.current) {
-      console.log('Map init skipped - container:', !!mapContainerRef.current, 'map exists:', !!mapRef.current, 'initialized:', mapInitializedRef.current);
-      return;
-    }
+    if (!mapContainerRef.current) return;
 
-    console.log('🚀 Starting map initialization...');
+    // Initialize map centered on Philippines (same as MapPicker)
+    const map = L.map(mapContainerRef.current).setView([14.5995, 120.9842], 10);
+    mapRef.current = map;
 
-    // Simple map initialization - no complex async logic
-    const initMap = () => {
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      attribution: '© OpenStreetMap contributors',
+      maxZoom: 19,
+    }).addTo(map);
+
+    // Try to get current location using our utility function
+    const setInitialLocation = async () => {
       try {
-        console.log('📍 Initializing Leaflet map...');
-
-        // Create map with Philippines center
-        const defaultLocation = { lat: 14.5995, lng: 120.9842 };
-        const map = L.map(mapContainerRef.current!).setView([defaultLocation.lat, defaultLocation.lng], 8);
-
-        // Add tile layer
-        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-          attribution: '© OpenStreetMap contributors',
-          maxZoom: 19,
-        }).addTo(map);
-
-        mapRef.current = map;
-        mapInitializedRef.current = true;
-        setMapReady(true);
-
-        console.log('✅ Map initialized successfully');
-
-        // Force resize after a short delay
-        setTimeout(() => {
-          if (map) {
-            map.invalidateSize();
-            console.log('🔄 Map resized');
-          }
-        }, 500);
-
-        // Add a test marker to verify map is working
-        const testMarker = L.marker([defaultLocation.lat, defaultLocation.lng])
-          .addTo(map)
-          .bindPopup('Map initialized successfully!');
-        console.log('📍 Test marker added');
-
-        // Try location asynchronously (don't block map loading)
-        setTimeout(() => {
-          getCurrentLocation()
-            .then(location => {
-              console.log('📍 Got user location:', location);
-              setUserLocation(location);
-
-              if (map) {
-                // Add user marker
-                const userIcon = L.divIcon({
-                  html: '<div style="background-color: #10b981; width: 20px; height: 20px; border-radius: 50%; border: 3px solid white; box-shadow: 0 2px 4px rgba(0,0,0,0.3);"></div>',
-                  className: 'user-location-marker',
-                  iconSize: [20, 20],
-                  iconAnchor: [10, 10],
-                });
-
-                L.marker([location.lat, location.lng], {
-                  icon: userIcon,
-                  zIndexOffset: 1000
-                }).addTo(map).bindPopup('<strong>You are here</strong><br><small>Location detected</small>');
-
-                map.setView([location.lat, location.lng], 14);
-                console.log('📍 Map centered on user location');
-              }
-            })
-            .catch(error => {
-              console.log('📍 Location not available:', error.message);
-            });
-        }, 2000);
-
+        const location = await getCurrentLocation();
+        const userLatLng: [number, number] = [location.lat, location.lng];
+        map.setView(userLatLng, 14);
+        setUserLocation({ lat: userLatLng[0], lng: userLatLng[1] });
       } catch (error) {
-        console.error('❌ Map initialization failed:', error);
-        // Fallback: show error message in the container
-        if (mapContainerRef.current) {
-          mapContainerRef.current.innerHTML = `
-            <div style="display: flex; align-items: center; justify-content: center; height: 100%; background: #f3f4f6; border-radius: 12px;">
-              <div style="text-align: center; color: #ef4444;">
-                <div style="font-size: 48px; margin-bottom: 16px;">🗺️</div>
-                <h3 style="font-size: 18px; font-weight: bold; margin-bottom: 8px;">Map Failed to Load</h3>
-                <p style="font-size: 14px; color: #6b7280;">Please refresh the page to try again.</p>
-                <p style="font-size: 12px; color: #9ca3af; margin-top: 8px;">Error: ${error instanceof Error ? error.message : String(error)}</p>
-              </div>
-            </div>
-          `;
-        }
+        console.log('Location tracking failed, using default location');
       }
     };
 
-    // Initialize immediately if container is ready
-    const rect = mapContainerRef.current.getBoundingClientRect();
-    if (rect.width > 0 && rect.height > 0) {
-      console.log('📏 Container ready, initializing map...');
-      initMap();
-    } else {
-      console.log('⏳ Container not ready, waiting...');
-      // Wait for container to be ready
-      const checkReady = () => {
-        if (mapContainerRef.current) {
-          const rect = mapContainerRef.current.getBoundingClientRect();
-          if (rect.width > 0 && rect.height > 0) {
-            console.log('📏 Container now ready, initializing map...');
-            initMap();
-          } else {
-            requestAnimationFrame(checkReady);
-          }
-        }
-      };
-      requestAnimationFrame(checkReady);
-    }
+    setInitialLocation();
 
     return () => {
-      console.log('🧹 Cleaning up map...');
-      if (locationTrackingIntervalRef.current) {
-        clearTimeout(locationTrackingIntervalRef.current);
-        locationTrackingIntervalRef.current = null;
-      }
-
-      if (mapRef.current) {
-        try {
-          mapRef.current.remove();
-          console.log('🗑️ Map removed');
-        } catch (error) {
-          console.error('Error removing map:', error);
-        }
-        mapRef.current = null;
-      }
-
-      mapInitializedRef.current = false;
-      setMapReady(false);
+      map.remove();
     };
   }, []); // Only run once on mount
 
@@ -806,13 +704,20 @@ export default function RealTimeMapContent() {
                     ➕ Add Station
                   </button>
                 ) : (
-                  <div className="flex gap-2 items-center">
+                  <div className="flex gap-2 items-center flex-wrap">
                     <input
                       type="text"
                       placeholder="Station name"
                       value={newStationName}
                       onChange={(e) => setNewStationName(e.target.value)}
-                      className="px-3 py-2 border border-gray-300 rounded-lg"
+                      className="px-3 py-2 border border-gray-300 rounded-lg min-w-[150px]"
+                    />
+                    <input
+                      type="tel"
+                      placeholder="Phone number (optional)"
+                      value={newStationPhone}
+                      onChange={(e) => setNewStationPhone(e.target.value)}
+                      className="px-3 py-2 border border-gray-300 rounded-lg min-w-[150px]"
                     />
                     <button
                       onClick={() => setAddingStation(false)}
