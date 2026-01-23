@@ -282,55 +282,57 @@ export default function RealTimeMapContent() {
   };
 
   useEffect(() => {
-    if (!mapContainerRef.current || mapRef.current || mapInitializedRef.current) return;
+    if (!mapContainerRef.current || mapRef.current || mapInitializedRef.current) {
+      console.log('Map init skipped - container:', !!mapContainerRef.current, 'map exists:', !!mapRef.current, 'initialized:', mapInitializedRef.current);
+      return;
+    }
 
-    // Initialize map immediately - don't wait for location
-    const initMap = async () => {
-      if (!mapContainerRef.current || mapRef.current || mapInitializedRef.current) return;
+    console.log('🚀 Starting map initialization...');
 
-      // Mark as initialized to prevent duplicate initialization
-      mapInitializedRef.current = true;
-
-      // Check if container has dimensions and is empty (not already initialized)
-      const rect = mapContainerRef.current.getBoundingClientRect();
-      if (rect.width === 0 || rect.height === 0) {
-        // Container not ready yet, try again
-        setTimeout(initMap, 100);
-        return;
-      }
-
+    // Simple map initialization - no complex async logic
+    const initMap = () => {
       try {
-        // Initialize map immediately with Philippines center - no location dependency
-        const defaultLocation = { lat: 14.5995, lng: 120.9842 }; // Philippines center
-        const map = L.map(mapContainerRef.current!).setView([defaultLocation.lat, defaultLocation.lng], 10);
-        mapRef.current = map;
-        setMapReady(true); // Mark map as ready immediately
+        console.log('📍 Initializing Leaflet map...');
 
+        // Create map with Philippines center
+        const defaultLocation = { lat: 14.5995, lng: 120.9842 };
+        const map = L.map(mapContainerRef.current!).setView([defaultLocation.lat, defaultLocation.lng], 8);
+
+        // Add tile layer
         L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
           attribution: '© OpenStreetMap contributors',
           maxZoom: 19,
         }).addTo(map);
 
-        // Force map to recalculate size after initialization
+        mapRef.current = map;
+        mapInitializedRef.current = true;
+        setMapReady(true);
+
+        console.log('✅ Map initialized successfully');
+
+        // Force resize after a short delay
         setTimeout(() => {
           if (map) {
             map.invalidateSize();
+            console.log('🔄 Map resized');
           }
-        }, 100);
+        }, 500);
 
-        // Try to get user location asynchronously - don't block map loading
-        const trackUserLocation = async () => {
-          try {
-            const location = await getCurrentLocation();
-            setUserLocation(location);
+        // Add a test marker to verify map is working
+        const testMarker = L.marker([defaultLocation.lat, defaultLocation.lng])
+          .addTo(map)
+          .bindPopup('Map initialized successfully!');
+        console.log('📍 Test marker added');
 
-            // Make sure map is fully initialized before updating
-            if (map) {
-              if (userMarkerRef.current) {
-                // Update existing marker
-                userMarkerRef.current.setLatLng([location.lat, location.lng]);
-              } else {
-                // Create new marker with highest z-index to stay on top
+        // Try location asynchronously (don't block map loading)
+        setTimeout(() => {
+          getCurrentLocation()
+            .then(location => {
+              console.log('📍 Got user location:', location);
+              setUserLocation(location);
+
+              if (map) {
+                // Add user marker
                 const userIcon = L.divIcon({
                   html: '<div style="background-color: #10b981; width: 20px; height: 20px; border-radius: 50%; border: 3px solid white; box-shadow: 0 2px 4px rgba(0,0,0,0.3);"></div>',
                   className: 'user-location-marker',
@@ -338,56 +340,62 @@ export default function RealTimeMapContent() {
                   iconAnchor: [10, 10],
                 });
 
-                const marker = L.marker([location.lat, location.lng], {
+                L.marker([location.lat, location.lng], {
                   icon: userIcon,
-                  zIndexOffset: 1000 // High z-index to ensure it stays on top
-                }).addTo(map);
-                marker.bindPopup('<strong>You are here</strong><br><small>Location updated in real-time</small>');
-                userMarkerRef.current = marker;
+                  zIndexOffset: 1000
+                }).addTo(map).bindPopup('<strong>You are here</strong><br><small>Location detected</small>');
+
+                map.setView([location.lat, location.lng], 14);
+                console.log('📍 Map centered on user location');
               }
+            })
+            .catch(error => {
+              console.log('📍 Location not available:', error.message);
+            });
+        }, 2000);
 
-              // Center map on user location once we get it
-              map.setView([location.lat, location.lng], 16); // Closer zoom for better accuracy
-            } else {
-              console.warn('Map not ready for location update');
-            }
-
-            // Continue tracking location with proper interval - more frequent updates
-            if (locationTrackingIntervalRef.current) {
-              clearTimeout(locationTrackingIntervalRef.current);
-            }
-            locationTrackingIntervalRef.current = setTimeout(trackUserLocation, 15000); // Update every 15 seconds for better accuracy
-          } catch (error) {
-            console.log('Location tracking error:', error);
-            // Don't retry immediately - location will be updated when user allows permission
-          }
-        };
-
-        // Start location tracking asynchronously - don't wait for it
-        setTimeout(trackUserLocation, 1000); // Small delay to ensure map is ready
-
-        // Note: Click handlers are managed by the useEffect below to avoid conflicts
       } catch (error) {
-        console.error('Error initializing map:', error);
-      }
-    };
-
-    // Use requestAnimationFrame for better timing
-    const checkReady = () => {
-      if (mapContainerRef.current && !mapRef.current) {
-        const rect = mapContainerRef.current.getBoundingClientRect();
-        if (rect.width > 0 && rect.height > 0) {
-          initMap();
-        } else {
-          requestAnimationFrame(checkReady);
+        console.error('❌ Map initialization failed:', error);
+        // Fallback: show error message in the container
+        if (mapContainerRef.current) {
+          mapContainerRef.current.innerHTML = `
+            <div style="display: flex; align-items: center; justify-content: center; height: 100%; background: #f3f4f6; border-radius: 12px;">
+              <div style="text-align: center; color: #ef4444;">
+                <div style="font-size: 48px; margin-bottom: 16px;">🗺️</div>
+                <h3 style="font-size: 18px; font-weight: bold; margin-bottom: 8px;">Map Failed to Load</h3>
+                <p style="font-size: 14px; color: #6b7280;">Please refresh the page to try again.</p>
+                <p style="font-size: 12px; color: #9ca3af; margin-top: 8px;">Error: ${error instanceof Error ? error.message : String(error)}</p>
+              </div>
+            </div>
+          `;
         }
       }
     };
 
-    requestAnimationFrame(checkReady);
+    // Initialize immediately if container is ready
+    const rect = mapContainerRef.current.getBoundingClientRect();
+    if (rect.width > 0 && rect.height > 0) {
+      console.log('📏 Container ready, initializing map...');
+      initMap();
+    } else {
+      console.log('⏳ Container not ready, waiting...');
+      // Wait for container to be ready
+      const checkReady = () => {
+        if (mapContainerRef.current) {
+          const rect = mapContainerRef.current.getBoundingClientRect();
+          if (rect.width > 0 && rect.height > 0) {
+            console.log('📏 Container now ready, initializing map...');
+            initMap();
+          } else {
+            requestAnimationFrame(checkReady);
+          }
+        }
+      };
+      requestAnimationFrame(checkReady);
+    }
 
     return () => {
-      // Clear any pending timeouts
+      console.log('🧹 Cleaning up map...');
       if (locationTrackingIntervalRef.current) {
         clearTimeout(locationTrackingIntervalRef.current);
         locationTrackingIntervalRef.current = null;
@@ -396,11 +404,15 @@ export default function RealTimeMapContent() {
       if (mapRef.current) {
         try {
           mapRef.current.remove();
+          console.log('🗑️ Map removed');
         } catch (error) {
           console.error('Error removing map:', error);
         }
         mapRef.current = null;
       }
+
+      mapInitializedRef.current = false;
+      setMapReady(false);
     };
   }, []); // Only run once on mount
 
