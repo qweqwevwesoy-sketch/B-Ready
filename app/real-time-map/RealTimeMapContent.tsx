@@ -281,11 +281,8 @@ export default function RealTimeMapContent() {
     }
   };
 
-  useEffect(() => {
-    if (!mapContainerRef.current || mapRef.current || mapInitializedRef.current) return;
-
   // Initialize map immediately without waiting for location
-  const initMap = async () => {
+  const initMap = useCallback(async () => {
     if (!mapContainerRef.current || mapRef.current || mapInitializedRef.current) return;
 
     // Mark as initialized to prevent duplicate initialization
@@ -300,11 +297,15 @@ export default function RealTimeMapContent() {
     }
 
     try {
+      console.log('🗺️ Initializing map immediately...');
+
       // Initialize map immediately with Philippines center (no location wait)
       const initialCenter = { lat: 14.5995, lng: 120.9842 }; // Philippines center
       const map = L.map(mapContainerRef.current!).setView([initialCenter.lat, initialCenter.lng], 10);
       mapRef.current = map;
       setMapReady(true); // Mark map as ready immediately
+
+      console.log('✅ Map initialized successfully');
 
       L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
         attribution: '© OpenStreetMap contributors',
@@ -315,14 +316,17 @@ export default function RealTimeMapContent() {
       setTimeout(() => {
         if (map) {
           map.invalidateSize();
+          console.log('🔄 Map size recalculated');
         }
       }, 100);
 
       // Start location tracking in background (don't wait for it)
       const trackUserLocation = async () => {
         try {
+          console.log('📍 Getting user location...');
           const location = await getCurrentLocation();
           setUserLocation(location);
+          console.log('✅ User location found:', location);
 
           // Add user location marker and center map on first successful location
           if (map && !userMarkerRef.current) {
@@ -342,6 +346,7 @@ export default function RealTimeMapContent() {
 
             // Center map on user location when first detected
             map.setView([location.lat, location.lng], 14);
+            console.log('📍 Map centered on user location');
           } else if (map && userMarkerRef.current) {
             // Update existing marker position
             userMarkerRef.current.setLatLng([location.lat, location.lng]);
@@ -353,7 +358,7 @@ export default function RealTimeMapContent() {
           }
           locationTrackingIntervalRef.current = setTimeout(trackUserLocation, 15000);
         } catch (error) {
-          console.log('Location tracking error:', error);
+          console.log('⚠️ Location tracking error:', error);
           // Retry in 5 seconds
           if (locationTrackingIntervalRef.current) {
             clearTimeout(locationTrackingIntervalRef.current);
@@ -366,23 +371,16 @@ export default function RealTimeMapContent() {
       trackUserLocation();
 
     } catch (error) {
-      console.error('Error initializing map:', error);
+      console.error('❌ Error initializing map:', error);
     }
-  };
+  }, []);
 
-    // Use requestAnimationFrame for better timing
-    const checkReady = () => {
-      if (mapContainerRef.current && !mapRef.current) {
-        const rect = mapContainerRef.current.getBoundingClientRect();
-        if (rect.width > 0 && rect.height > 0) {
-          initMap();
-        } else {
-          requestAnimationFrame(checkReady);
-        }
-      }
-    };
+  useEffect(() => {
+    if (!mapContainerRef.current || mapRef.current || mapInitializedRef.current) return;
 
-    requestAnimationFrame(checkReady);
+    // Initialize map immediately - no waiting for container dimensions
+    console.log('🚀 Initializing map immediately...');
+    initMap();
 
     return () => {
       // Clear any pending timeouts
@@ -400,7 +398,7 @@ export default function RealTimeMapContent() {
         mapRef.current = null;
       }
     };
-  }, []); // Only run once on mount
+  }, [initMap]); // Only run once on mount
 
   // Update map click handler when addingStation changes
   useEffect(() => {
@@ -669,9 +667,20 @@ export default function RealTimeMapContent() {
               style={{
                 height: '70vh',
                 minHeight: '500px',
-                position: 'relative'
+                position: 'relative',
+                backgroundColor: '#f8f9fa'
               }}
             />
+            {/* Loading indicator while map initializes */}
+            {!mapReady && (
+              <div className="absolute inset-0 flex items-center justify-center bg-gray-100 rounded-xl z-10">
+                <div className="text-center">
+                  <div className="text-4xl mb-4">🗺️</div>
+                  <p className="text-gray-600">Loading map...</p>
+                  <p className="text-sm text-gray-500 mt-2">Initializing real-time disaster map</p>
+                </div>
+              </div>
+            )}
           </div>
 
           {/* Legend */}
