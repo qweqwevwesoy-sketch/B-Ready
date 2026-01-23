@@ -226,8 +226,8 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
 
         {/* Bottom section - fixed to bottom */}
         <div className="flex-shrink-0 mt-auto p-6 border-t border-gray-200">
-          {/* Google Translate Widget - 80px height */}
-          <div className="mb-4 h-20 overflow-hidden rounded-lg border border-gray-200">
+          {/* Google Translate Widget - 40px height */}
+          <div className="mb-4 h-10 overflow-hidden rounded-lg border border-gray-200">
             <div id="google_translate_element" className="text-center h-full flex items-center justify-center"></div>
           </div>
 
