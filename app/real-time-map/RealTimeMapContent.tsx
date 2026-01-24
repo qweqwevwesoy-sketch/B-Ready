@@ -20,6 +20,7 @@ interface Station {
   lat: number;
   lng: number;
   address: string;
+  phoneNumber?: string;
 }
 
 interface SearchResult {
@@ -68,6 +69,7 @@ export default function RealTimeMapContent() {
   const [stationsLoading, setStationsLoading] = useState(true);
   const [addingStation, setAddingStation] = useState(false);
   const [newStationName, setNewStationName] = useState('');
+  const [newStationPhone, setNewStationPhone] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
   const [searchResults, setSearchResults] = useState<SearchResult[]>([]);
   const [showResults, setShowResults] = useState(false);
@@ -284,12 +286,9 @@ export default function RealTimeMapContent() {
   useEffect(() => {
     if (!mapContainerRef.current) return;
 
-    console.log('🚀 Starting map initialization (MapPicker style)...');
-
     // Initialize map centered on Philippines (same as MapPicker)
     const map = L.map(mapContainerRef.current).setView([14.5995, 120.9842], 13);
     mapRef.current = map;
-    setMapReady(true);
 
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
       attribution: '© OpenStreetMap contributors',
@@ -302,26 +301,10 @@ export default function RealTimeMapContent() {
         const location = await getCurrentLocation();
         const userLatLng: [number, number] = [location.lat, location.lng];
         map.setView(userLatLng, 15);
-        
-        // Add user marker
-        const userIcon = L.divIcon({
-          html: '<div style="background-color: #10b981; width: 20px; height: 20px; border-radius: 50%; border: 3px solid white; box-shadow: 0 2px 4px rgba(0,0,0,0.3);"></div>',
-          className: 'user-location-marker',
-          iconSize: [20, 20],
-          iconAnchor: [10, 10],
-        });
-
-        const marker = L.marker(userLatLng, {
-          icon: userIcon,
-          zIndexOffset: 1000
-        }).addTo(map).bindPopup('<strong>You are here</strong><br><small>Location detected</small>');
-
-        userMarkerRef.current = marker;
         setUserLocation({ lat: userLatLng[0], lng: userLatLng[1] });
-        console.log('📍 User location set successfully');
+        console.log('📍 Location detected successfully');
       } catch (error) {
         console.log('📍 Location tracking failed, using default location');
-        // Map already centered on Philippines default
       }
     };
 
@@ -336,16 +319,7 @@ export default function RealTimeMapContent() {
     });
 
     return () => {
-      console.log('🧹 Cleaning up map...');
-      if (mapRef.current) {
-        try {
-          mapRef.current.remove();
-          console.log('🗑️ Map removed');
-        } catch (error) {
-          console.error('Error removing map:', error);
-        }
-        mapRef.current = null;
-      }
+      map.remove();
     };
   }, [addingStation, user?.role]); // Re-run when addingStation or user role changes
 
@@ -747,6 +721,13 @@ export default function RealTimeMapContent() {
                       onChange={(e) => setNewStationName(e.target.value)}
                       className="px-3 py-2 border border-gray-300 rounded-lg"
                     />
+                    <input
+                      type="tel"
+                      placeholder="Phone number"
+                      value={newStationPhone}
+                      onChange={(e) => setNewStationPhone(e.target.value)}
+                      className="px-3 py-2 border border-gray-300 rounded-lg"
+                    />
                     <button
                       onClick={() => setAddingStation(false)}
                       className="px-4 py-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600"
@@ -773,6 +754,9 @@ export default function RealTimeMapContent() {
                         <div>
                           <strong>{station.name}</strong>
                           <p className="text-sm text-gray-600">{station.address}</p>
+                          {station.phoneNumber && (
+                            <p className="text-sm text-gray-500">📞 {station.phoneNumber}</p>
+                          )}
                         </div>
                         <button
                           onClick={() => removeStation(station.id)}
@@ -785,6 +769,26 @@ export default function RealTimeMapContent() {
                   </div>
                 </div>
               )}
+            </div>
+          )}
+
+          {/* Resident View - Stations Only */}
+          {user.role === 'resident' && stations.length > 0 && (
+            <div className="bg-blue-50 rounded-lg p-4">
+              <h3 className="font-semibold mb-3">Emergency Stations</h3>
+              <div className="space-y-2">
+                {stations.map(station => (
+                  <div key={station.id} className="flex justify-between items-center bg-white p-3 rounded-lg">
+                    <div>
+                      <strong>{station.name}</strong>
+                      <p className="text-sm text-gray-600">{station.address}</p>
+                      {station.phoneNumber && (
+                        <p className="text-sm text-gray-500">📞 {station.phoneNumber}</p>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
             </div>
           )}
 

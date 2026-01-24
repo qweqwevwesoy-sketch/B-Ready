@@ -20,7 +20,7 @@ const getInitialMessage = (category: Category | null | undefined): { text: strin
     : 'Hello! How can we help you today?',
   sender: 'B-READY Support',
   time: 'Just now',
-  type: 'received' as const,
+  type: 'received',
 });
 
 export function ChatBox({ reportId, category, onClose, onSendMessage, onSendImage }: ChatBoxProps) {
@@ -30,6 +30,7 @@ export function ChatBox({ reportId, category, onClose, onSendMessage, onSendImag
   const [cameraActive, setCameraActive] = useState(false);
   const [cameraReady, setCameraReady] = useState(false);
   const [capturedImage, setCapturedImage] = useState<string | null>(null);
+  const [showInfo, setShowInfo] = useState(false);
   const [localMessages, setLocalMessages] = useState<Array<{ text: string; sender: string; time: string; type: 'sent' | 'received'; imageData?: string }>>([]);
   const videoRef = useRef<HTMLVideoElement>(null);
   const streamRef = useRef<MediaStream | null>(null);
@@ -577,18 +578,13 @@ export function ChatBox({ reportId, category, onClose, onSendMessage, onSendImag
             </p>
           </div>
           <div className="flex gap-2">
-            {reportId && (
-              <button
-                onClick={() => {
-                  // Show report details in a modal or alert
-                  alert(`Report Details:\n\nReport ID: ${reportId}\nCategory: ${category?.name || 'N/A'}\n\nThis information can be expanded to show more details.`);
-                }}
-                className="text-white hover:opacity-80 text-lg"
-                title="Report Details"
-              >
-                ℹ️
-              </button>
-            )}
+            <button
+              onClick={() => setShowInfo(!showInfo)}
+              className="text-white hover:opacity-80 text-lg"
+              title="Report Details"
+            >
+              ℹ️
+            </button>
             <button onClick={onClose} className="text-white hover:opacity-80 text-2xl">
               ×
             </button>
@@ -664,6 +660,28 @@ export function ChatBox({ reportId, category, onClose, onSendMessage, onSendImag
           <div ref={messagesEndRef} />
         </div>
 
+        {/* Report Info Modal */}
+        {showInfo && reportId && (
+          <div className="absolute inset-0 bg-black/50 z-20 flex items-center justify-center p-4">
+            <div className="bg-white rounded-xl p-6 max-w-md w-full">
+              <h3 className="text-lg font-bold mb-4">Report Details</h3>
+              <div className="space-y-2 text-sm text-gray-600">
+                <p><strong>Report ID:</strong> {reportId}</p>
+                <p><strong>Type:</strong> {category?.name || 'Emergency Report'}</p>
+                <p><strong>Status:</strong> Active</p>
+                <p><strong>Location:</strong> {category?.name || 'Location not specified'}</p>
+                <p><strong>Reported by:</strong> {user?.firstName} {user?.lastName}</p>
+              </div>
+              <button
+                onClick={() => setShowInfo(false)}
+                className="mt-4 w-full py-2 bg-primary text-white rounded-lg"
+              >
+                Close
+              </button>
+            </div>
+          </div>
+        )}
+
         {/* Camera Preview */}
         {cameraActive && (
           <div className="p-4 bg-gray-900 relative z-10" style={{ position: 'relative', zIndex: 9999 }}>
@@ -714,16 +732,18 @@ export function ChatBox({ reportId, category, onClose, onSendMessage, onSendImag
             <div className="flex gap-2 justify-center">
               <button
                 onClick={capturePhoto}
-                className="px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 disabled:opacity-50"
                 disabled={!cameraReady}
+                className={`w-12 h-12 rounded-full ${
+                  cameraReady ? 'bg-red-500 hover:bg-red-600' : 'bg-gray-400 cursor-not-allowed'
+                } text-white flex items-center justify-center text-lg`}
               >
-                📸 Capture Photo
+                📸
               </button>
               <button
                 onClick={stopCamera}
-                className="px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600"
+                className="w-12 h-12 bg-gray-500 text-white rounded-full hover:bg-gray-600 flex items-center justify-center text-lg"
               >
-                ❌ Cancel
+                🛑
               </button>
             </div>
           </div>
@@ -761,9 +781,9 @@ export function ChatBox({ reportId, category, onClose, onSendMessage, onSendImag
               </button>
               <button
                 type="submit"
-                className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:opacity-90 text-sm font-medium whitespace-nowrap"
+                className="px-4 py-2 bg-gradient-to-r from-primary to-primary-dark text-white rounded-lg hover:opacity-90 text-sm font-medium whitespace-nowrap"
               >
-                ➕ Send
+                Send
               </button>
             </div>
           </div>

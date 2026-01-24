@@ -17,7 +17,6 @@ const DEFAULT_SAFETY_TIPS: SafetyTip[] = [
       'Keep emergency supplies ready',
       'Avoid walking or driving through floodwaters',
       'Disconnect electrical appliances',
-      'Emergency Contacts: 911, Local Disaster Risk Reduction Office',
     ],
     category: 'disaster',
     order: 1,
@@ -32,7 +31,6 @@ const DEFAULT_SAFETY_TIPS: SafetyTip[] = [
       'Keep fire extinguishers accessible',
       'Never leave cooking unattended',
       'Know your escape routes',
-      'Emergency Contacts: 911, Local Fire Department',
     ],
     category: 'disaster',
     order: 2,
@@ -47,7 +45,6 @@ const DEFAULT_SAFETY_TIPS: SafetyTip[] = [
       'Stay away from windows and heavy objects',
       'Prepare a family emergency plan',
       'Evacuate if building is unsafe',
-      'Emergency Contacts: 911, Local Emergency Services',
     ],
     category: 'disaster',
     order: 3,
@@ -62,7 +59,6 @@ const DEFAULT_SAFETY_TIPS: SafetyTip[] = [
       'Monitor weather updates',
       'Evacuate early if advised',
       'Keep emergency contacts handy',
-      'Emergency Contacts: 911, PAGASA, Local DRRMO',
     ],
     category: 'disaster',
     order: 4,
@@ -77,7 +73,6 @@ const DEFAULT_SAFETY_TIPS: SafetyTip[] = [
       'Keep important documents waterproof',
       'Help neighbors, especially elderly',
       'Report hazards immediately',
-      'Emergency Contacts: 911, Local Authorities',
     ],
     category: 'disaster',
     order: 5,
@@ -92,7 +87,6 @@ const DEFAULT_SAFETY_TIPS: SafetyTip[] = [
       'Save emergency numbers',
       'Use B-READY for quick reporting',
       'Share location with trusted contacts',
-      'Emergency Contacts: 911, Family Members',
     ],
     category: 'disaster',
     order: 6,
@@ -249,6 +243,40 @@ export default function SafetyTipsPage() {
                   </ul>
                 </div>
               ))}
+            </div>
+          </div>
+
+          {/* Emergency Contacts */}
+          <div className="bg-red-50 rounded-xl p-8 mt-8">
+            <h2 className="text-2xl font-bold mb-6">Emergency Contacts</h2>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              <div className="bg-white p-6 rounded-lg">
+                <h3 className="font-bold text-lg mb-2">Police</h3>
+                <p className="text-gray-600 mb-2">National: 911</p>
+                <p className="text-gray-600">Local: 117</p>
+              </div>
+              <div className="bg-white p-6 rounded-lg">
+                <h3 className="font-bold text-lg mb-2">Fire Department</h3>
+                <p className="text-gray-600 mb-2">National: 911</p>
+                <p className="text-gray-600">Local: 160</p>
+              </div>
+              <div className="bg-white p-6 rounded-lg">
+                <h3 className="font-bold text-lg mb-2">Ambulance</h3>
+                <p className="text-gray-600 mb-2">National: 911</p>
+                <p className="text-gray-600">Local: 165</p>
+              </div>
+              <div className="bg-white p-6 rounded-lg">
+                <h3 className="font-bold text-lg mb-2">B-READY Admin</h3>
+                <p className="text-gray-600">Contact your local admin</p>
+              </div>
+              <div className="bg-white p-6 rounded-lg">
+                <h3 className="font-bold text-lg mb-2">Disaster Hotline</h3>
+                <p className="text-gray-600">NDRRMC: (02) 911-1406</p>
+              </div>
+              <div className="bg-white p-6 rounded-lg">
+                <h3 className="font-bold text-lg mb-2">Weather Updates</h3>
+                <p className="text-gray-600">PAGASA: (02) 434-2600</p>
+              </div>
             </div>
           </div>
 

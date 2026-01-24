@@ -122,8 +122,8 @@ export default function LoginPage() {
                   Sign up here
                 </Link>
               </p>
-              <p className="text-gray-600">
-                <Link href="/forgot-password" className="text-primary font-semibold hover:underline">
+              <p className="text-sm text-gray-500">
+                <Link href="/forgot-password" className="text-primary hover:underline">
                   Forgot Password?
                 </Link>
               </p>
