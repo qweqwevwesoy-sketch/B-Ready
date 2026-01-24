@@ -8,6 +8,7 @@ import { Header } from '@/components/Header';
 import { FAB } from '@/components/FAB';
 import { ReportCard } from '@/components/ReportCard';
 import { DisasterWarnings } from '@/components/DisasterWarnings';
+import { EnhancedNotificationSystem } from '@/components/EnhancedNotificationSystem';
 import { ChatBox } from '@/components/ChatBox';
 import { notificationManager } from '@/components/NotificationManager';
 import type { Category, Report } from '@/types';

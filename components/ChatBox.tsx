@@ -778,27 +778,26 @@ export function ChatBox({ reportId, category, onClose, onSendMessage, onSendImag
       {/* Report Information Modal */}
       {showReportInfo && reportId && (
         <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-2xl w-full max-w-md shadow-2xl">
-            <div className="bg-gradient-to-r from-primary to-primary-dark text-white p-4 rounded-t-2xl">
+          <div className="bg-white rounded-2xl w-full max-w-sm shadow-2xl">
+            <div className="bg-gradient-to-r from-primary to-primary-dark text-white p-3 rounded-t-2xl">
               <div className="flex justify-between items-center">
                 <div>
-                  <h3 className="font-semibold">Report Information</h3>
-                  <p className="text-sm opacity-90">Report #{reportId}</p>
+                  <h3 className="font-semibold text-sm">Report #{reportId}</h3>
                 </div>
                 <button
                   onClick={() => setShowReportInfo(false)}
-                  className="text-white hover:opacity-80 text-2xl"
+                  className="text-white hover:opacity-80 text-xl"
                 >
                   ×
                 </button>
               </div>
             </div>
 
-            <div className="p-4 space-y-4">
+            <div className="p-3 space-y-2 max-h-64 overflow-y-auto">
               {/* Report Type */}
-              <div className="bg-gray-50 rounded-lg p-3">
-                <div className="text-sm font-semibold text-gray-600 mb-1">Report Type</div>
-                <div className="text-lg">
+              <div className="bg-gray-50 rounded-lg p-2">
+                <div className="text-xs font-semibold text-gray-600">Type</div>
+                <div className="text-sm">
                   {category ? (
                     category.name === 'Earthquake' || category.name === 'Landslide' || category.name === 'Volcano' 
                       ? 'Geological' 
@@ -810,83 +809,57 @@ export function ChatBox({ reportId, category, onClose, onSendMessage, onSendImag
               </div>
 
               {/* Username */}
-              <div className="bg-gray-50 rounded-lg p-3">
-                <div className="text-sm font-semibold text-gray-600 mb-1">Reported By</div>
-                <div className="text-lg">
+              <div className="bg-gray-50 rounded-lg p-2">
+                <div className="text-xs font-semibold text-gray-600">Reported By</div>
+                <div className="text-sm">
                   {user ? `${user.firstName} ${user.lastName}` : 'Anonymous'}
                 </div>
               </div>
 
-              {/* Location (Real-time GPS) */}
-              <div className="bg-gray-50 rounded-lg p-3">
-                <div className="text-sm font-semibold text-gray-600 mb-1">Location</div>
-                <div className="text-lg">
-                  <div className="flex items-center gap-2">
-                    <span className="text-lg">📍</span>
-                    <span>Real-time GPS coordinates</span>
-                  </div>
-                  <div className="text-sm text-gray-600 mt-1">
-                    Latitude: 14.5995° N<br />
-                    Longitude: 120.9842° E
-                  </div>
+              {/* Location */}
+              <div className="bg-gray-50 rounded-lg p-2">
+                <div className="text-xs font-semibold text-gray-600">Location</div>
+                <div className="text-sm">📍 Real-time GPS</div>
+                <div className="text-xs text-gray-600 mt-1">
+                  14.5995° N, 120.9842° E
                 </div>
               </div>
 
-              {/* Date/Time */}
-              <div className="bg-gray-50 rounded-lg p-3">
-                <div className="text-sm font-semibold text-gray-600 mb-1">Reported On</div>
-                <div className="text-lg">{new Date().toLocaleString()}</div>
-              </div>
-
-              {/* Victim Contact Info */}
-              <div className="bg-gray-50 rounded-lg p-3">
-                <div className="text-sm font-semibold text-gray-600 mb-1">Contact Information</div>
-                <div className="text-lg">
-                  <div className="flex items-center gap-2">
-                    <span className="text-lg">📞</span>
-                    <span>{user?.phone || 'Not provided'}</span>
-                  </div>
-                  <div className="text-sm text-gray-600 mt-1">
-                    Email: {user?.email || 'Not provided'}
-                  </div>
+              {/* Contact Info */}
+              <div className="bg-gray-50 rounded-lg p-2">
+                <div className="text-xs font-semibold text-gray-600">Contact</div>
+                <div className="text-sm">📞 {user?.phone || 'Not provided'}</div>
+                <div className="text-xs text-gray-600 mt-1">
+                  {user?.email || 'Not provided'}
                 </div>
               </div>
 
-              {/* Category Details */}
+              {/* Incident Type */}
               {category && (
-                <div className="bg-gray-50 rounded-lg p-3">
-                  <div className="text-sm font-semibold text-gray-600 mb-1">Incident Type</div>
-                  <div className="text-lg">{category.name}</div>
-                  <div className="text-sm text-gray-600 mt-1">
-                    Subcategories: {category.subcategories.join(', ') || 'None specified'}
+                <div className="bg-gray-50 rounded-lg p-2">
+                  <div className="text-xs font-semibold text-gray-600">Incident</div>
+                  <div className="text-sm">{category.name}</div>
+                  <div className="text-xs text-gray-600 mt-1">
+                    {category.subcategories.join(', ') || 'None'}
                   </div>
                 </div>
               )}
 
               {/* Status */}
-              <div className="bg-gray-50 rounded-lg p-3">
-                <div className="text-sm font-semibold text-gray-600 mb-1">Status</div>
-                <div className="text-lg">
-                  <span className="px-2 py-1 bg-green-100 text-green-800 rounded-full text-sm font-semibold">
+              <div className="bg-gray-50 rounded-lg p-2">
+                <div className="text-xs font-semibold text-gray-600">Status</div>
+                <div className="text-sm">
+                  <span className="px-2 py-1 bg-green-100 text-green-800 rounded-full text-xs font-semibold">
                     Active
                   </span>
                 </div>
               </div>
-
-              {/* Additional Details */}
-              <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
-                <div className="text-sm font-semibold text-blue-800 mb-1">Report Details</div>
-                <div className="text-sm text-blue-700">
-                  This report contains real-time information including GPS coordinates, 
-                  contact details, and incident classification for emergency response coordination.
-                </div>
-              </div>
             </div>
 
-            <div className="p-4 border-t border-gray-200 rounded-b-2xl">
+            <div className="p-3 border-t border-gray-200 rounded-b-2xl">
               <button
                 onClick={() => setShowReportInfo(false)}
-                className="w-full px-4 py-2 bg-gradient-to-r from-primary to-primary-dark text-white rounded-lg hover:opacity-90"
+                className="w-full px-3 py-2 bg-gradient-to-r from-primary to-primary-dark text-white rounded-lg hover:opacity-90 text-sm"
               >
                 Close
               </button>

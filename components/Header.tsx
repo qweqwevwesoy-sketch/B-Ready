@@ -37,7 +37,7 @@ export function Header() {
             {/* Menu Button */}
             <button
               onClick={() => setSidebarOpen(true)}
-              className="md:hidden p-2 hover:bg-white/10 rounded-lg transition-colors"
+              className="p-2 hover:bg-white/10 rounded-lg transition-colors"
               aria-label="Open menu"
             >
               <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
