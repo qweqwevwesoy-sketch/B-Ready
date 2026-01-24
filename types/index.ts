@@ -86,3 +86,15 @@ export interface EmergencyKitItem {
   created_by?: string;
   updated_at: string;
 }
+
+export interface EmergencyContact {
+  id: string;
+  name: string;
+  phone: string;
+  type: 'fire' | 'police' | 'medical' | 'barangay' | 'other';
+  address: string;
+  location: Location;
+  description?: string;
+  created_at: string;
+  updated_at: string;
+}
