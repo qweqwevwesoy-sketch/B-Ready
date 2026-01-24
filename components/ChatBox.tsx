@@ -4,6 +4,7 @@ import { useState, useEffect, useRef, useMemo } from 'react';
 import { useSocketContext } from '@/contexts/SocketContext';
 import { useAuth } from '@/contexts/AuthContext';
 import { useOfflineStatus, storeOfflineMessage, getOfflineMessagesForReport } from '@/lib/offline-manager';
+import { getCurrentLocation } from '@/lib/utils';
 import type { Category } from '@/types';
 
 interface ChatBoxProps {
@@ -12,6 +13,16 @@ interface ChatBoxProps {
   onClose: () => void;
   onSendMessage: (text: string) => void;
   onSendImage?: (imageData: string) => void;
+  reportDetails?: {
+    type?: string;
+    description?: string;
+    location?: { lat: number; lng: number } | null;
+    address?: string;
+    timestamp?: string;
+    userName?: string;
+    severity?: string;
+    status?: string;
+  };
 }
 
 const getInitialMessage = (category: Category | null | undefined): { text: string; sender: string; time: string; type: 'sent' | 'received'; imageData?: string } => ({
@@ -20,18 +31,18 @@ const getInitialMessage = (category: Category | null | undefined): { text: strin
     : 'Hello! How can we help you today?',
   sender: 'B-READY Support',
   time: 'Just now',
-  type: 'received',
+  type: 'received' as const,
 });
 
-export function ChatBox({ reportId, category, onClose, onSendMessage, onSendImage }: ChatBoxProps) {
+export function ChatBox({ reportId, category, onClose, onSendMessage, onSendImage, reportDetails }: ChatBoxProps) {
   const { chatMessages } = useSocketContext();
   const { user } = useAuth();
   const [message, setMessage] = useState('');
   const [cameraActive, setCameraActive] = useState(false);
   const [cameraReady, setCameraReady] = useState(false);
   const [capturedImage, setCapturedImage] = useState<string | null>(null);
-  const [showInfo, setShowInfo] = useState(false);
   const [localMessages, setLocalMessages] = useState<Array<{ text: string; sender: string; time: string; type: 'sent' | 'received'; imageData?: string }>>([]);
+  const [showReportDetails, setShowReportDetails] = useState(false);
   const videoRef = useRef<HTMLVideoElement>(null);
   const streamRef = useRef<MediaStream | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -519,6 +530,26 @@ export function ChatBox({ reportId, category, onClose, onSendMessage, onSendImag
     fileInput.click();
   };
 
+  const shareLocation = async () => {
+    try {
+      console.log('📍 Getting current location...');
+      const location = await getCurrentLocation();
+
+      const locationMessage = {
+        text: `📍 My location: ${location.lat.toFixed(6)}, ${location.lng.toFixed(6)}`,
+        sender: 'You',
+        time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+        type: 'sent' as const,
+      };
+      setLocalMessages(prev => [...prev, locationMessage]);
+
+      console.log('✅ Location shared successfully');
+    } catch (error) {
+      console.error('❌ Error getting location:', error);
+      alert('Unable to get your location. Please check your location permissions and try again.');
+    }
+  };
+
   const handleSend = (e: React.FormEvent) => {
     e.preventDefault();
     if (message.trim()) {
@@ -578,18 +609,117 @@ export function ChatBox({ reportId, category, onClose, onSendMessage, onSendImag
             </p>
           </div>
           <div className="flex gap-2">
-            <button
-              onClick={() => setShowInfo(!showInfo)}
-              className="text-white hover:opacity-80 text-lg"
-              title="Report Details"
-            >
-              ℹ️
-            </button>
+            {reportId && reportDetails && (
+              <button
+                onClick={() => setShowReportDetails(!showReportDetails)}
+                className="text-white hover:opacity-80 text-lg"
+                title="View report details"
+              >
+                ℹ️
+              </button>
+            )}
             <button onClick={onClose} className="text-white hover:opacity-80 text-2xl">
               ×
             </button>
           </div>
         </div>
+
+        {/* Report Details Modal */}
+        {showReportDetails && reportDetails && (
+          <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+            <div className="bg-white rounded-2xl p-6 max-w-md w-full shadow-2xl">
+              <div className="flex justify-between items-center mb-4">
+                <h4 className="font-semibold text-lg">Report Details</h4>
+                <button
+                  onClick={() => setShowReportDetails(false)}
+                  className="text-gray-500 hover:text-gray-700 text-2xl"
+                >
+                  ×
+                </button>
+              </div>
+              
+              <div className="space-y-3 text-sm">
+                {reportDetails.type && (
+                  <div className="flex justify-between">
+                    <span className="text-gray-600">Type:</span>
+                    <span className="font-medium">{reportDetails.type}</span>
+                  </div>
+                )}
+                
+                {reportDetails.description && (
+                  <div className="flex justify-between">
+                    <span className="text-gray-600">Description:</span>
+                    <span className="font-medium">{reportDetails.description}</span>
+                  </div>
+                )}
+                
+                {reportDetails.userName && (
+                  <div className="flex justify-between">
+                    <span className="text-gray-600">Reported by:</span>
+                    <span className="font-medium">{reportDetails.userName}</span>
+                  </div>
+                )}
+                
+                {reportDetails.status && (
+                  <div className="flex justify-between">
+                    <span className="text-gray-600">Status:</span>
+                    <span className="font-medium">
+                      <span className={`px-2 py-1 rounded-full text-xs ${
+                        reportDetails.status === 'approved' ? 'bg-green-100 text-green-800' :
+                        reportDetails.status === 'current' ? 'bg-blue-100 text-blue-800' :
+                        reportDetails.status === 'pending' ? 'bg-yellow-100 text-yellow-800' :
+                        'bg-red-100 text-red-800'
+                      }`}>
+                        {reportDetails.status.toUpperCase()}
+                      </span>
+                    </span>
+                  </div>
+                )}
+                
+                {reportDetails.severity && (
+                  <div className="flex justify-between">
+                    <span className="text-gray-600">Severity:</span>
+                    <span className="font-medium capitalize">{reportDetails.severity}</span>
+                  </div>
+                )}
+                
+                {reportDetails.address && (
+                  <div className="flex justify-between">
+                    <span className="text-gray-600">Location:</span>
+                    <span className="font-medium">{reportDetails.address}</span>
+                  </div>
+                )}
+                
+                {reportDetails.timestamp && (
+                  <div className="flex justify-between">
+                    <span className="text-gray-600">Time:</span>
+                    <span className="font-medium">
+                      {new Date(reportDetails.timestamp).toLocaleString()}
+                    </span>
+                  </div>
+                )}
+                
+                {reportDetails.location && (
+                  <div className="flex justify-between">
+                    <span className="text-gray-600">Coordinates:</span>
+                    <span className="font-medium">
+                      {reportDetails.location.lat.toFixed(6)}, {reportDetails.location.lng.toFixed(6)}
+                    </span>
+                  </div>
+                )}
+              </div>
+              
+              <div className="mt-4 flex justify-end">
+                <button
+                  onClick={() => setShowReportDetails(false)}
+                  className="px-4 py-2 bg-primary text-white rounded-lg hover:opacity-90"
+                >
+                  Close
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Messages */}
         <div className="flex-1 overflow-y-auto p-4 space-y-4 bg-gray-50">
@@ -660,28 +790,6 @@ export function ChatBox({ reportId, category, onClose, onSendMessage, onSendImag
           <div ref={messagesEndRef} />
         </div>
 
-        {/* Report Info Modal */}
-        {showInfo && reportId && (
-          <div className="absolute inset-0 bg-black/50 z-20 flex items-center justify-center p-4">
-            <div className="bg-white rounded-xl p-6 max-w-md w-full">
-              <h3 className="text-lg font-bold mb-4">Report Details</h3>
-              <div className="space-y-2 text-sm text-gray-600">
-                <p><strong>Report ID:</strong> {reportId}</p>
-                <p><strong>Type:</strong> {category?.name || 'Emergency Report'}</p>
-                <p><strong>Status:</strong> Active</p>
-                <p><strong>Location:</strong> {category?.name || 'Location not specified'}</p>
-                <p><strong>Reported by:</strong> {user?.firstName} {user?.lastName}</p>
-              </div>
-              <button
-                onClick={() => setShowInfo(false)}
-                className="mt-4 w-full py-2 bg-primary text-white rounded-lg"
-              >
-                Close
-              </button>
-            </div>
-          </div>
-        )}
-
         {/* Camera Preview */}
         {cameraActive && (
           <div className="p-4 bg-gray-900 relative z-10" style={{ position: 'relative', zIndex: 9999 }}>
@@ -732,18 +840,16 @@ export function ChatBox({ reportId, category, onClose, onSendMessage, onSendImag
             <div className="flex gap-2 justify-center">
               <button
                 onClick={capturePhoto}
+                className="px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 disabled:opacity-50"
                 disabled={!cameraReady}
-                className={`w-12 h-12 rounded-full ${
-                  cameraReady ? 'bg-red-500 hover:bg-red-600' : 'bg-gray-400 cursor-not-allowed'
-                } text-white flex items-center justify-center text-lg`}
               >
-                📸
+                📸 Capture Photo
               </button>
               <button
                 onClick={stopCamera}
-                className="w-12 h-12 bg-gray-500 text-white rounded-full hover:bg-gray-600 flex items-center justify-center text-lg"
+                className="px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600"
               >
-                🛑
+                ❌ Cancel
               </button>
             </div>
           </div>
@@ -771,6 +877,14 @@ export function ChatBox({ reportId, category, onClose, onSendMessage, onSendImag
               autoComplete="off"
             />
             <div className="flex gap-1 flex-shrink-0">
+              <button
+                type="button"
+                onClick={shareLocation}
+                className="w-10 h-10 bg-blue-500 text-white rounded-lg hover:bg-blue-600 flex items-center justify-center text-lg"
+                title="Share your location"
+              >
+                📍
+              </button>
               <button
                 type="button"
                 onClick={startInstantCamera}

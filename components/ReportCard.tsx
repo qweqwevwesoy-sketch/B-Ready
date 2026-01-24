@@ -1,10 +1,11 @@
-'use client';
+ 'use client';
 
 import { formatDate } from '@/lib/utils';
 import type { Report } from '@/types';
 
 interface ReportCardProps {
   report: Report;
+  userPhone?: string;
   onOpenChat?: (reportId: string) => void;
   onApprove?: (reportId: string) => void;
   onReject?: (reportId: string) => void;
@@ -14,6 +15,7 @@ interface ReportCardProps {
 
 export function ReportCard({
   report,
+  userPhone,
   onOpenChat,
   onApprove,
   onReject,
@@ -66,8 +68,11 @@ export function ReportCard({
           </div>
           <p className="text-gray-600 text-sm mb-2">{report.address || 'Location not specified'}</p>
           <p className="text-gray-500 text-xs mb-3">{report.userName || 'Resident'}</p>
-          {report.phoneNumber && (
-            <p className="text-gray-500 text-xs mb-2">📞 {report.phoneNumber}</p>
+          
+          {userPhone && (
+            <p className="text-xs text-blue-600 mb-2">
+              📞 {userPhone}
+            </p>
           )}
           
           <div className="flex flex-wrap gap-3 text-xs text-gray-500">

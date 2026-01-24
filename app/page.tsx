@@ -113,11 +113,10 @@ export default function LandingPage() {
       {/* Anonymous Report Button */}
       <button
         onClick={() => setShowAnonymousChat(true)}
-        className="fixed bottom-6 right-6 bg-blue-600 hover:bg-blue-700 text-white p-4 rounded-full shadow-lg z-40 transition-all duration-300 hover:scale-110 flex items-center gap-2"
+        className="fixed bottom-6 right-6 bg-gradient-to-r from-primary to-primary-dark text-white p-4 rounded-full shadow-lg z-40 transition-all duration-300 hover:scale-110 flex items-center gap-2"
         title="Report Emergency Anonymously"
       >
-        <span className="text-xl">+</span>
-        <span className="text-lg">💬</span>
+        <span className="text-xl font-bold">+</span>
       </button>
 
       {/* Offline Message Overlay */}
@@ -128,7 +127,7 @@ export default function LandingPage() {
             <h2 className="text-2xl font-bold text-gray-800 mb-4">
               Can't open page
             </h2>
-            <p className="text-gray-600 mb-6">
+              <p className="text-gray-600 mb-6">
               Your phone is not connected to the internet. You can still access Safety Tips and emergency reporting features.
             </p>
             <div className="space-y-3">

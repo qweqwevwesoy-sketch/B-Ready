@@ -246,40 +246,6 @@ export default function SafetyTipsPage() {
             </div>
           </div>
 
-          {/* Emergency Contacts */}
-          <div className="bg-red-50 rounded-xl p-8 mt-8">
-            <h2 className="text-2xl font-bold mb-6">Emergency Contacts</h2>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              <div className="bg-white p-6 rounded-lg">
-                <h3 className="font-bold text-lg mb-2">Police</h3>
-                <p className="text-gray-600 mb-2">National: 911</p>
-                <p className="text-gray-600">Local: 117</p>
-              </div>
-              <div className="bg-white p-6 rounded-lg">
-                <h3 className="font-bold text-lg mb-2">Fire Department</h3>
-                <p className="text-gray-600 mb-2">National: 911</p>
-                <p className="text-gray-600">Local: 160</p>
-              </div>
-              <div className="bg-white p-6 rounded-lg">
-                <h3 className="font-bold text-lg mb-2">Ambulance</h3>
-                <p className="text-gray-600 mb-2">National: 911</p>
-                <p className="text-gray-600">Local: 165</p>
-              </div>
-              <div className="bg-white p-6 rounded-lg">
-                <h3 className="font-bold text-lg mb-2">B-READY Admin</h3>
-                <p className="text-gray-600">Contact your local admin</p>
-              </div>
-              <div className="bg-white p-6 rounded-lg">
-                <h3 className="font-bold text-lg mb-2">Disaster Hotline</h3>
-                <p className="text-gray-600">NDRRMC: (02) 911-1406</p>
-              </div>
-              <div className="bg-white p-6 rounded-lg">
-                <h3 className="font-bold text-lg mb-2">Weather Updates</h3>
-                <p className="text-gray-600">PAGASA: (02) 434-2600</p>
-              </div>
-            </div>
-          </div>
-
           {/* Admin Controls */}
           {user?.role === 'admin' && (
             <div className="mt-8">

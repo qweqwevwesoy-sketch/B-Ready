@@ -6,6 +6,8 @@ import { useAuth } from '@/contexts/AuthContext';
 import { Header } from '@/components/Header';
 import { notificationManager } from '@/components/NotificationManager';
 import Link from 'next/link';
+import { sendPasswordResetEmail } from 'firebase/auth';
+import { auth } from '@/lib/firebase';
 
 export default function LoginPage() {
   const router = useRouter(); 
@@ -49,6 +51,35 @@ export default function LoginPage() {
       notificationManager.error(errorMessage);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleForgotPassword = async () => {
+    if (!email) {
+      notificationManager.error('Please enter your email address first');
+      return;
+    }
+
+    try {
+      await sendPasswordResetEmail(auth, email);
+      notificationManager.success('Password reset email sent! Please check your inbox.');
+    } catch (error: unknown) {
+      let errorMessage = 'Failed to send password reset email. ';
+      const firebaseError = error as { code?: string; message?: string };
+      switch (firebaseError.code) {
+        case 'auth/invalid-email':
+          errorMessage += 'Invalid email address.';
+          break;
+        case 'auth/user-not-found':
+          errorMessage += 'No account found with this email.';
+          break;
+        case 'auth/missing-email':
+          errorMessage += 'Please enter your email address.';
+          break;
+        default:
+          errorMessage += firebaseError.message || 'Unknown error occurred';
+      }
+      notificationManager.error(errorMessage);
     }
   };
 
@@ -115,18 +146,17 @@ export default function LoginPage() {
               {loading ? 'Logging in...' : 'Login'}
             </button>
 
-            <div className="text-center space-y-2">
-              <p className="text-gray-600">
-                Don't have an account?{' '}
-                <Link href="/signup" className="text-primary font-semibold hover:underline">
-                  Sign up here
-                </Link>
-              </p>
-              <p className="text-sm text-gray-500">
-                <Link href="/forgot-password" className="text-primary hover:underline">
-                  Forgot Password?
-                </Link>
-              </p>
+            <div className="flex justify-between text-sm">
+              <button
+                type="button"
+                onClick={handleForgotPassword}
+                className="text-primary font-semibold hover:underline"
+              >
+                Forgot Password?
+              </button>
+              <Link href="/signup" className="text-primary font-semibold hover:underline">
+                Sign up here
+              </Link>
             </div>
           </form>
         </div>

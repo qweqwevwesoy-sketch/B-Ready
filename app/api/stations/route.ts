@@ -11,6 +11,7 @@ interface Station {
   lat: number;
   lng: number;
   address: string;
+  phone?: string;
   created_by?: string;
   created_at?: string;
   updated_at?: string;
@@ -62,7 +63,7 @@ export async function POST(request: NextRequest) {
   console.log('📡 POST /api/stations called - Deployed version');
 
   try {
-    const { name, lat, lng, address, created_by } = await request.json();
+    const { name, lat, lng, address, phone, created_by } = await request.json();
 
     if (!name || lat === undefined || lng === undefined) {
       return NextResponse.json(
@@ -80,6 +81,7 @@ export async function POST(request: NextRequest) {
       lat: parseFloat(lat),
       lng: parseFloat(lng),
       address: address || '',
+      phone: phone || '',
       created_by: created_by || null,
       created_at: new Date().toISOString(),
       updated_at: new Date().toISOString()

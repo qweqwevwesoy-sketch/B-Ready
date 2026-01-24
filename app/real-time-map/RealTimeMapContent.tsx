@@ -20,7 +20,6 @@ interface Station {
   lat: number;
   lng: number;
   address: string;
-  phoneNumber?: string;
 }
 
 interface SearchResult {
@@ -252,6 +251,7 @@ export default function RealTimeMapContent() {
           lat,
           lng,
           address,
+          phone: newStationPhone,
           created_by: user?.uid || null,
         }),
       });
@@ -286,7 +286,7 @@ export default function RealTimeMapContent() {
   useEffect(() => {
     if (!mapContainerRef.current) return;
 
-    // Initialize map centered on Philippines (same as MapPicker)
+    // Initialize map centered on Philippines - same as MapPicker
     const map = L.map(mapContainerRef.current).setView([14.5995, 120.9842], 13);
     mapRef.current = map;
 
@@ -295,25 +295,39 @@ export default function RealTimeMapContent() {
       maxZoom: 19,
     }).addTo(map);
 
-    // Try to get current location using our utility function
+    // Try to get current location using our utility function - same as MapPicker
     const setInitialLocation = async () => {
       try {
         const location = await getCurrentLocation();
         const userLatLng: [number, number] = [location.lat, location.lng];
         map.setView(userLatLng, 15);
+
+        // Add user marker - same style as MapPicker
+        const userIcon = L.divIcon({
+          html: '<div style="background-color: #10b981; width: 20px; height: 20px; border-radius: 50%; border: 3px solid white; box-shadow: 0 2px 4px rgba(0,0,0,0.3);"></div>',
+          className: 'user-location-marker',
+          iconSize: [20, 20],
+          iconAnchor: [10, 10],
+        });
+
+        const userMarker = L.marker(userLatLng, {
+          icon: userIcon,
+          draggable: false
+        }).addTo(map);
+
+        userMarkerRef.current = userMarker;
         setUserLocation({ lat: userLatLng[0], lng: userLatLng[1] });
-        console.log('📍 Location detected successfully');
       } catch (error) {
-        console.log('📍 Location tracking failed, using default location');
+        console.log('Could not detect precise location, using default');
       }
     };
 
     setInitialLocation();
 
-    // Handle map clicks for admin station adding
+    // Handle map clicks - same as MapPicker
     map.on('click', (e) => {
+      const latLng = e.latlng;
       if (addingStation && user?.role === 'admin') {
-        const latLng = e.latlng;
         addStation(latLng.lat, latLng.lng);
       }
     });
@@ -321,7 +335,7 @@ export default function RealTimeMapContent() {
     return () => {
       map.remove();
     };
-  }, [addingStation, user?.role]); // Re-run when addingStation or user role changes
+  }, []); // Only run once on mount
 
   // Update map click handler when addingStation changes
   useEffect(() => {
@@ -754,9 +768,6 @@ export default function RealTimeMapContent() {
                         <div>
                           <strong>{station.name}</strong>
                           <p className="text-sm text-gray-600">{station.address}</p>
-                          {station.phoneNumber && (
-                            <p className="text-sm text-gray-500">📞 {station.phoneNumber}</p>
-                          )}
                         </div>
                         <button
                           onClick={() => removeStation(station.id)}
@@ -772,20 +783,18 @@ export default function RealTimeMapContent() {
             </div>
           )}
 
-          {/* Resident View - Stations Only */}
+          {/* Resident View - Stations Info */}
           {user.role === 'resident' && stations.length > 0 && (
             <div className="bg-blue-50 rounded-lg p-4">
-              <h3 className="font-semibold mb-3">Emergency Stations</h3>
+              <h3 className="font-semibold mb-3">Emergency Response Stations</h3>
               <div className="space-y-2">
                 {stations.map(station => (
                   <div key={station.id} className="flex justify-between items-center bg-white p-3 rounded-lg">
                     <div>
                       <strong>{station.name}</strong>
                       <p className="text-sm text-gray-600">{station.address}</p>
-                      {station.phoneNumber && (
-                        <p className="text-sm text-gray-500">📞 {station.phoneNumber}</p>
-                      )}
                     </div>
+                    <span className="text-xs text-gray-500">Emergency Response Station</span>
                   </div>
                 ))}
               </div>

@@ -360,6 +360,7 @@ function DashboardContent({ searchParams }: { searchParams: URLSearchParams }) {
                     <ReportCard
                       key={report.id}
                       report={report}
+                      userPhone={user.phone}
                       onOpenChat={handleOpenReportChat}
                       canOpenChat={user.role === 'admin' || report.userId === user.uid}
                     />

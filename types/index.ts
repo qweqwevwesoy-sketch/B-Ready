@@ -32,7 +32,6 @@ export interface Report {
   timestamp: string;
   userId: string;
   userName: string;
-  phoneNumber?: string;
   severity: ReportSeverity;
   status: ReportStatus;
   category?: string;

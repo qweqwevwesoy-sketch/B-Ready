@@ -4,8 +4,10 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
 import { Sidebar } from './Sidebar';
-import { GoogleTranslate } from './GoogleTranslate';
+import Link from 'next/link';
 import Image from 'next/image';
+import { GoogleTranslate } from './GoogleTranslate';
+import { UserMenu } from './UserMenu';
 
 export function Header() {
   const router = useRouter();
@@ -13,41 +15,38 @@ export function Header() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
   return (
-    <> 
-      <header className="bg-gradient-to-r from-primary to-primary-dark text-white p-4 sticky top-0 z-50 shadow-md">
-        <nav className="max-w-7xl mx-auto flex justify-between items-center">
-          <h1
-            className="text-2xl font-bold cursor-pointer flex items-center gap-2"
-            onClick={() => router.push('/')}
-          >
-            <div className="flex flex-col">
-              <div className="flex items-center gap-2">
-                <Image
-                  src="/BLogo.png"
-                  alt="B-READY Logo"
-                  width={32}
-                  height={32}
-                  className="w-8 h-8"
-                />
-                <span>B-READY</span>
-              </div>
-              <span className="text-xs opacity-90 -mt-1">Real-time reporting and response</span>
-            </div>
-          </h1>
+    <header className="bg-white/95 backdrop-blur-lg border-b border-gray-200 sticky top-0 z-40">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="flex justify-between items-center h-16">
           <div className="flex items-center gap-4">
-            <GoogleTranslate />
+            <Link href="/" className="flex items-center gap-2">
+              <Image src="/BLogo.svg" alt="B-Ready Logo" width={40} height={40} className="w-10 h-10" />
+              <span className="text-xl font-bold text-primary">B-READY</span>
+            </Link>
           </div>
-          {user && (
-            <button
-              className="bg-white/10 hover:bg-white/20 p-2 rounded-lg transition-colors"
-              onClick={() => setSidebarOpen(!sidebarOpen)}
-            >
-              ☰
-            </button>
-          )}
-        </nav>
-      </header>
-      <Sidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
-    </>
+
+          <div className="flex items-center gap-4">
+            {user && (
+              <>
+                <Link href="/dashboard" className="text-gray-700 hover:text-primary">
+                  Dashboard
+                </Link>
+                <Link href="/real-time-map" className="text-gray-700 hover:text-primary">
+                  Real-Time Map
+                </Link>
+                <Link href="/safety-tips" className="text-gray-700 hover:text-primary">
+                  Safety Tips
+                </Link>
+                <Link href="/status-update" className="text-gray-700 hover:text-primary">
+                  Status Update
+                </Link>
+              </>
+            )}
+            <GoogleTranslate />
+            <UserMenu />
+          </div>
+        </div>
+      </div>
+    </header>
   );
 }
