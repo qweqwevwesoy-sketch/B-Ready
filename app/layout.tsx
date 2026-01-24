@@ -44,17 +44,19 @@ export default function RootLayout({
         <meta name="apple-mobile-web-app-status-bar-style" content="default" />
         <meta name="apple-mobile-web-app-title" content="B-READY" />
       </head>
-      <body className={inter.className} suppressHydrationWarning>
-        <OfflineBanner />
-        <AuthProvider>
-          <SocketProvider>
-            {children}
-            <NotificationContainer />
-            <ServiceWorker />
-            <WebSocketConfig />
-          </SocketProvider>
-        </AuthProvider>
-      </body>
+        <body className={inter.className} suppressHydrationWarning>
+          <OfflineBanner />
+          <AuthProvider>
+            <SocketProvider>
+              <ModalManagerProvider>
+                {children}
+                <NotificationContainer />
+                <ServiceWorker />
+                <WebSocketConfig />
+              </ModalManagerProvider>
+            </SocketProvider>
+          </AuthProvider>
+        </body>
     </html>
   );
 }

@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import type { SafetyTip, EmergencyKitItem } from '@/types';
 import { SafetyTipsAdmin } from '@/components/SafetyTipsAdmin';
-import { EmergencyContacts } from '@/components/EmergencyContacts';
+import { EmergencyResponseSystem } from '@/components/EmergencyResponseSystem';
 
 // Default offline safety tips data
 const DEFAULT_SAFETY_TIPS: SafetyTip[] = [
@@ -244,9 +244,9 @@ export default function SafetyTipsContent() {
         </div>
       </div>
 
-      {/* Emergency Contacts Section */}
+      {/* Emergency Response System Section */}
       <div className="mt-8">
-        <EmergencyContacts variant="safety-tips" />
+        <EmergencyResponseSystem variant="safety-tips" />
       </div>
 
       {/* Admin Controls */}

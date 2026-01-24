@@ -118,6 +118,10 @@ class MySQLConnection {
         lat DECIMAL(10, 8) NOT NULL,
         lng DECIMAL(11, 8) NOT NULL,
         address TEXT,
+        phone VARCHAR(50),
+        email VARCHAR(100),
+        website VARCHAR(255),
+        description TEXT,
         created_by VARCHAR(100),
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
         updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
@@ -175,35 +179,51 @@ class MySQLConnection {
         name: 'Manila Central Fire Station',
         lat: 14.5995,
         lng: 120.9842,
-        address: 'Manila, Metro Manila, Philippines'
+        address: 'Manila, Metro Manila, Philippines',
+        phone: '+63 2 8527 3100',
+        email: 'manila.fire@bureau.gov.ph',
+        website: 'https://www.bfp.gov.ph',
+        description: 'Main fire station for Metro Manila area'
       },
       {
         id: 'station_2',
         name: 'Cebu City Fire Station',
         lat: 10.3157,
         lng: 123.8854,
-        address: 'Cebu City, Cebu, Philippines'
+        address: 'Cebu City, Cebu, Philippines',
+        phone: '+63 32 253 7777',
+        email: 'cebu.fire@bureau.gov.ph',
+        website: 'https://www.bfp.gov.ph',
+        description: 'Primary fire response station for Cebu City'
       },
       {
         id: 'station_3',
         name: 'Davao City Fire Station',
         lat: 7.1907,
         lng: 125.4553,
-        address: 'Davao City, Davao del Sur, Philippines'
+        address: 'Davao City, Davao del Sur, Philippines',
+        phone: '+63 82 221 0234',
+        email: 'davao.fire@bureau.gov.ph',
+        website: 'https://www.bfp.gov.ph',
+        description: 'Main fire station for Davao City and surrounding areas'
       },
       {
         id: 'station_4',
         name: 'Baguio Emergency Response Center',
         lat: 16.4023,
         lng: 120.5960,
-        address: 'Baguio City, Benguet, Philippines'
+        address: 'Baguio City, Benguet, Philippines',
+        phone: '+63 74 442 3333',
+        email: 'baguio.fire@bureau.gov.ph',
+        website: 'https://www.bfp.gov.ph',
+        description: 'Emergency response center for Baguio City'
       }
     ];
 
     for (const station of defaultStations) {
       await conn.execute(
-        `INSERT IGNORE INTO emergency_stations (id, name, lat, lng, address) VALUES (?, ?, ?, ?, ?)`,
-        [station.id, station.name, station.lat, station.lng, station.address]
+        `INSERT IGNORE INTO emergency_stations (id, name, lat, lng, address, phone, email, website, description) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        [station.id, station.name, station.lat, station.lng, station.address, station.phone, station.email, station.website, station.description]
       );
     }
 

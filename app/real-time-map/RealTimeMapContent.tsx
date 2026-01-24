@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
 import { useSocketContext } from '@/contexts/SocketContext';
 import { Header } from '@/components/Header';
-import { EmergencyContacts } from '@/components/EmergencyContacts';
+import { EmergencyResponseSystem } from '@/components/EmergencyResponseSystem';
 import { getCurrentLocation } from '@/lib/utils';
 import L from 'leaflet';
 
@@ -786,10 +786,10 @@ export default function RealTimeMapContent() {
             </div>
           )}
 
-          {/* Emergency Contacts for Residents */}
+          {/* Emergency Response System for Residents */}
           {user.role === 'resident' && (
             <div className="mb-6">
-              <EmergencyContacts userLocation={userLocation} variant="display" />
+              <EmergencyResponseSystem userLocation={userLocation} variant="display" />
             </div>
           )}
 
