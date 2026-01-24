@@ -84,16 +84,6 @@ export function Header() {
               </div>
             </div>
 
-            {/* Account Settings Link */}
-            {user && (
-              <button
-                onClick={() => router.push('/profile')}
-                className="flex items-center gap-2 px-4 py-2 rounded-lg hover:bg-white/10 transition-colors"
-              >
-                <span className="text-lg">⚙️</span>
-                <span className="hidden md:inline">Account Settings</span>
-              </button>
-            )}
           </div>
         </nav>
       </header>

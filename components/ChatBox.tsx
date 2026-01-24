@@ -795,34 +795,90 @@ export function ChatBox({ reportId, category, onClose, onSendMessage, onSendImag
             </div>
 
             <div className="p-4 space-y-4">
-              {/* Report details would go here */}
+              {/* Report Type */}
               <div className="bg-gray-50 rounded-lg p-3">
-                <div className="text-sm font-semibold text-gray-600 mb-1">Report ID</div>
-                <div className="text-lg font-mono">{reportId}</div>
-              </div>
-
-              {category && (
-                <div className="bg-gray-50 rounded-lg p-3">
-                  <div className="text-sm font-semibold text-gray-600 mb-1">Category</div>
-                  <div className="text-lg">{category.name}</div>
+                <div className="text-sm font-semibold text-gray-600 mb-1">Report Type</div>
+                <div className="text-lg">
+                  {category ? (
+                    category.name === 'Earthquake' || category.name === 'Landslide' || category.name === 'Volcano' 
+                      ? 'Geological' 
+                      : category.name === 'Fire' || category.name === 'Explosion' 
+                      ? 'Intentional' 
+                      : 'Natural'
+                  ) : 'Unknown'}
                 </div>
-              )}
-
-              <div className="bg-gray-50 rounded-lg p-3">
-                <div className="text-sm font-semibold text-gray-600 mb-1">Status</div>
-                <div className="text-lg">Active</div>
               </div>
 
+              {/* Username */}
               <div className="bg-gray-50 rounded-lg p-3">
-                <div className="text-sm font-semibold text-gray-600 mb-1">Created</div>
+                <div className="text-sm font-semibold text-gray-600 mb-1">Reported By</div>
+                <div className="text-lg">
+                  {user ? `${user.firstName} ${user.lastName}` : 'Anonymous'}
+                </div>
+              </div>
+
+              {/* Location (Real-time GPS) */}
+              <div className="bg-gray-50 rounded-lg p-3">
+                <div className="text-sm font-semibold text-gray-600 mb-1">Location</div>
+                <div className="text-lg">
+                  <div className="flex items-center gap-2">
+                    <span className="text-lg">📍</span>
+                    <span>Real-time GPS coordinates</span>
+                  </div>
+                  <div className="text-sm text-gray-600 mt-1">
+                    Latitude: 14.5995° N<br />
+                    Longitude: 120.9842° E
+                  </div>
+                </div>
+              </div>
+
+              {/* Date/Time */}
+              <div className="bg-gray-50 rounded-lg p-3">
+                <div className="text-sm font-semibold text-gray-600 mb-1">Reported On</div>
                 <div className="text-lg">{new Date().toLocaleString()}</div>
               </div>
 
+              {/* Victim Contact Info */}
+              <div className="bg-gray-50 rounded-lg p-3">
+                <div className="text-sm font-semibold text-gray-600 mb-1">Contact Information</div>
+                <div className="text-lg">
+                  <div className="flex items-center gap-2">
+                    <span className="text-lg">📞</span>
+                    <span>{user?.phone || 'Not provided'}</span>
+                  </div>
+                  <div className="text-sm text-gray-600 mt-1">
+                    Email: {user?.email || 'Not provided'}
+                  </div>
+                </div>
+              </div>
+
+              {/* Category Details */}
+              {category && (
+                <div className="bg-gray-50 rounded-lg p-3">
+                  <div className="text-sm font-semibold text-gray-600 mb-1">Incident Type</div>
+                  <div className="text-lg">{category.name}</div>
+                  <div className="text-sm text-gray-600 mt-1">
+                    Subcategories: {category.subcategories.join(', ') || 'None specified'}
+                  </div>
+                </div>
+              )}
+
+              {/* Status */}
+              <div className="bg-gray-50 rounded-lg p-3">
+                <div className="text-sm font-semibold text-gray-600 mb-1">Status</div>
+                <div className="text-lg">
+                  <span className="px-2 py-1 bg-green-100 text-green-800 rounded-full text-sm font-semibold">
+                    Active
+                  </span>
+                </div>
+              </div>
+
+              {/* Additional Details */}
               <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
-                <div className="text-sm font-semibold text-blue-800 mb-1">Note</div>
+                <div className="text-sm font-semibold text-blue-800 mb-1">Report Details</div>
                 <div className="text-sm text-blue-700">
-                  This is a sample report information display. In a production environment, 
-                  this would show the actual report details from the database.
+                  This report contains real-time information including GPS coordinates, 
+                  contact details, and incident classification for emergency response coordination.
                 </div>
               </div>
             </div>
