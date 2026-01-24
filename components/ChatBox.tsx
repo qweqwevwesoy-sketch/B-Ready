@@ -4,7 +4,7 @@ import { useState, useEffect, useRef, useMemo } from 'react';
 import { useSocketContext } from '@/contexts/SocketContext';
 import { useAuth } from '@/contexts/AuthContext';
 import { useOfflineStatus, storeOfflineMessage, getOfflineMessagesForReport } from '@/lib/offline-manager';
-import type { Category } from '@/types';
+import type { Category, Report } from '@/types';
 
 interface ChatBoxProps {
   reportId?: string | null;
@@ -20,17 +20,18 @@ const getInitialMessage = (category: Category | null | undefined): { text: strin
     : 'Hello! How can we help you today?',
   sender: 'B-READY Support',
   time: 'Just now',
-  type: 'received' as const,
+  type: 'received',
 });
 
 export function ChatBox({ reportId, category, onClose, onSendMessage, onSendImage }: ChatBoxProps) {
-  const { chatMessages } = useSocketContext();
+  const { chatMessages, reports } = useSocketContext();
   const { user } = useAuth();
   const [message, setMessage] = useState('');
   const [cameraActive, setCameraActive] = useState(false);
   const [cameraReady, setCameraReady] = useState(false);
   const [capturedImage, setCapturedImage] = useState<string | null>(null);
   const [localMessages, setLocalMessages] = useState<Array<{ text: string; sender: string; time: string; type: 'sent' | 'received'; imageData?: string }>>([]);
+  const [showReportInfo, setShowReportInfo] = useState(false);
   const videoRef = useRef<HTMLVideoElement>(null);
   const streamRef = useRef<MediaStream | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -745,8 +746,7 @@ export function ChatBox({ reportId, category, onClose, onSendMessage, onSendImag
                   onClick={(e) => {
                     e.preventDefault();
                     e.stopPropagation();
-                    // This would trigger a tooltip or modal with report details
-                    console.log('Report details requested for:', reportId);
+                    setShowReportInfo(true);
                   }}
                 >
                   <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -774,6 +774,70 @@ export function ChatBox({ reportId, category, onClose, onSendMessage, onSendImag
           </div>
         </form>
       </div>
+
+      {/* Report Information Modal */}
+      {showReportInfo && reportId && (
+        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl w-full max-w-md shadow-2xl">
+            <div className="bg-gradient-to-r from-primary to-primary-dark text-white p-4 rounded-t-2xl">
+              <div className="flex justify-between items-center">
+                <div>
+                  <h3 className="font-semibold">Report Information</h3>
+                  <p className="text-sm opacity-90">Report #{reportId}</p>
+                </div>
+                <button
+                  onClick={() => setShowReportInfo(false)}
+                  className="text-white hover:opacity-80 text-2xl"
+                >
+                  ×
+                </button>
+              </div>
+            </div>
+
+            <div className="p-4 space-y-4">
+              {/* Report details would go here */}
+              <div className="bg-gray-50 rounded-lg p-3">
+                <div className="text-sm font-semibold text-gray-600 mb-1">Report ID</div>
+                <div className="text-lg font-mono">{reportId}</div>
+              </div>
+
+              {category && (
+                <div className="bg-gray-50 rounded-lg p-3">
+                  <div className="text-sm font-semibold text-gray-600 mb-1">Category</div>
+                  <div className="text-lg">{category.name}</div>
+                </div>
+              )}
+
+              <div className="bg-gray-50 rounded-lg p-3">
+                <div className="text-sm font-semibold text-gray-600 mb-1">Status</div>
+                <div className="text-lg">Active</div>
+              </div>
+
+              <div className="bg-gray-50 rounded-lg p-3">
+                <div className="text-sm font-semibold text-gray-600 mb-1">Created</div>
+                <div className="text-lg">{new Date().toLocaleString()}</div>
+              </div>
+
+              <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
+                <div className="text-sm font-semibold text-blue-800 mb-1">Note</div>
+                <div className="text-sm text-blue-700">
+                  This is a sample report information display. In a production environment, 
+                  this would show the actual report details from the database.
+                </div>
+              </div>
+            </div>
+
+            <div className="p-4 border-t border-gray-200 rounded-b-2xl">
+              <button
+                onClick={() => setShowReportInfo(false)}
+                className="w-full px-4 py-2 bg-gradient-to-r from-primary to-primary-dark text-white rounded-lg hover:opacity-90"
+              >
+                Close
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

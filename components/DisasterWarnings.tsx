@@ -152,76 +152,78 @@ export function DisasterWarnings() {
         </div>
       ) : (
         <div className="space-y-4">
-          {activeWarnings.map((warning) => (
-            <div
-              key={warning.id}
-              className={`border border-gray-200 rounded-lg p-4 ${
-                warning.severity === 'critical' ? 'bg-red-50' : 
-                warning.severity === 'high' ? 'bg-orange-50' : 
-                warning.severity === 'medium' ? 'bg-yellow-50' : 'bg-blue-50'
-              }`}
-            >
-              <div className="flex items-start justify-between mb-3">
-                <div className="flex items-center gap-3">
-                  <div className={`w-10 h-10 ${getSeverityColor(warning.severity)} rounded-full flex items-center justify-center text-white font-bold`}>
-                    {getWarningIcon(warning.type)}
+          <div className="flex space-x-4 overflow-x-auto pb-4">
+            {activeWarnings.map((warning) => (
+              <div
+                key={warning.id}
+                className={`border border-gray-200 rounded-lg p-4 min-w-[300px] ${
+                  warning.severity === 'critical' ? 'bg-red-50' : 
+                  warning.severity === 'high' ? 'bg-orange-50' : 
+                  warning.severity === 'medium' ? 'bg-yellow-50' : 'bg-blue-50'
+                }`}
+              >
+                <div className="flex items-start justify-between mb-3">
+                  <div className="flex items-center gap-3">
+                    <div className={`w-10 h-10 ${getSeverityColor(warning.type)} rounded-full flex items-center justify-center text-white font-bold`}>
+                      {getWarningIcon(warning.type)}
+                    </div>
+                    <div>
+                      <div className="font-bold text-lg">{warning.title}</div>
+                      <div className="text-sm text-gray-600">{warning.location}</div>
+                    </div>
                   </div>
-                  <div>
-                    <div className="font-bold text-lg">{warning.title}</div>
-                    <div className="text-sm text-gray-600">{warning.location}</div>
-                  </div>
-                </div>
-                <div className="text-right">
-                  <div className={`px-2 py-1 rounded-full text-xs font-semibold text-white ${getSeverityColor(warning.severity)}`}>
-                    {getSeverityText(warning.severity)}
-                  </div>
-                  <div className="text-xs text-gray-500 mt-1">
-                    Expires: {new Date(warning.expiresAt).toLocaleString()}
-                  </div>
-                </div>
-              </div>
-
-              <p className="text-sm text-gray-700 mb-3">{warning.description}</p>
-
-              <div className="flex gap-2">
-                <button
-                  onClick={() => setShowDetails(showDetails === warning.id ? null : warning.id)}
-                  className="px-3 py-1 bg-gray-500 text-white rounded-lg hover:bg-gray-600 text-sm"
-                >
-                  {showDetails === warning.id ? 'Hide Details' : 'More Info'}
-                </button>
-                <button
-                  onClick={() => dismissWarning(warning.id)}
-                  className="px-3 py-1 bg-red-500 text-white rounded-lg hover:bg-red-600 text-sm"
-                >
-                  Dismiss
-                </button>
-              </div>
-
-              {showDetails === warning.id && (
-                <div className="mt-3 p-3 bg-white rounded-lg border border-gray-200">
-                  <div className="text-sm space-y-2">
-                    <div><strong>Type:</strong> {warning.type}</div>
-                    <div><strong>Location:</strong> {warning.location}</div>
-                    <div><strong>Issued:</strong> {new Date(warning.timestamp).toLocaleString()}</div>
-                    <div><strong>Expires:</strong> {new Date(warning.expiresAt).toLocaleString()}</div>
-                    <div><strong>Severity:</strong> {getSeverityText(warning.severity)}</div>
-                  </div>
-                  <div className="mt-3 p-2 bg-yellow-50 border border-yellow-200 rounded-lg">
-                    <div className="text-sm text-yellow-800">
-                      <strong>Safety Tips:</strong>
-                      {warning.type === 'typhoon' && ' Stay indoors, secure loose objects, and avoid coastal areas.'}
-                      {warning.type === 'flood' && ' Avoid walking or driving through floodwaters. Move to higher ground if necessary.'}
-                      {warning.type === 'earthquake' && ' Drop, cover, and hold on. Stay away from windows and heavy objects.'}
-                      {warning.type === 'fire' && ' Stay away from the fire area. Follow evacuation orders if issued.'}
-                      {warning.type === 'landslide' && ' Avoid slopes and hillsides. Move to stable ground immediately.'}
-                      {warning.type === 'volcano' && ' Follow evacuation orders. Avoid ash fall areas and wear protective masks.'}
+                  <div className="text-right">
+                    <div className={`px-2 py-1 rounded-full text-xs font-semibold text-white ${getSeverityColor(warning.severity)}`}>
+                      {getSeverityText(warning.severity)}
+                    </div>
+                    <div className="text-xs text-gray-500 mt-1">
+                      Expires: {new Date(warning.expiresAt).toLocaleString()}
                     </div>
                   </div>
                 </div>
-              )}
-            </div>
-          ))}
+
+                <p className="text-sm text-gray-700 mb-3">{warning.description}</p>
+
+                <div className="flex gap-2">
+                  <button
+                    onClick={() => setShowDetails(showDetails === warning.id ? null : warning.id)}
+                    className="px-3 py-1 bg-gray-500 text-white rounded-lg hover:bg-gray-600 text-sm"
+                  >
+                    {showDetails === warning.id ? 'Hide Details' : 'More Info'}
+                  </button>
+                  <button
+                    onClick={() => dismissWarning(warning.id)}
+                    className="px-3 py-1 bg-red-500 text-white rounded-lg hover:bg-red-600 text-sm"
+                  >
+                    Dismiss
+                  </button>
+                </div>
+
+                {showDetails === warning.id && (
+                  <div className="mt-3 p-3 bg-white rounded-lg border border-gray-200">
+                    <div className="text-sm space-y-2">
+                      <div><strong>Type:</strong> {warning.type}</div>
+                      <div><strong>Location:</strong> {warning.location}</div>
+                      <div><strong>Issued:</strong> {new Date(warning.timestamp).toLocaleString()}</div>
+                      <div><strong>Expires:</strong> {new Date(warning.expiresAt).toLocaleString()}</div>
+                      <div><strong>Severity:</strong> {getSeverityText(warning.severity)}</div>
+                    </div>
+                    <div className="mt-3 p-2 bg-yellow-50 border border-yellow-200 rounded-lg">
+                      <div className="text-sm text-yellow-800">
+                        <strong>Safety Tips:</strong>
+                        {warning.type === 'typhoon' && ' Stay indoors, secure loose objects, and avoid coastal areas.'}
+                        {warning.type === 'flood' && ' Avoid walking or driving through floodwaters. Move to higher ground if necessary.'}
+                        {warning.type === 'earthquake' && ' Drop, cover, and hold on. Stay away from windows and heavy objects.'}
+                        {warning.type === 'fire' && ' Stay away from the fire area. Follow evacuation orders if issued.'}
+                        {warning.type === 'landslide' && ' Avoid slopes and hillsides. Move to stable ground immediately.'}
+                        {warning.type === 'volcano' && ' Follow evacuation orders. Avoid ash fall areas and wear protective masks.'}
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
         </div>
       )}
 
