@@ -75,6 +75,7 @@ export default function RealTimeMapContent() {
   const [showResults, setShowResults] = useState(false);
   const [mapKey, setMapKey] = useState(() => Date.now()); // Unique key to force re-mount
   const [mapReady, setMapReady] = useState(false); // Track when map is ready
+  const [mapError, setMapError] = useState<string | null>(null); // Track map errors
   const stationIdCounter = useRef(0);
   const mapRef = useRef<L.Map | null>(null);
   const mapContainerRef = useRef<HTMLDivElement>(null);
@@ -86,11 +87,11 @@ export default function RealTimeMapContent() {
   const searchTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   // Filter all active reports (not just today's)
-  const activeReports = reports.filter(report => {
+  const activeReports = reports?.filter(report => {
     if (report.status !== 'current') return false;
     if (!report.location) return false;
     return true;
-  });
+  }) || [];
 
   // Initialize stationIdCounter based on loaded stations
   useEffect(() => {

@@ -23,7 +23,16 @@ export function useSocket() {
     // For Vercel and Render deployments, disable WebSocket connection
     if (window.location.hostname.includes('vercel.app') || window.location.hostname.includes('onrender.com')) {
       console.log('🔌 WebSocket disabled for cloud deployment (Vercel/Render)');
-      return null; // Return null to indicate no WebSocket server
+      // For Render deployments, try to use the same domain with WebSocket protocol
+      if (window.location.hostname.includes('onrender.com')) {
+        // Try WebSocket on the same domain
+        if (window.location.protocol === 'https:') {
+          return `wss://${window.location.hostname}`;
+        } else {
+          return `ws://${window.location.hostname}`;
+        }
+      }
+      return null; // Return null to indicate no WebSocket server for Vercel
     }
 
     // If we're running on localhost, use localhost
