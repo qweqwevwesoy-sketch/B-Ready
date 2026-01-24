@@ -6,6 +6,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useOfflineStatus, storeOfflineMessage, getOfflineMessagesForReport, storeOfflineReport } from '@/lib/offline-manager';
 import { notificationManager } from '@/components/NotificationManager';
 import { getCurrentLocation } from '@/lib/utils';
+import { useModalManager } from '@/contexts/ModalManager';
 import type { Category, Report } from '@/types';
 import { categories } from '@/lib/categories';
 
@@ -571,10 +572,15 @@ export function ChatBox({ reportId, category, onClose, onSendMessage, onSendImag
     }
   };
 
+  // Get proper z-index values from ModalManager
+  const { getModalZIndex } = useModalManager();
+  const chatBoxZIndex = getModalZIndex('chatbox');
+  const reportInfoZIndex = getModalZIndex('reportInfo');
+
   // Category Selection Screen for Anonymous Users
   if (showCategorySelection) {
     return (
-      <div className="fixed inset-0 bg-black/70 z-50 flex items-center justify-center p-4">
+      <div className="fixed inset-0 bg-black/70 flex items-center justify-center p-4" style={{ zIndex: chatBoxZIndex }}>
         <div className="bg-white rounded-2xl w-full max-w-md h-[85vh] max-h-[700px] flex flex-col shadow-2xl">
           <div className="bg-gradient-to-r from-red-600 to-red-700 text-white p-4 rounded-t-2xl flex justify-between items-center">
             <div>
@@ -933,7 +939,7 @@ export function ChatBox({ reportId, category, onClose, onSendMessage, onSendImag
 
       {/* Report Information Modal */}
       {showReportInfo && reportId && (
-        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4" style={{ zIndex: reportInfoZIndex }}>
           <div className="bg-white rounded-2xl w-full max-w-sm shadow-2xl">
             <div className="bg-gradient-to-r from-primary to-primary-dark text-white p-3 rounded-t-2xl">
               <div className="flex justify-between items-center">

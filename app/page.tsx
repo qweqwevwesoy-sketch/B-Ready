@@ -3,11 +3,9 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { Header } from '@/components/Header';
-import { ChatBox } from '@/components/ChatBox';
 
 export default function LandingPage() {
   const router = useRouter();
-  const [showAnonymousChat, setShowAnonymousChat] = useState(false);
   const [isOffline, setIsOffline] = useState(() => !navigator.onLine);
 
   useEffect(() => {
@@ -75,7 +73,7 @@ export default function LandingPage() {
       <section id="features" className="py-20 px-4 max-w-7xl mx-auto">
         <h2 className="text-4xl font-bold text-center mb-12">Features</h2>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-          {[
+          [
             { icon: '⚡', title: 'Instant Reporting', desc: 'Report emergencies in seconds with location sharing and photo uploads.' },
             { icon: '👥', title: 'Community-Driven', desc: 'Built for residents by residents. Collaborate with neighbors and officials.' },
             { icon: '🌐', title: 'Multi-Language', desc: 'Available in English, Filipino, and Cebuano for effective communication.' },
@@ -110,16 +108,6 @@ export default function LandingPage() {
           </button>
         </div>
       </section>
-
-      {/* Anonymous Report Button */}
-      <button
-        onClick={() => setShowAnonymousChat(true)}
-        className="fixed bottom-6 right-6 bg-blue-600 hover:bg-blue-700 text-white p-4 rounded-full shadow-lg z-40 transition-all duration-300 hover:scale-110 flex items-center gap-2"
-        title="Report Emergency Anonymously"
-      >
-        <span className="text-xl">+</span>
-        <span className="text-lg">💬</span>
-      </button>
 
       {/* Offline Message Overlay */}
       {isOffline && (
@@ -156,16 +144,6 @@ export default function LandingPage() {
         </div>
       )}
 
-      {/* Anonymous Chat Modal */}
-      {showAnonymousChat && (
-        <ChatBox 
-          onClose={() => setShowAnonymousChat(false)} 
-          onSendMessage={(message) => {
-            // Handle anonymous message sending
-            console.log('Anonymous message:', message);
-          }}
-        />
-      )}
     </div>
   );
 }

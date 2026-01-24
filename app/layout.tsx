@@ -3,6 +3,7 @@ import { Inter } from "next/font/google";
 import "./globals.css";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { SocketProvider } from "@/contexts/SocketContext";
+import { ModalManagerProvider } from "@/contexts/ModalManager";
 import { NotificationContainer } from "@/components/NotificationManager";
 import { ServiceWorker } from "@/components/ServiceWorker";
 import { OfflineBanner } from "@/components/OfflineBanner";

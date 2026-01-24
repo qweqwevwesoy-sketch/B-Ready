@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { useModalManager } from '@/contexts/ModalManager';
 import { categories } from '@/lib/categories';
 import type { Category } from '@/types';
 
@@ -16,6 +17,10 @@ export function FAB({ onCategorySelect }: FABProps) {
     setIsOpen(false);
   };
 
+  // Get proper z-index from ModalManager
+  const { getModalZIndex } = useModalManager();
+  const fabZIndex = getModalZIndex('fab');
+
   return (
     <>
       {/* Floating Action Button */}
@@ -29,7 +34,7 @@ export function FAB({ onCategorySelect }: FABProps) {
 
       {/* Modal Overlay */}
       {isOpen && (
-        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4" style={{ zIndex: fabZIndex }}>
           <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full max-h-[80vh] overflow-y-auto">
             <div className="p-6">
               <div className="flex justify-between items-center mb-6">
