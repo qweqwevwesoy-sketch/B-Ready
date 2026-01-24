@@ -106,6 +106,7 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
   }, []);
 
   const handleNavigation = (path: string) => {
+    console.log('Navigating to:', path, 'User:', user);
     router.push(path);
     onClose();
   };

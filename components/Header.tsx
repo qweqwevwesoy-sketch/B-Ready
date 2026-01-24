@@ -35,9 +35,6 @@ export function Header() {
             </div>
           </h1>
           <div className="flex items-center gap-4">
-            {/* Google Translate Component */}
-            <GoogleTranslate />
-
             {/* Menu Button */}
             <button
               onClick={() => setSidebarOpen(true)}
@@ -48,6 +45,9 @@ export function Header() {
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
               </svg>
             </button>
+
+            {/* Google Translate Component */}
+            <GoogleTranslate />
           </div>
         </nav>
       </header>
