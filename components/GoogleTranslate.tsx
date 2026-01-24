@@ -64,14 +64,14 @@ export function GoogleTranslate() {
   }, []);
 
   return (
-    <div className="fixed bottom-6 left-6 z-50">
-      {/* Google Translate widget - always visible but can be styled */}
+    <div className="relative">
+      {/* Google Translate widget - compact version for header */}
       <div
         id="google_translate_element"
-        className="bg-white rounded-lg shadow-lg border border-gray-200 overflow-hidden"
+        className="bg-white rounded-lg border border-gray-300 overflow-hidden"
         style={{
-          minWidth: '70px',
-          maxWidth: '120px'
+          minWidth: '120px',
+          maxWidth: '160px'
         }}
       />
     </div>

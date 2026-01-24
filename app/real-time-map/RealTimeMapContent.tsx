@@ -20,6 +20,7 @@ interface Station {
   lat: number;
   lng: number;
   address: string;
+  contactNumber?: string;
 }
 
 interface SearchResult {
@@ -114,9 +115,9 @@ export default function RealTimeMapContent() {
       const data = await response.json();
 
       if (data.features && data.features.length > 0) {
-        const results: SearchResult[] = data.features.map((feature: PhotonFeature, index: number) => ({
-          place_id: feature.properties.osm_id || `${feature.geometry.coordinates[0]}-${feature.geometry.coordinates[1]}-${index}`,
-          display_name: feature.properties.name || feature.properties.city || feature.properties.state,
+        const results: SearchResult[] = data.features.map((feature: PhotonFeature, index: number): SearchResult => ({
+          place_id: feature.properties.osm_id || index,
+          display_name: feature.properties.name || feature.properties.city || feature.properties.state || '',
           lat: feature.geometry.coordinates[1].toString(),
           lon: feature.geometry.coordinates[0].toString(),
         })).filter(result => result.display_name); // Filter out empty names
@@ -251,7 +252,6 @@ export default function RealTimeMapContent() {
           lat,
           lng,
           address,
-          phone: newStationPhone,
           created_by: user?.uid || null,
         }),
       });
@@ -284,56 +284,149 @@ export default function RealTimeMapContent() {
   };
 
   useEffect(() => {
-    if (!mapContainerRef.current) return;
+    if (!mapContainerRef.current || mapRef.current || mapInitializedRef.current) {
+      console.log('Map init skipped - container:', !!mapContainerRef.current, 'map exists:', !!mapRef.current, 'initialized:', mapInitializedRef.current);
+      return;
+    }
 
-    // Initialize map centered on Philippines - same as MapPicker
-    const map = L.map(mapContainerRef.current).setView([14.5995, 120.9842], 13);
-    mapRef.current = map;
+    console.log('🚀 Starting map initialization...');
 
-    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-      attribution: '© OpenStreetMap contributors',
-      maxZoom: 19,
-    }).addTo(map);
-
-    // Try to get current location using our utility function - same as MapPicker
-    const setInitialLocation = async () => {
+    // Use the same map initialization as MapPicker for consistency
+    const initMap = () => {
       try {
-        const location = await getCurrentLocation();
-        const userLatLng: [number, number] = [location.lat, location.lng];
-        map.setView(userLatLng, 15);
+        console.log('📍 Initializing Leaflet map (MapPicker style)...');
 
-        // Add user marker - same style as MapPicker
-        const userIcon = L.divIcon({
-          html: '<div style="background-color: #10b981; width: 20px; height: 20px; border-radius: 50%; border: 3px solid white; box-shadow: 0 2px 4px rgba(0,0,0,0.3);"></div>',
-          className: 'user-location-marker',
-          iconSize: [20, 20],
-          iconAnchor: [10, 10],
+        // Create map centered on Philippines - same as MapPicker
+        const map = L.map(mapContainerRef.current!, {
+          center: [14.5995, 120.9842],
+          zoom: 13,
+          zoomControl: true,
+          attributionControl: true,
+          scrollWheelZoom: true,
+          doubleClickZoom: true,
+          dragging: true,
+          touchZoom: true
         });
 
-        const userMarker = L.marker(userLatLng, {
-          icon: userIcon,
-          draggable: false
+        // Add tile layer - same as MapPicker
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+          attribution: '© OpenStreetMap contributors',
+          maxZoom: 19,
+          detectRetina: true
         }).addTo(map);
 
-        userMarkerRef.current = userMarker;
-        setUserLocation({ lat: userLatLng[0], lng: userLatLng[1] });
+        mapRef.current = map;
+        mapInitializedRef.current = true;
+        setMapReady(true);
+
+        console.log('✅ Map initialized successfully (MapPicker style)');
+
+        // Force resize after a short delay - same as MapPicker
+        setTimeout(() => {
+          if (map) {
+            map.invalidateSize();
+            console.log('🔄 Map resized');
+          }
+        }, 500);
+
+        // Try to get current location using the same utility function as MapPicker
+        const setInitialLocation = async () => {
+          console.log('📍 Detecting location...');
+          try {
+            const location = await getCurrentLocation();
+            const userLatLng: [number, number] = [location.lat, location.lng];
+            map.setView(userLatLng, 15);
+
+            // Add user marker - same style as MapPicker
+            const userIcon = L.divIcon({
+              html: '<div style="background-color: #10b981; width: 20px; height: 20px; border-radius: 50%; border: 3px solid white; box-shadow: 0 2px 4px rgba(0,0,0,0.3);"></div>',
+              className: 'user-location-marker',
+              iconSize: [20, 20],
+              iconAnchor: [10, 10],
+            });
+
+            const userMarker = L.marker(userLatLng, {
+              icon: userIcon,
+              draggable: false
+            }).addTo(map);
+
+            userMarkerRef.current = userMarker;
+            setUserLocation({ lat: userLatLng[0], lng: userLatLng[1] });
+            console.log('✅ Location detected successfully');
+          } catch (error) {
+            console.log('⚠️ Could not detect precise location, using default');
+          }
+        };
+
+        setInitialLocation();
+
+        // Handle map clicks - same as MapPicker
+        map.on('click', (e) => {
+          const latLng = e.latlng;
+          if (addingStation && user?.role === 'admin') {
+            addStation(latLng.lat, latLng.lng);
+          }
+        });
+
       } catch (error) {
-        console.log('Could not detect precise location, using default');
+        console.error('❌ Map initialization failed:', error);
+        // Fallback: show error message in the container
+        if (mapContainerRef.current) {
+          mapContainerRef.current.innerHTML = `
+            <div style="display: flex; align-items: center; justify-content: center; height: 100%; background: #f3f4f6; border-radius: 12px;">
+              <div style="text-align: center; color: #ef4444;">
+                <div style="font-size: 48px; margin-bottom: 16px;">🗺️</div>
+                <h3 style="font-size: 18px; font-weight: bold; margin-bottom: 8px;">Map Failed to Load</h3>
+                <p style="font-size: 14px; color: #6b7280;">Please refresh the page to try again.</p>
+                <p style="font-size: 12px; color: #9ca3af; margin-top: 8px;">Error: ${error instanceof Error ? error.message : String(error)}</p>
+              </div>
+            </div>
+          `;
+        }
       }
     };
 
-    setInitialLocation();
-
-    // Handle map clicks - same as MapPicker
-    map.on('click', (e) => {
-      const latLng = e.latlng;
-      if (addingStation && user?.role === 'admin') {
-        addStation(latLng.lat, latLng.lng);
-      }
-    });
+    // Initialize immediately if container is ready
+    const rect = mapContainerRef.current.getBoundingClientRect();
+    if (rect.width > 0 && rect.height > 0) {
+      console.log('📏 Container ready, initializing map...');
+      initMap();
+    } else {
+      console.log('⏳ Container not ready, waiting...');
+      // Wait for container to be ready
+      const checkReady = () => {
+        if (mapContainerRef.current) {
+          const rect = mapContainerRef.current.getBoundingClientRect();
+          if (rect.width > 0 && rect.height > 0) {
+            console.log('📏 Container now ready, initializing map...');
+            initMap();
+          } else {
+            requestAnimationFrame(checkReady);
+          }
+        }
+      };
+      requestAnimationFrame(checkReady);
+    }
 
     return () => {
-      map.remove();
+      console.log('🧹 Cleaning up map...');
+      if (locationTrackingIntervalRef.current) {
+        clearTimeout(locationTrackingIntervalRef.current);
+        locationTrackingIntervalRef.current = null;
+      }
+
+      if (mapRef.current) {
+        try {
+          mapRef.current.remove();
+          console.log('🗑️ Map removed');
+        } catch (error) {
+          console.error('Error removing map:', error);
+        }
+        mapRef.current = null;
+      }
+
+      mapInitializedRef.current = false;
+      setMapReady(false);
     };
   }, []); // Only run once on mount
 
@@ -737,7 +830,7 @@ export default function RealTimeMapContent() {
                     />
                     <input
                       type="tel"
-                      placeholder="Phone number"
+                      placeholder="Contact Number"
                       value={newStationPhone}
                       onChange={(e) => setNewStationPhone(e.target.value)}
                       className="px-3 py-2 border border-gray-300 rounded-lg"
@@ -768,6 +861,9 @@ export default function RealTimeMapContent() {
                         <div>
                           <strong>{station.name}</strong>
                           <p className="text-sm text-gray-600">{station.address}</p>
+                          {station.contactNumber && (
+                            <p className="text-sm text-blue-600">📞 {station.contactNumber}</p>
+                          )}
                         </div>
                         <button
                           onClick={() => removeStation(station.id)}
@@ -783,20 +879,26 @@ export default function RealTimeMapContent() {
             </div>
           )}
 
-          {/* Resident View - Stations Info */}
-          {user.role === 'resident' && stations.length > 0 && (
+          {/* Resident View - Stations without Admin Controls */}
+          {user.role === 'resident' && (
             <div className="bg-blue-50 rounded-lg p-4">
-              <h3 className="font-semibold mb-3">Emergency Response Stations</h3>
+              <h3 className="font-semibold mb-3">Emergency Stations</h3>
               <div className="space-y-2">
-                {stations.map(station => (
-                  <div key={station.id} className="flex justify-between items-center bg-white p-3 rounded-lg">
-                    <div>
-                      <strong>{station.name}</strong>
-                      <p className="text-sm text-gray-600">{station.address}</p>
+                {stations.length > 0 ? (
+                  stations.map(station => (
+                    <div key={station.id} className="flex justify-between items-center bg-white p-3 rounded-lg">
+                      <div>
+                        <strong>{station.name}</strong>
+                        <p className="text-sm text-gray-600">{station.address}</p>
+                        {station.contactNumber && (
+                          <p className="text-sm text-blue-600">📞 {station.contactNumber}</p>
+                        )}
+                      </div>
                     </div>
-                    <span className="text-xs text-gray-500">Emergency Response Station</span>
-                  </div>
-                ))}
+                  ))
+                ) : (
+                  <p className="text-gray-600">No emergency stations available.</p>
+                )}
               </div>
             </div>
           )}
