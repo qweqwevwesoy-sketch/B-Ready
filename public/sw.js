@@ -140,6 +140,15 @@ async function handleStaticAsset(request) {
     }
   }
 
+  // Skip caching for chrome-extension requests (they cause errors)
+  if (request.url.startsWith('chrome-extension://')) {
+    try {
+      return await fetch(request);
+    } catch (error) {
+      return new Response('Offline', { status: 503 });
+    }
+  }
+
   // Try cache first for static assets
   const cachedResponse = await caches.match(request);
   if (cachedResponse) {

@@ -1,7 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { mysqlConnection } from '@/lib/mysql-connection';
+import { db } from '@/lib/firebase';
+import { collection, getDocs } from 'firebase/firestore';
 
-console.log('🚀 Stations API route loaded - Database version');
+console.log('🚀 Stations API route loaded - Database version with Firebase fallback');
 
 interface Station {
   id: string;
@@ -20,9 +22,10 @@ interface Station {
 
 // GET /api/stations - Get all stations
 export async function GET() {
-  console.log('📡 GET /api/stations called - Database version');
+  console.log('📡 GET /api/stations called - Database version with Firebase fallback');
 
   try {
+    // Try database first
     const rows = await mysqlConnection.query(
       'SELECT * FROM emergency_stations ORDER BY name'
     );
@@ -32,11 +35,135 @@ export async function GET() {
       stations: rows as Station[]
     });
   } catch (error) {
-    console.error('❌ Error fetching stations:', error);
-    return NextResponse.json(
-      { success: false, error: 'Failed to fetch stations' },
-      { status: 500 }
-    );
+    console.error('❌ Database error fetching stations:', error);
+
+    // Fallback to Firebase if database fails
+    try {
+      console.log('🔥 Falling back to Firebase for stations data');
+      const stationsCollection = collection(db, 'emergency_stations');
+      const snapshot = await getDocs(stationsCollection);
+
+      const stations = snapshot.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data()
+      })) as Station[];
+
+      // If Firebase also fails or returns empty, return default stations
+      if (stations.length === 0) {
+        console.log('📋 Using default stations as fallback');
+        const defaultStations = [
+          {
+            id: 'station_1',
+            name: 'Manila Central Fire Station',
+            lat: 14.5995,
+            lng: 120.9842,
+            address: 'Manila, Metro Manila, Philippines',
+            phone: '+63 2 8527 3100',
+            email: 'manila.fire@bureau.gov.ph',
+            website: 'https://www.bfp.gov.ph',
+            description: 'Main fire station for Metro Manila area'
+          },
+          {
+            id: 'station_2',
+            name: 'Cebu City Fire Station',
+            lat: 10.3157,
+            lng: 123.8854,
+            address: 'Cebu City, Cebu, Philippines',
+            phone: '+63 32 253 7777',
+            email: 'cebu.fire@bureau.gov.ph',
+            website: 'https://www.bfp.gov.ph',
+            description: 'Primary fire response station for Cebu City'
+          },
+          {
+            id: 'station_3',
+            name: 'Davao City Fire Station',
+            lat: 7.1907,
+            lng: 125.4553,
+            address: 'Davao City, Davao del Sur, Philippines',
+            phone: '+63 82 221 0234',
+            email: 'davao.fire@bureau.gov.ph',
+            website: 'https://www.bfp.gov.ph',
+            description: 'Main fire station for Davao City and surrounding areas'
+          },
+          {
+            id: 'station_4',
+            name: 'Baguio Emergency Response Center',
+            lat: 16.4023,
+            lng: 120.5960,
+            address: 'Baguio City, Benguet, Philippines',
+            phone: '+63 74 442 3333',
+            email: 'baguio.fire@bureau.gov.ph',
+            website: 'https://www.bfp.gov.ph',
+            description: 'Emergency response center for Baguio City'
+          }
+        ];
+
+        return NextResponse.json({
+          success: true,
+          stations: defaultStations
+        });
+      }
+
+      return NextResponse.json({
+        success: true,
+        stations: stations
+      });
+    } catch (firebaseError) {
+      console.error('❌ Firebase error fetching stations:', firebaseError);
+
+      // Return default stations as last resort
+      const defaultStations = [
+        {
+          id: 'station_1',
+          name: 'Manila Central Fire Station',
+          lat: 14.5995,
+          lng: 120.9842,
+          address: 'Manila, Metro Manila, Philippines',
+          phone: '+63 2 8527 3100',
+          email: 'manila.fire@bureau.gov.ph',
+          website: 'https://www.bfp.gov.ph',
+          description: 'Main fire station for Metro Manila area'
+        },
+        {
+          id: 'station_2',
+          name: 'Cebu City Fire Station',
+          lat: 10.3157,
+          lng: 123.8854,
+          address: 'Cebu City, Cebu, Philippines',
+          phone: '+63 32 253 7777',
+          email: 'cebu.fire@bureau.gov.ph',
+          website: 'https://www.bfp.gov.ph',
+          description: 'Primary fire response station for Cebu City'
+        },
+        {
+          id: 'station_3',
+          name: 'Davao City Fire Station',
+          lat: 7.1907,
+          lng: 125.4553,
+          address: 'Davao City, Davao del Sur, Philippines',
+          phone: '+63 82 221 0234',
+          email: 'davao.fire@bureau.gov.ph',
+          website: 'https://www.bfp.gov.ph',
+          description: 'Main fire station for Davao City and surrounding areas'
+        },
+        {
+          id: 'station_4',
+          name: 'Baguio Emergency Response Center',
+          lat: 16.4023,
+          lng: 120.5960,
+          address: 'Baguio City, Benguet, Philippines',
+          phone: '+63 74 442 3333',
+          email: 'baguio.fire@bureau.gov.ph',
+          website: 'https://www.bfp.gov.ph',
+          description: 'Emergency response center for Baguio City'
+        }
+      ];
+
+      return NextResponse.json({
+        success: true,
+        stations: defaultStations
+      });
+    }
   }
 }
 

@@ -42,11 +42,12 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
 
   const handleNavigation = (path: string) => {
     console.log('Navigating to:', path, 'User:', user);
-    // Don't redirect to login for account settings - allow direct navigation
-    if (path === '/profile' && user) {
+    // Allow direct navigation to profile for authenticated users
+    if (user) {
       router.push(path);
-    } else if (path !== '/profile') {
-      router.push(path);
+    } else {
+      // If not authenticated, redirect to login
+      router.push('/login');
     }
     onClose();
   };

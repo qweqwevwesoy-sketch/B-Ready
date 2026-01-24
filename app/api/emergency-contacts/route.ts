@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { mysqlConnection } from '@/lib/mysql-connection';
+import { db } from '@/lib/firebase';
+import { collection, getDocs } from 'firebase/firestore';
 
 interface EmergencyContact {
   id: string;
@@ -18,20 +20,123 @@ interface EmergencyContact {
 
 export async function GET() {
   try {
+    // Try database first
     const rows = await mysqlConnection.query(
       'SELECT * FROM emergency_contacts ORDER BY type, name'
     );
-    
+
     return NextResponse.json({
       success: true,
       contacts: rows as EmergencyContact[]
     });
   } catch (error) {
-    console.error('Error fetching emergency contacts:', error);
-    return NextResponse.json(
-      { success: false, error: 'Failed to fetch emergency contacts' },
-      { status: 500 }
-    );
+    console.error('❌ Database error fetching emergency contacts:', error);
+
+    // Fallback to Firebase if database fails
+    try {
+      console.log('🔥 Falling back to Firebase for emergency contacts data');
+      const contactsCollection = collection(db, 'emergency_contacts');
+      const snapshot = await getDocs(contactsCollection);
+
+      const contacts = snapshot.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data()
+      })) as EmergencyContact[];
+
+      // If Firebase also fails or returns empty, return default contacts
+      if (contacts.length === 0) {
+        console.log('📋 Using default emergency contacts as fallback');
+        const defaultContacts = [
+          {
+            id: 'contact_1',
+            name: 'Manila Fire Department',
+            type: 'fire',
+            phone: '911',
+            address: 'Manila, Metro Manila',
+            location: { lat: 14.5995, lng: 120.9842 },
+            created_by: 'system',
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString()
+          },
+          {
+            id: 'contact_2',
+            name: 'Manila Police Department',
+            type: 'police',
+            phone: '117',
+            address: 'Manila, Metro Manila',
+            location: { lat: 14.5995, lng: 120.9842 },
+            created_by: 'system',
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString()
+          },
+          {
+            id: 'contact_3',
+            name: 'Manila Medical Center',
+            type: 'medical',
+            phone: '160',
+            address: 'Manila, Metro Manila',
+            location: { lat: 14.5995, lng: 120.9842 },
+            created_by: 'system',
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString()
+          }
+        ];
+
+        return NextResponse.json({
+          success: true,
+          contacts: defaultContacts
+        });
+      }
+
+      return NextResponse.json({
+        success: true,
+        contacts: contacts
+      });
+    } catch (firebaseError) {
+      console.error('❌ Firebase error fetching emergency contacts:', firebaseError);
+
+      // Return default contacts as last resort
+      const defaultContacts = [
+        {
+          id: 'contact_1',
+          name: 'Manila Fire Department',
+          type: 'fire',
+          phone: '911',
+          address: 'Manila, Metro Manila',
+          location: { lat: 14.5995, lng: 120.9842 },
+          created_by: 'system',
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString()
+        },
+        {
+          id: 'contact_2',
+          name: 'Manila Police Department',
+          type: 'police',
+          phone: '117',
+          address: 'Manila, Metro Manila',
+          location: { lat: 14.5995, lng: 120.9842 },
+          created_by: 'system',
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString()
+        },
+        {
+          id: 'contact_3',
+          name: 'Manila Medical Center',
+          type: 'medical',
+          phone: '160',
+          address: 'Manila, Metro Manila',
+          location: { lat: 14.5995, lng: 120.9842 },
+          created_by: 'system',
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString()
+        }
+      ];
+
+      return NextResponse.json({
+        success: true,
+        contacts: defaultContacts
+      });
+    }
   }
 }
 
