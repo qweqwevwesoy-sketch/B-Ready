@@ -73,14 +73,15 @@ export default function LandingPage() {
       <section id="features" className="py-20 px-4 max-w-7xl mx-auto">
         <h2 className="text-4xl font-bold text-center mb-12">Features</h2>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-          [
-            { icon: '⚡', title: 'Instant Reporting', desc: 'Report emergencies in seconds with location sharing and photo uploads.' },
-            { icon: '👥', title: 'Community-Driven', desc: 'Built for residents by residents. Collaborate with neighbors and officials.' },
-            { icon: '🌐', title: 'Multi-Language', desc: 'Available in English, Filipino, and Cebuano for effective communication.' },
-            { icon: '📊', title: 'Real-Time Updates', desc: 'Track report status, receive updates, and stay informed about emergencies.' },
-            { icon: '🛡️', title: 'Safety First', desc: 'Access safety tips, emergency contacts, and preparedness guides.' },
-            { icon: '📱', title: 'Mobile-Friendly', desc: 'Works perfectly on any device. No app download required.' },
-          ].map((feature, idx) => (
+          {
+            [
+              { icon: '⚡', title: 'Instant Reporting', desc: 'Report emergencies in seconds with location sharing and photo uploads.' },
+              { icon: '👥', title: 'Community-Driven', desc: 'Built for residents by residents. Collaborate with neighbors and officials.' },
+              { icon: '🌐', title: 'Multi-Language', desc: 'Available in English, Filipino, and Cebuano for effective communication.' },
+              { icon: '📊', title: 'Real-Time Updates', desc: 'Track report status, receive updates, and stay informed about emergencies.' },
+              { icon: '🛡️', title: 'Safety First', desc: 'Access safety tips, emergency contacts, and preparedness guides.' },
+              { icon: '📱', title: 'Mobile-Friendly', desc: 'Works perfectly on any device. No app download required.' },
+            ].map((feature, idx) => (
             <div
               key={idx}
               className="bg-white/95 backdrop-blur-lg rounded-2xl p-8 shadow-lg hover:shadow-xl transition-shadow text-center"

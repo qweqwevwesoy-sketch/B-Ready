@@ -7,7 +7,6 @@ import { useSocketContext } from '@/contexts/SocketContext';
 import { Header } from '@/components/Header';
 import { FAB } from '@/components/FAB';
 import { ReportCard } from '@/components/ReportCard';
-import { DisasterWarnings } from '@/components/DisasterWarnings';
 import { EnhancedNotificationSystem } from '@/components/EnhancedNotificationSystem';
 import { ChatBox } from '@/components/ChatBox';
 import { notificationManager } from '@/components/NotificationManager';
@@ -296,10 +295,6 @@ function DashboardContent({ searchParams }: { searchParams: URLSearchParams }) {
       <Header />
 
       <main className="max-w-7xl mx-auto px-4 py-8">
-        {/* Disaster Warnings Section - Horizontal Layout */}
-        <div className="mb-8">
-          <DisasterWarnings />
-        </div>
 
         {/* Reports Section */}
         <div ref={(el) => {
