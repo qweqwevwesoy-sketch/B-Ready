@@ -38,7 +38,7 @@ export function Header() {
             <div className="relative">
               <select
                 id="google_translate_element"
-                className="bg-white/10 hover:bg-white/20 px-3 py-2 rounded-lg border border-white/20 text-white cursor-pointer appearance-none"
+                className="bg-white text-gray-900 px-3 py-2 rounded-lg border border-gray-300 cursor-pointer appearance-none"
                 onChange={(e) => {
                   const target = e.target.value;
                   // Trigger Google Translate
@@ -67,17 +67,17 @@ export function Header() {
                 <option value="ar">العربية</option>
               </select>
               <div className="absolute right-2 top-1/2 transform -translate-y-1/2 pointer-events-none">
-                <svg className="w-4 h-4 text-white/70" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <svg className="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
                 </svg>
               </div>
             </div>
             {user && (
               <button
-                className="bg-white/10 hover:bg-white/20 p-2 rounded-lg transition-colors"
-                onClick={() => setSidebarOpen(!sidebarOpen)}
+                onClick={() => router.push('/profile')}
+                className="px-4 py-2 bg-primary text-white rounded-lg hover:opacity-90"
               >
-                ☰
+                👤 Account Settings
               </button>
             )}
           </div>

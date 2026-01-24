@@ -295,7 +295,20 @@ function DashboardContent({ searchParams }: { searchParams: URLSearchParams }) {
       <Header />
 
       <main className="max-w-7xl mx-auto px-4 py-8">
-        <div className="bg-white/95 backdrop-blur-lg rounded-2xl p-8 shadow-xl mb-8">
+        {/* Disaster Warnings Section - Horizontal Layout */}
+        <div className="mb-8">
+          <DisasterWarnings />
+        </div>
+
+        {/* Reports Section */}
+        <div ref={(el) => {
+          if (el && user?.role === 'resident') {
+            // Auto-scroll to reports section for residents after 3 seconds
+            setTimeout(() => {
+              el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            }, 3000);
+          }
+        }} className="bg-white/95 backdrop-blur-lg rounded-2xl p-8 shadow-xl">
           <div className="flex justify-between items-center mb-6 flex-wrap gap-4">
             <div>
               <h1 className="text-3xl font-bold mb-2">
@@ -349,12 +362,7 @@ function DashboardContent({ searchParams }: { searchParams: URLSearchParams }) {
             </div>
           </div>
 
-          <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
-            {/* Disaster Warnings Column */}
-            <div className="lg:col-span-1">
-              <DisasterWarnings />
-            </div>
-
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
             {/* Approved Reports Column */}
             <div className="bg-gray-50 rounded-xl overflow-hidden border border-gray-200 flex flex-col h-[70vh]">
               <div className="bg-gradient-to-r from-green-500 to-green-600 text-white p-4 text-center font-semibold">

@@ -21,6 +21,7 @@ interface Station {
   lat: number;
   lng: number;
   address: string;
+  phone?: string;
 }
 
 interface SearchResult {
@@ -452,6 +453,7 @@ export default function RealTimeMapContent() {
           <div class="p-2">
             <h3 class="font-bold">${station.name}</h3>
             <p class="text-sm text-gray-600">${station.address}</p>
+            ${station.phone ? `<p class="text-sm text-blue-600 mt-2"><strong>Contact:</strong> ${station.phone}</p>` : ''}
             ${user?.role === 'admin' ? '<button class="mt-2 px-2 py-1 bg-red-500 text-white text-xs rounded" onclick="window.removeStation(\'' + station.id + '\')">Remove</button>' : '<p class="text-xs text-gray-500 mt-1">Emergency Response Station</p>'}
           </div>
         `);
@@ -553,7 +555,7 @@ export default function RealTimeMapContent() {
                 onKeyDown={async (e) => {
                   if (e.key === 'Enter') {
                     const results = await searchLocation(searchQuery);
-                    if (results.length > 0) selectSearchResult(results[0]);
+                  if (results.length > 0) selectSearchResult(results[0]);
                   }
                 }}
                 className="flex-1 px-4 py-2 border-2 border-gray-300 rounded-lg focus:border-primary focus:outline-none"

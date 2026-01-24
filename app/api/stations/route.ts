@@ -62,7 +62,7 @@ export async function POST(request: NextRequest) {
   console.log('📡 POST /api/stations called - Deployed version');
 
   try {
-    const { name, lat, lng, address, created_by } = await request.json();
+    const { name, lat, lng, address, phone, created_by } = await request.json();
 
     if (!name || lat === undefined || lng === undefined) {
       return NextResponse.json(
