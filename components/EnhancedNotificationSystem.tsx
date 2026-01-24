@@ -4,7 +4,9 @@ import { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useSocketContext } from '@/contexts/SocketContext';
 import { notificationManager } from './NotificationManager';
-import { MapPicker } from './MapPicker';
+import dynamic from 'next/dynamic';
+
+const MapPicker = dynamic(() => import('./MapPicker').then(mod => mod.MapPicker), { ssr: false });
 
 interface Alert {
   id: string;
@@ -204,7 +206,10 @@ export function EnhancedNotificationSystem() {
 
   useEffect(() => {
     // Load existing alerts and warnings
-    loadExistingData();
+    const timeoutId = setTimeout(() => {
+      loadExistingData();
+    }, 0);
+    return () => clearTimeout(timeoutId);
   }, []);
 
   useEffect(() => {

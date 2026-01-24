@@ -2,7 +2,9 @@
 
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
-import { MapPicker } from './MapPicker';
+import dynamic from 'next/dynamic';
+
+const MapPicker = dynamic(() => import('./MapPicker').then(mod => mod.MapPicker), { ssr: false });
 import { notificationManager } from '@/components/NotificationManager';
 
 interface EmergencyContact {
