@@ -3,8 +3,11 @@
 import { useState, useEffect, useRef, useMemo } from 'react';
 import { useSocketContext } from '@/contexts/SocketContext';
 import { useAuth } from '@/contexts/AuthContext';
-import { useOfflineStatus, storeOfflineMessage, getOfflineMessagesForReport } from '@/lib/offline-manager';
+import { useOfflineStatus, storeOfflineMessage, getOfflineMessagesForReport, storeOfflineReport } from '@/lib/offline-manager';
+import { notificationManager } from '@/components/NotificationManager';
+import { getCurrentLocation } from '@/lib/utils';
 import type { Category, Report } from '@/types';
+import { categories } from '@/lib/categories';
 
 interface ChatBoxProps {
   reportId?: string | null;
@@ -12,18 +15,23 @@ interface ChatBoxProps {
   onClose: () => void;
   onSendMessage: (text: string) => void;
   onSendImage?: (imageData: string) => void;
+  isAnonymous?: boolean;
 }
 
-const getInitialMessage = (category: Category | null | undefined): { text: string; sender: string; time: string; type: 'sent' | 'received'; imageData?: string } => ({
-  text: category
+const getInitialMessage = (category: Category | null | undefined, isAnonymous: boolean): { text: string; sender: string; time: string; type: 'sent' | 'received'; imageData?: string } => ({
+  text: isAnonymous
+    ? category
+      ? `Hello! I understand you're reporting a ${category.name} emergency anonymously. Can you please describe what happened?`
+      : 'Hello! I\'m here to help you report an emergency anonymously. What type of emergency are you experiencing?'
+    : category
     ? `Hello! How can we help you today? You're reporting a ${category.name.toLowerCase()} incident.`
     : 'Hello! How can we help you today?',
   sender: 'B-READY Support',
   time: 'Just now',
-  type: 'received',
+  type: 'received' as const,
 });
 
-export function ChatBox({ reportId, category, onClose, onSendMessage, onSendImage }: ChatBoxProps) {
+export function ChatBox({ reportId, category, onClose, onSendMessage, onSendImage, isAnonymous = false }: ChatBoxProps) {
   const { chatMessages, reports } = useSocketContext();
   const { user } = useAuth();
   const [message, setMessage] = useState('');
@@ -32,6 +40,9 @@ export function ChatBox({ reportId, category, onClose, onSendMessage, onSendImag
   const [capturedImage, setCapturedImage] = useState<string | null>(null);
   const [localMessages, setLocalMessages] = useState<Array<{ text: string; sender: string; time: string; type: 'sent' | 'received'; imageData?: string }>>([]);
   const [showReportInfo, setShowReportInfo] = useState(false);
+  const [showCategorySelection, setShowCategorySelection] = useState(isAnonymous && !category);
+  const [selectedCategory, setSelectedCategory] = useState<Category | null>(category || null);
+  const [anonymousReportId, setAnonymousReportId] = useState<string | null>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
   const streamRef = useRef<MediaStream | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -74,7 +85,7 @@ export function ChatBox({ reportId, category, onClose, onSendMessage, onSendImag
 
     // Always include initial message if no other messages exist, otherwise just show all messages
     if (allMessages.length === 0) {
-      return [getInitialMessage(category)];
+      return [getInitialMessage(selectedCategory || category, isAnonymous)];
     }
 
     // Check if initial message is already in the messages
@@ -85,12 +96,12 @@ export function ChatBox({ reportId, category, onClose, onSendMessage, onSendImag
     );
 
     // If no initial message and we have a category, add it at the beginning
-    if (!hasInitialMessage && category) {
-      return [getInitialMessage(category), ...allMessages];
+    if (!hasInitialMessage && (selectedCategory || category)) {
+      return [getInitialMessage(selectedCategory || category, isAnonymous), ...allMessages];
     }
 
     return allMessages;
-  }, [reportId, chatMessages, category, localMessages]);
+  }, [reportId, chatMessages, category, selectedCategory, isAnonymous, localMessages]);
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -307,15 +318,26 @@ export function ChatBox({ reportId, category, onClose, onSendMessage, onSendImag
       // Add the image to local messages
       const uploadedImageMessage = {
         text: '[Photo]', // Placeholder text for image
-        sender: 'You',
+        sender: isAnonymous ? 'You (Anonymous)' : 'You',
         time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
         type: 'sent' as const,
         imageData: compressedDataUrl,
       };
       setLocalMessages(prev => [...prev, uploadedImageMessage]);
 
-      // Send the image if callback exists
-      if (onSendImage) {
+      // Handle anonymous image storage
+      if (isAnonymous && selectedCategory) {
+        const reportIdToUse = anonymousReportId || `anonymous_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+        storeOfflineMessage({
+          reportId: reportIdToUse,
+          text: '[Photo uploaded]',
+          userName: 'Anonymous User',
+          userRole: 'user',
+          timestamp: new Date().toISOString(),
+          imageData: compressedDataUrl,
+        });
+      } else if (onSendImage) {
+        // Send the image if callback exists for authenticated users
         onSendImage(compressedDataUrl);
       }
 
@@ -522,10 +544,106 @@ export function ChatBox({ reportId, category, onClose, onSendMessage, onSendImag
   const handleSend = (e: React.FormEvent) => {
     e.preventDefault();
     if (message.trim()) {
-      onSendMessage(message);
+      // Handle anonymous messages
+      if (isAnonymous && selectedCategory) {
+        const newMessage = {
+          text: message,
+          sender: 'You (Anonymous)',
+          time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+          type: 'sent' as const,
+        };
+        setLocalMessages(prev => [...prev, newMessage]);
+
+        // Store offline message for anonymous report
+        const reportIdToUse = anonymousReportId || `anonymous_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+        storeOfflineMessage({
+          reportId: reportIdToUse,
+          text: message,
+          userName: 'Anonymous User',
+          userRole: 'user',
+          timestamp: new Date().toISOString(),
+        });
+      } else {
+        // Handle authenticated user messages
+        onSendMessage(message);
+      }
       setMessage('');
     }
   };
+
+  // Category Selection Screen for Anonymous Users
+  if (showCategorySelection) {
+    return (
+      <div className="fixed inset-0 bg-black/70 z-50 flex items-center justify-center p-4">
+        <div className="bg-white rounded-2xl w-full max-w-md h-[85vh] max-h-[700px] flex flex-col shadow-2xl">
+          <div className="bg-gradient-to-r from-red-600 to-red-700 text-white p-4 rounded-t-2xl flex justify-between items-center">
+            <div>
+              <h3 className="font-semibold">🚨 Anonymous Emergency Chat</h3>
+              <p className="text-sm opacity-90">Select emergency type to start chatting</p>
+            </div>
+            <button onClick={onClose} className="text-white hover:opacity-80 text-2xl">
+              ×
+            </button>
+          </div>
+
+          <div className="flex-1 p-4 overflow-y-auto">
+            <p className="text-gray-600 mb-4 text-center text-sm">
+              Choose the type of emergency. Your chat will be completely anonymous.
+            </p>
+
+            <div className="space-y-2">
+              {categories.map((category) => (
+                <button
+                  key={category.id}
+                  onClick={() => {
+                    setSelectedCategory(category);
+                    setShowCategorySelection(false);
+                    // Create anonymous report
+                    const newReportId = `anonymous_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+                    setAnonymousReportId(newReportId);
+
+                    const reportData = {
+                      id: newReportId,
+                      type: category.name,
+                      description: `${category.name} emergency reported anonymously`,
+                      location: null,
+                      address: 'Anonymous location',
+                      timestamp: new Date().toISOString(),
+                      userId: 'anonymous',
+                      userName: 'Anonymous User',
+                      severity: 'high' as const,
+                      status: 'pending' as const,
+                      category: category.name,
+                      subcategory: category.subcategories[0] || 'General',
+                      icon: category.icon,
+                    };
+
+                    storeOfflineReport(reportData);
+                  }}
+                  className="w-full p-3 bg-gray-50 hover:bg-red-50 border border-gray-200 hover:border-red-300 rounded-lg transition-all duration-200 text-left flex items-center gap-3 group"
+                >
+                  <span className="text-2xl group-hover:scale-110 transition-transform duration-200">
+                    {category.icon}
+                  </span>
+                  <div className="flex-1">
+                    <div className="font-semibold text-gray-800 group-hover:text-red-700 text-sm">
+                      {category.name}
+                    </div>
+                  </div>
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <div className="p-4 border-t border-gray-200 bg-gray-50 rounded-b-2xl">
+            <p className="text-xs text-gray-500 text-center">
+              🔒 Your identity is completely protected
+            </p>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="fixed inset-0 bg-black/70 z-50 flex items-center justify-center p-4">
@@ -756,6 +874,44 @@ export function ChatBox({ reportId, category, onClose, onSendMessage, onSendImag
               )}
             </div>
             <div className="flex gap-1 flex-shrink-0">
+              {isAnonymous && (
+                <button
+                  type="button"
+                  onClick={async () => {
+                    try {
+                      console.log('📍 Getting current location...');
+                      const location = await getCurrentLocation();
+
+                      const locationMessage = {
+                        text: `📍 My location: ${location.lat.toFixed(6)}, ${location.lng.toFixed(6)}`,
+                        sender: 'You (Anonymous)',
+                        time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+                        type: 'sent' as const,
+                      };
+                      setLocalMessages(prev => [...prev, locationMessage]);
+
+                      // Store offline location message for anonymous report
+                      const reportIdToUse = anonymousReportId || `anonymous_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+                      storeOfflineMessage({
+                        reportId: reportIdToUse,
+                        text: `Location shared: ${location.lat.toFixed(6)}, ${location.lng.toFixed(6)}`,
+                        userName: 'Anonymous User',
+                        userRole: 'user',
+                        timestamp: new Date().toISOString(),
+                      });
+
+                      console.log('✅ Location shared successfully');
+                    } catch (error) {
+                      console.error('❌ Error getting location:', error);
+                      alert('Unable to get your location. Please check your location permissions and try again.');
+                    }
+                  }}
+                  className="w-10 h-10 bg-blue-500 text-white rounded-lg hover:bg-blue-600 flex items-center justify-center text-lg"
+                  title="Share location"
+                >
+                  📍
+                </button>
+              )}
               <button
                 type="button"
                 onClick={startInstantCamera}

@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import type { SafetyTip, EmergencyKitItem } from '@/types';
 import { useAuth } from '@/contexts/AuthContext';
+import { EmergencyContacts } from './EmergencyContacts';
 
 interface SafetyTipsAdminProps {
   tips: SafetyTip[];
@@ -11,7 +12,7 @@ interface SafetyTipsAdminProps {
 }
 
 export function SafetyTipsAdmin({ tips, emergencyKit, onRefresh }: SafetyTipsAdminProps) {
-  const [activeTab, setActiveTab] = useState<'tips' | 'kit'>('tips');
+  const [activeTab, setActiveTab] = useState<'tips' | 'kit' | 'contacts'>('tips');
   const [editingTip, setEditingTip] = useState<SafetyTip | null>(null);
   const [editingKit, setEditingKit] = useState<EmergencyKitItem | null>(null);
   const [isCreating, setIsCreating] = useState(false);
@@ -95,6 +96,16 @@ export function SafetyTipsAdmin({ tips, emergencyKit, onRefresh }: SafetyTipsAdm
           }`}
         >
           Emergency Kit ({emergencyKit.length})
+        </button>
+        <button
+          onClick={() => setActiveTab('contacts')}
+          className={`px-4 py-2 rounded-lg font-semibold ${
+            activeTab === 'contacts'
+              ? 'bg-blue-600 text-white'
+              : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+          }`}
+        >
+          Emergency Contacts
         </button>
       </div>
 
@@ -238,6 +249,10 @@ export function SafetyTipsAdmin({ tips, emergencyKit, onRefresh }: SafetyTipsAdm
           </div>
         </div>
       )}
+
+        {activeTab === 'contacts' && (
+          <EmergencyContacts variant="admin" />
+        )}
     </div>
   );
 }

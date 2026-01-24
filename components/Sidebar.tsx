@@ -107,7 +107,12 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
 
   const handleNavigation = (path: string) => {
     console.log('Navigating to:', path, 'User:', user);
-    router.push(path);
+    // Don't redirect to login for account settings - allow direct navigation
+    if (path === '/profile' && user) {
+      router.push(path);
+    } else if (path !== '/profile') {
+      router.push(path);
+    }
     onClose();
   };
 

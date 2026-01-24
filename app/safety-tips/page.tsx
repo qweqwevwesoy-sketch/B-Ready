@@ -5,7 +5,7 @@ import { Header } from '@/components/Header';
 import { useAuth } from '@/contexts/AuthContext';
 import type { SafetyTip, EmergencyKitItem } from '@/types';
 import { SafetyTipsAdmin } from '@/components/SafetyTipsAdmin';
-import { EmergencyContactsInSafetyTips } from '@/components/EmergencyContactsInSafetyTips';
+import { EmergencyContacts } from '@/components/EmergencyContacts';
 
 // Default offline safety tips data
 const DEFAULT_SAFETY_TIPS: SafetyTip[] = [
@@ -249,7 +249,7 @@ export default function SafetyTipsPage() {
 
           {/* Emergency Contacts Section */}
           <div className="mt-8">
-            <EmergencyContactsInSafetyTips />
+            <EmergencyContacts variant="safety-tips" />
           </div>
 
           {/* Admin Controls */}
