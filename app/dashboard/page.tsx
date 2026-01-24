@@ -7,6 +7,7 @@ import { useSocketContext } from '@/contexts/SocketContext';
 import { Header } from '@/components/Header';
 import { FAB } from '@/components/FAB';
 import { ReportCard } from '@/components/ReportCard';
+import { DisasterWarnings } from '@/components/DisasterWarnings';
 import { ChatBox } from '@/components/ChatBox';
 import { notificationManager } from '@/components/NotificationManager';
 import type { Category, Report } from '@/types';
@@ -175,6 +176,7 @@ function DashboardContent({ searchParams }: { searchParams: URLSearchParams }) {
         timestamp: timestamp,
         userId: user.uid,
         userName: `${user.firstName} ${user.lastName}`,
+        userPhone: user.phone,
         severity: 'medium',
         status: 'pending',
         category: category.name,
@@ -347,7 +349,12 @@ function DashboardContent({ searchParams }: { searchParams: URLSearchParams }) {
             </div>
           </div>
 
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
+            {/* Disaster Warnings Column */}
+            <div className="lg:col-span-1">
+              <DisasterWarnings />
+            </div>
+
             {/* Approved Reports Column */}
             <div className="bg-gray-50 rounded-xl overflow-hidden border border-gray-200 flex flex-col h-[70vh]">
               <div className="bg-gradient-to-r from-green-500 to-green-600 text-white p-4 text-center font-semibold">

@@ -6,6 +6,8 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useSocketContext } from '@/contexts/SocketContext';
 import { Header } from '@/components/Header';
 import { ReportCard } from '@/components/ReportCard';
+import { EmergencyContactsAdmin } from '@/components/EmergencyContactsAdmin';
+import { NotificationSystem } from '@/components/NotificationSystem';
 import { notificationManager } from '@/components/NotificationManager';
 
 export default function StatusUpdatePage() {

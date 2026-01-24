@@ -700,10 +700,10 @@ export function ChatBox({ reportId, category, onClose, onSendMessage, onSendImag
             <div className="flex gap-2 justify-center">
               <button
                 onClick={capturePhoto}
-                className="px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 disabled:opacity-50"
+                className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 disabled:opacity-50"
                 disabled={!cameraReady}
               >
-                📸 Capture Photo
+                + Capture Photo
               </button>
               <button
                 onClick={stopCamera}
@@ -718,24 +718,43 @@ export function ChatBox({ reportId, category, onClose, onSendMessage, onSendImag
         {/* Input Area */}
         <form onSubmit={handleSend} className="p-4 border-t border-gray-200 bg-white rounded-b-2xl overflow-hidden">
           <div className="flex flex-wrap gap-2 items-end">
-            <input
-              type="text"
-              name="message"
-              value={message}
-              onChange={(e) => setMessage(e.target.value)}
-              onKeyPress={(e: React.KeyboardEvent<HTMLInputElement>) => {
-                if (e.key === 'Enter' && !e.shiftKey) {
-                  e.preventDefault();
-                  const syntheticEvent = {
-                    preventDefault: () => {},
-                  } as React.FormEvent;
-                  handleSend(syntheticEvent);
-                }
-              }}
-              placeholder={category ? `Describe the ${category.name.toLowerCase()} incident...` : 'Type your message...'}
-              className="flex-1 min-w-0 px-3 py-2 text-sm border-2 border-gray-300 rounded-lg focus:border-primary focus:outline-none"
-              autoComplete="off"
-            />
+            <div className="relative flex-1">
+              <input
+                type="text"
+                name="message"
+                value={message}
+                onChange={(e) => setMessage(e.target.value)}
+                onKeyPress={(e: React.KeyboardEvent<HTMLInputElement>) => {
+                  if (e.key === 'Enter' && !e.shiftKey) {
+                    e.preventDefault();
+                    const syntheticEvent = {
+                      preventDefault: () => {},
+                    } as React.FormEvent;
+                    handleSend(syntheticEvent);
+                  }
+                }}
+                placeholder={category ? `Describe the ${category.name.toLowerCase()} incident...` : 'Type your message...'}
+                className="w-full px-3 py-2 text-sm border-2 border-gray-300 rounded-lg focus:border-primary focus:outline-none"
+                autoComplete="off"
+              />
+              {reportId && (
+                <button
+                  type="button"
+                  className="absolute right-2 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                  title="Report Information"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    // This would trigger a tooltip or modal with report details
+                    console.log('Report details requested for:', reportId);
+                  }}
+                >
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                </button>
+              )}
+            </div>
             <div className="flex gap-1 flex-shrink-0">
               <button
                 type="button"

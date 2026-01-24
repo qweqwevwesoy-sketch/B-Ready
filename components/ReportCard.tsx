@@ -66,6 +66,9 @@ export function ReportCard({
           </div>
           <p className="text-gray-600 text-sm mb-2">{report.address || 'Location not specified'}</p>
           <p className="text-gray-500 text-xs mb-3">{report.userName || 'Resident'}</p>
+          {report.userPhone && (
+            <p className="text-gray-500 text-xs mb-3">📞 {report.userPhone}</p>
+          )}
           
           <div className="flex flex-wrap gap-3 text-xs text-gray-500">
             <span>📅 {formatDate(report.timestamp)}</span>

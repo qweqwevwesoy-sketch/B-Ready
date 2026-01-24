@@ -152,6 +152,22 @@ class MySQLConnection {
       )
     `);
 
+    // Emergency contacts table
+    await conn.execute(`
+      CREATE TABLE IF NOT EXISTS emergency_contacts (
+        id VARCHAR(50) PRIMARY KEY,
+        name VARCHAR(255) NOT NULL,
+        type ENUM('fire', 'police', 'medical', 'other') NOT NULL,
+        phone VARCHAR(50) NOT NULL,
+        address TEXT,
+        location_lat DECIMAL(10, 8),
+        location_lng DECIMAL(11, 8),
+        created_by VARCHAR(100),
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+      )
+    `);
+
     // Insert default stations if they don't exist
     const defaultStations = [
       {
