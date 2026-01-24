@@ -40,7 +40,7 @@ export function ChatBox({ reportId, category, onClose, onSendMessage, onSendImag
   const [capturedImage, setCapturedImage] = useState<string | null>(null);
   const [localMessages, setLocalMessages] = useState<Array<{ text: string; sender: string; time: string; type: 'sent' | 'received'; imageData?: string }>>([]);
   const [showReportInfo, setShowReportInfo] = useState(false);
-  const [showCategorySelection, setShowCategorySelection] = useState(isAnonymous && !category);
+  const [showCategorySelection, setShowCategorySelection] = useState(isAnonymous && !category && !reportId);
   const [selectedCategory, setSelectedCategory] = useState<Category | null>(category || null);
   const [anonymousReportId, setAnonymousReportId] = useState<string | null>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
