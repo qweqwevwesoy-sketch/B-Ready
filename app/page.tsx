@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { Header } from '@/components/Header';
-import { AnonymousChatBox } from '@/components/AnonymousChatBox';
+import { ChatBox } from '@/components/ChatBox';
 
 export default function LandingPage() {
   const router = useRouter();
@@ -44,7 +44,8 @@ export default function LandingPage() {
             className="w-24 h-24 mx-auto mb-6 animate-pulse"
           />
           <h1 className="text-5xl md:text-6xl font-bold mb-4">
-            B-READY</h1>
+            B-READY
+          </h1>
           <p className="text-2xl md:text-3xl mb-6 opacity-90">
             Barangay Disaster Reporting & Response System
           </p>
@@ -128,7 +129,7 @@ export default function LandingPage() {
             <h2 className="text-2xl font-bold text-gray-800 mb-4">
               Can't open page
             </h2>
-            <p className="text-gray-600 mb-6">
+              <p className="text-gray-600 mb-6">
               Your phone is not connected to the internet. You can still access Safety Tips and emergency reporting features.
             </p>
             <div className="space-y-3">
@@ -157,7 +158,13 @@ export default function LandingPage() {
 
       {/* Anonymous Chat Modal */}
       {showAnonymousChat && (
-        <AnonymousChatBox onClose={() => setShowAnonymousChat(false)} />
+        <ChatBox 
+          onClose={() => setShowAnonymousChat(false)} 
+          onSendMessage={(message) => {
+            // Handle anonymous message sending
+            console.log('Anonymous message:', message);
+          }}
+        />
       )}
     </div>
   );
