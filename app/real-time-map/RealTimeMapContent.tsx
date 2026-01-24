@@ -68,7 +68,6 @@ export default function RealTimeMapContent() {
   const [stationsLoading, setStationsLoading] = useState(true);
   const [addingStation, setAddingStation] = useState(false);
   const [newStationName, setNewStationName] = useState('');
-  const [newStationPhone, setNewStationPhone] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
   const [searchResults, setSearchResults] = useState<SearchResult[]>([]);
   const [showResults, setShowResults] = useState(false);
@@ -251,7 +250,6 @@ export default function RealTimeMapContent() {
           lat,
           lng,
           address,
-          phone: newStationPhone || null,
           created_by: user?.uid || null,
         }),
       });
@@ -286,9 +284,12 @@ export default function RealTimeMapContent() {
   useEffect(() => {
     if (!mapContainerRef.current) return;
 
+    console.log('🚀 Starting map initialization (MapPicker style)...');
+
     // Initialize map centered on Philippines (same as MapPicker)
-    const map = L.map(mapContainerRef.current).setView([14.5995, 120.9842], 10);
+    const map = L.map(mapContainerRef.current).setView([14.5995, 120.9842], 13);
     mapRef.current = map;
+    setMapReady(true);
 
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
       attribution: '© OpenStreetMap contributors',
@@ -300,19 +301,53 @@ export default function RealTimeMapContent() {
       try {
         const location = await getCurrentLocation();
         const userLatLng: [number, number] = [location.lat, location.lng];
-        map.setView(userLatLng, 14);
+        map.setView(userLatLng, 15);
+        
+        // Add user marker
+        const userIcon = L.divIcon({
+          html: '<div style="background-color: #10b981; width: 20px; height: 20px; border-radius: 50%; border: 3px solid white; box-shadow: 0 2px 4px rgba(0,0,0,0.3);"></div>',
+          className: 'user-location-marker',
+          iconSize: [20, 20],
+          iconAnchor: [10, 10],
+        });
+
+        const marker = L.marker(userLatLng, {
+          icon: userIcon,
+          zIndexOffset: 1000
+        }).addTo(map).bindPopup('<strong>You are here</strong><br><small>Location detected</small>');
+
+        userMarkerRef.current = marker;
         setUserLocation({ lat: userLatLng[0], lng: userLatLng[1] });
+        console.log('📍 User location set successfully');
       } catch (error) {
-        console.log('Location tracking failed, using default location');
+        console.log('📍 Location tracking failed, using default location');
+        // Map already centered on Philippines default
       }
     };
 
     setInitialLocation();
 
+    // Handle map clicks for admin station adding
+    map.on('click', (e) => {
+      if (addingStation && user?.role === 'admin') {
+        const latLng = e.latlng;
+        addStation(latLng.lat, latLng.lng);
+      }
+    });
+
     return () => {
-      map.remove();
+      console.log('🧹 Cleaning up map...');
+      if (mapRef.current) {
+        try {
+          mapRef.current.remove();
+          console.log('🗑️ Map removed');
+        } catch (error) {
+          console.error('Error removing map:', error);
+        }
+        mapRef.current = null;
+      }
     };
-  }, []); // Only run once on mount
+  }, [addingStation, user?.role]); // Re-run when addingStation or user role changes
 
   // Update map click handler when addingStation changes
   useEffect(() => {
@@ -704,20 +739,13 @@ export default function RealTimeMapContent() {
                     ➕ Add Station
                   </button>
                 ) : (
-                  <div className="flex gap-2 items-center flex-wrap">
+                  <div className="flex gap-2 items-center">
                     <input
                       type="text"
                       placeholder="Station name"
                       value={newStationName}
                       onChange={(e) => setNewStationName(e.target.value)}
-                      className="px-3 py-2 border border-gray-300 rounded-lg min-w-[150px]"
-                    />
-                    <input
-                      type="tel"
-                      placeholder="Phone number (optional)"
-                      value={newStationPhone}
-                      onChange={(e) => setNewStationPhone(e.target.value)}
-                      className="px-3 py-2 border border-gray-300 rounded-lg min-w-[150px]"
+                      className="px-3 py-2 border border-gray-300 rounded-lg"
                     />
                     <button
                       onClick={() => setAddingStation(false)}

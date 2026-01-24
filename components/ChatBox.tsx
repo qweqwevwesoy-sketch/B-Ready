@@ -576,9 +576,23 @@ export function ChatBox({ reportId, category, onClose, onSendMessage, onSendImag
               {reportId ? 'Continuing conversation' : (category ? `Reporting: ${category.name}` : 'Emergency Reporting')}
             </p>
           </div>
-          <button onClick={onClose} className="text-white hover:opacity-80 text-2xl">
-            ×
-          </button>
+          <div className="flex gap-2">
+            {reportId && (
+              <button
+                onClick={() => {
+                  // Show report details in a modal or alert
+                  alert(`Report Details:\n\nReport ID: ${reportId}\nCategory: ${category?.name || 'N/A'}\n\nThis information can be expanded to show more details.`);
+                }}
+                className="text-white hover:opacity-80 text-lg"
+                title="Report Details"
+              >
+                ℹ️
+              </button>
+            )}
+            <button onClick={onClose} className="text-white hover:opacity-80 text-2xl">
+              ×
+            </button>
+          </div>
         </div>
 
         {/* Messages */}
@@ -747,9 +761,9 @@ export function ChatBox({ reportId, category, onClose, onSendMessage, onSendImag
               </button>
               <button
                 type="submit"
-                className="px-4 py-2 bg-gradient-to-r from-primary to-primary-dark text-white rounded-lg hover:opacity-90 text-sm font-medium whitespace-nowrap"
+                className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:opacity-90 text-sm font-medium whitespace-nowrap"
               >
-                Send
+                ➕ Send
               </button>
             </div>
           </div>
