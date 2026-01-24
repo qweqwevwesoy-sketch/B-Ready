@@ -13,7 +13,7 @@ import { notificationManager } from '@/components/NotificationManager';
 export default function StatusUpdatePage() {
   const router = useRouter();
   const { user, loading: authLoading } = useAuth();
-  const { reports, updateReport } = useSocketContext();
+  const { reports, updateReport, socket, connected } = useSocketContext();
 
   useEffect(() => {
     if (!authLoading && !user) {
@@ -24,6 +24,17 @@ export default function StatusUpdatePage() {
       router.push('/dashboard');
     }
   }, [user, authLoading, router]);
+
+  // Authenticate with socket connection (same as Dashboard)
+  useEffect(() => {
+    if (socket && connected && user) {
+      socket.emit('authenticate', {
+        email: user.email,
+        userId: user.uid,
+        role: user.role,
+      });
+    }
+  }, [socket, connected, user]);
 
   const handleStatusChange = (reportId: string, status: string) => {
     updateReport(reportId, status, `Status changed to ${status}`);

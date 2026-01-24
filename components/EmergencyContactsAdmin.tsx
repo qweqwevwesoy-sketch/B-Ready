@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
+import { MapPicker } from './MapPicker';
 import { notificationManager } from '@/components/NotificationManager';
 
 interface EmergencyContact {
@@ -24,6 +25,7 @@ export function EmergencyContactsAdmin() {
   const [contacts, setContacts] = useState<EmergencyContact[]>([]);
   const [loading, setLoading] = useState(true);
   const [showAddForm, setShowAddForm] = useState(false);
+  const [showMapPicker, setShowMapPicker] = useState(false);
   const [newContact, setNewContact] = useState({
     name: '',
     type: 'fire' as EmergencyContact['type'],
@@ -175,6 +177,30 @@ export function EmergencyContactsAdmin() {
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent"
               />
             </div>
+            <div>
+              <label className="block text-sm font-medium mb-2">Location</label>
+              <div className="flex gap-2">
+                <input
+                  type="text"
+                  value={newContact.address || ''}
+                  readOnly
+                  placeholder="Click 'Select Location' to set coordinates"
+                  className="flex-1 px-3 py-2 border border-gray-300 rounded-lg bg-gray-50"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowMapPicker(true)}
+                  className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600"
+                >
+                  📍 Select Location
+                </button>
+              </div>
+              {newContact.location.lat !== 0 && newContact.location.lng !== 0 && (
+                <div className="mt-2 text-sm text-gray-600">
+                  Coordinates: {newContact.location.lat.toFixed(6)}, {newContact.location.lng.toFixed(6)}
+                </div>
+              )}
+            </div>
           </div>
           <div className="flex gap-2">
             <button
@@ -192,6 +218,16 @@ export function EmergencyContactsAdmin() {
             </button>
           </div>
         </form>
+      )}
+
+      {showMapPicker && (
+        <MapPicker
+          onSelect={(address) => {
+            setNewContact(prev => ({ ...prev, address }));
+            setShowMapPicker(false);
+          }}
+          onClose={() => setShowMapPicker(false)}
+        />
       )}
 
       {loading ? (
