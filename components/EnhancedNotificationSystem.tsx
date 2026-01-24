@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useSocketContext } from '@/contexts/SocketContext';
 import { notificationManager } from './NotificationManager';
+import { MapPicker } from './MapPicker';
 
 interface Alert {
   id: string;
@@ -34,6 +35,7 @@ export function EnhancedNotificationSystem() {
   const [alerts, setAlerts] = useState<Alert[]>([]);
   const [disasterWarnings, setDisasterWarnings] = useState<DisasterWarning[]>([]);
   const [showAlertForm, setShowAlertForm] = useState(false);
+  const [showMapPicker, setShowMapPicker] = useState(false);
   const [alertForm, setAlertForm] = useState({
     type: 'warning' as Alert['type'],
     title: '',
@@ -43,8 +45,9 @@ export function EnhancedNotificationSystem() {
     priority: 'medium' as Alert['priority'],
     expiresAt: ''
   });
+  const [dataLoaded, setDataLoaded] = useState(false);
 
-  const loadExistingData = () => {
+  const loadExistingData = useCallback(() => {
     const savedAlerts = localStorage.getItem('bready_admin_alerts');
     const savedWarnings = localStorage.getItem('bready_disaster_warnings');
     
@@ -63,9 +66,10 @@ export function EnhancedNotificationSystem() {
         console.error('Error loading warnings:', error);
       }
     }
-  };
+    setDataLoaded(true);
+  }, []);
 
-  const generateDisasterWarnings = () => {
+  const generateDisasterWarnings = useCallback(() => {
     // Analyze reports to generate disaster warnings
     const currentReports = reports.filter(r => r.status === 'current');
     
@@ -124,7 +128,7 @@ export function EnhancedNotificationSystem() {
         });
       }
     }
-  };
+  }, [disasterWarnings, reports]);
 
   const sendAlert = async () => {
     if (!alertForm.title.trim() || !alertForm.message.trim()) {
@@ -201,10 +205,17 @@ export function EnhancedNotificationSystem() {
   useEffect(() => {
     // Load existing alerts and warnings
     loadExistingData();
-    
+  }, []);
+
+  useEffect(() => {
     // Generate disaster warnings based on reports
-    generateDisasterWarnings();
-  }, [reports]);
+    if (dataLoaded) {
+      const timeoutId = setTimeout(() => {
+        generateDisasterWarnings();
+      }, 0);
+      return () => clearTimeout(timeoutId);
+    }
+  }, [reports, dataLoaded]);
 
   const getWarningColor = (severity: DisasterWarning['severity']) => {
     switch (severity) {
@@ -285,13 +296,22 @@ export function EnhancedNotificationSystem() {
               </div>
               <div>
                 <label className="block text-sm font-medium mb-2">Location (Optional)</label>
-                <input
-                  type="text"
-                  value={alertForm.location}
-                  onChange={(e) => setAlertForm({...alertForm, location: e.target.value})}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent"
-                  placeholder="Specific location..."
-                />
+                <div className="flex gap-2">
+                  <input
+                    type="text"
+                    value={alertForm.location}
+                    onChange={(e) => setAlertForm({...alertForm, location: e.target.value})}
+                    className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent"
+                    placeholder="Specific location..."
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowMapPicker(true)}
+                    className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600"
+                  >
+                    📍 Select Location
+                  </button>
+                </div>
               </div>
               <div>
                 <label className="block text-sm font-medium mb-2">Priority</label>
@@ -321,6 +341,16 @@ export function EnhancedNotificationSystem() {
               </div>
             </div>
           </div>
+        )}
+
+        {showMapPicker && (
+          <MapPicker
+            onSelect={(address) => {
+              setAlertForm(prev => ({ ...prev, location: address }));
+              setShowMapPicker(false);
+            }}
+            onClose={() => setShowMapPicker(false)}
+          />
         )}
 
         {/* Recent Alerts */}

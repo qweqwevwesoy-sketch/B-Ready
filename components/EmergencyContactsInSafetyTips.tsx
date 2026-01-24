@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
+import { MapPicker } from './MapPicker';
 import { notificationManager } from '@/components/NotificationManager';
 
 interface EmergencyContact {
@@ -18,6 +19,7 @@ export function EmergencyContactsInSafetyTips() {
   const [contacts, setContacts] = useState<EmergencyContact[]>([]);
   const [loading, setLoading] = useState(true);
   const [showAddForm, setShowAddForm] = useState(false);
+  const [showMapPicker, setShowMapPicker] = useState(false);
   const [newContact, setNewContact] = useState({
     name: '',
     phone: '',
@@ -187,13 +189,22 @@ export function EmergencyContactsInSafetyTips() {
             </div>
             <div>
               <label className="block text-sm font-medium mb-2">Location</label>
-              <input
-                type="text"
-                value={newContact.location}
-                onChange={(e) => setNewContact({...newContact, location: e.target.value})}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent"
-                placeholder="e.g., Manila, Metro Manila"
-              />
+              <div className="flex gap-2">
+                <input
+                  type="text"
+                  value={newContact.location}
+                  onChange={(e) => setNewContact({...newContact, location: e.target.value})}
+                  className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent"
+                  placeholder="e.g., Manila, Metro Manila"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowMapPicker(true)}
+                  className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600"
+                >
+                  📍 Select Location
+                </button>
+              </div>
             </div>
             <div className="md:col-span-2">
               <label className="block text-sm font-medium mb-2">Description (Optional)</label>
@@ -221,6 +232,16 @@ export function EmergencyContactsInSafetyTips() {
             </button>
           </div>
         </div>
+      )}
+
+      {showMapPicker && (
+        <MapPicker
+          onSelect={(address) => {
+            setNewContact(prev => ({ ...prev, location: address }));
+            setShowMapPicker(false);
+          }}
+          onClose={() => setShowMapPicker(false)}
+        />
       )}
 
       {loading ? (
