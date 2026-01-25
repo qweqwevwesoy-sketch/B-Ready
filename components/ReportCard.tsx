@@ -20,11 +20,6 @@ export function ReportCard({
   canOpenChat = false,
   showActions = false,
 }: ReportCardProps) {
-  // Add safety checks for report data
-  if (!report || !report.id) {
-    return null; // Don't render if report is invalid
-  }
-
   const getStatusBadge = () => {
     const statusClasses = {
       pending: 'bg-yellow-100 text-yellow-800',

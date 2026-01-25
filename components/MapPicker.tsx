@@ -5,7 +5,7 @@ import { reverseGeocode, getCurrentLocation } from '@/lib/utils';
 import { useModalManager } from '@/contexts/ModalManager';
 
 // Import Leaflet only on client side
-let L: typeof import('leaflet');
+let L: any;
 if (typeof window !== 'undefined') {
   L = require('leaflet');
   // Fix for Leaflet default icon issue

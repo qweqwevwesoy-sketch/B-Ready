@@ -690,7 +690,7 @@ export function EmergencyContacts({ userLocation, variant = 'display' }: Emergen
               key={contact.id}
               className="border border-gray-200 rounded-lg p-4 hover:bg-gray-50 transition-colors"
             >
-              <div className="flex items-start justify-between">
+                <div className="flex items-start justify-between">
                 <div className="flex items-start gap-3">
                   <div className="w-10 h-10 bg-primary text-white rounded-full flex items-center justify-center font-bold text-lg">
                     {getContactIcon(contact.type)}
@@ -707,12 +707,20 @@ export function EmergencyContacts({ userLocation, variant = 'display' }: Emergen
                 <div className="flex flex-col items-end gap-2">
                   <div className="text-lg font-bold text-primary">📞 {contact.phone}</div>
                   {user?.role === 'admin' && (
-                    <button
-                      onClick={() => deleteContact(contact.id)}
-                      className="px-3 py-1 bg-red-500 text-white text-sm rounded hover:bg-red-600"
-                    >
-                      Delete
-                    </button>
+                    <>
+                      <button
+                        onClick={() => startEditContact(contact)}
+                        className="px-3 py-1 bg-blue-500 text-white text-sm rounded hover:bg-blue-600"
+                      >
+                        Edit
+                      </button>
+                      <button
+                        onClick={() => deleteContact(contact.id)}
+                        className="px-3 py-1 bg-red-500 text-white text-sm rounded hover:bg-red-600"
+                      >
+                        Delete
+                      </button>
+                    </>
                   )}
                 </div>
               </div>
