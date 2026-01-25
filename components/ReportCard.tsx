@@ -72,6 +72,19 @@ export function ReportCard({
           
           <div className="flex flex-wrap gap-3 text-xs text-gray-500">
             <span>📅 {formatDate(report.timestamp)}</span>
+            {report.category && (
+              <span className={`px-2 py-1 rounded-full text-xs font-semibold ${
+                report.category === 'Earthquake' || report.category === 'Landslide' || report.category === 'Volcano' 
+                  ? 'bg-orange-100 text-orange-800' 
+                  : report.category === 'Fire' || report.category === 'Explosion' 
+                  ? 'bg-red-100 text-red-800' 
+                  : report.category === 'Flood' || report.category === 'Storm' || report.category === 'Tsunami'
+                  ? 'bg-blue-100 text-blue-800'
+                  : 'bg-gray-100 text-gray-800'
+              }`}>
+                {report.category}
+              </span>
+            )}
           </div>
 
           {showActions && report.status === 'pending' && !report.id.startsWith('temp_') && (

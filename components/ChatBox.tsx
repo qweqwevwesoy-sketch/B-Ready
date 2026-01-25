@@ -29,7 +29,7 @@ const getInitialMessage = (category: Category | null | undefined, isAnonymous: b
     : 'Hello! How can we help you today?',
   sender: 'B-READY Support',
   time: 'Just now',
-  type: 'received' as const,
+  type: 'received',
 });
 
 export function ChatBox({ reportId, category, onClose, onSendMessage, onSendImage, isAnonymous = false }: ChatBoxProps) {
@@ -103,6 +103,12 @@ export function ChatBox({ reportId, category, onClose, onSendMessage, onSendImag
 
     return allMessages;
   }, [reportId, chatMessages, category, selectedCategory, isAnonymous, localMessages]);
+
+  // Get the actual report data for the modal
+  const currentReport = useMemo(() => {
+    if (!reportId || reportId.startsWith('temp_')) return null;
+    return reports.find(r => r.id === reportId);
+  }, [reportId, reports]);
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -956,16 +962,31 @@ export function ChatBox({ reportId, category, onClose, onSendMessage, onSendImag
             </div>
 
             <div className="p-3 space-y-2 max-h-64 overflow-y-auto">
-              {/* Report Type */}
+            {/* Report Type */}
               <div className="bg-gray-50 rounded-lg p-2">
                 <div className="text-xs font-semibold text-gray-600">Type</div>
                 <div className="text-sm">
-                  {category ? (
+                  {currentReport ? (
+                    currentReport.category === 'Earthquake' || currentReport.category === 'Landslide' || currentReport.category === 'Volcano' 
+                      ? 'Geological' 
+                      : currentReport.category === 'Fire' || currentReport.category === 'Explosion' 
+                      ? 'Intentional' 
+                      : currentReport.category === 'Flood' || currentReport.category === 'Storm' || currentReport.category === 'Tsunami'
+                      ? 'Natural'
+                      : currentReport.category || 'Unknown'
+                  ) : category ? (
                     category.name === 'Earthquake' || category.name === 'Landslide' || category.name === 'Volcano' 
                       ? 'Geological' 
                       : category.name === 'Fire' || category.name === 'Explosion' 
                       ? 'Intentional' 
-                      : 'Natural'
+                      : category.name === 'Flood' || category.name === 'Storm' || category.name === 'Tsunami'
+                      ? 'Natural'
+                      : category.name || 'Unknown'
+                  ) : reportId ? (
+                    // For reports without category data, try to infer from type
+                    reportId.startsWith('temp_') ? 'Temporary' :
+                    reportId.startsWith('anonymous_') ? 'Anonymous' :
+                    'Report'
                   ) : 'Unknown'}
                 </div>
               </div>
@@ -974,35 +995,58 @@ export function ChatBox({ reportId, category, onClose, onSendMessage, onSendImag
               <div className="bg-gray-50 rounded-lg p-2">
                 <div className="text-xs font-semibold text-gray-600">Reported By</div>
                 <div className="text-sm">
-                  {user ? `${user.firstName} ${user.lastName}` : 'Anonymous'}
+                  {currentReport ? (
+                    currentReport.userName || 'Anonymous User'
+                  ) : reportId ? (
+                    reportId.startsWith('temp_') ? 'Temporary User' :
+                    reportId.startsWith('anonymous_') ? 'Anonymous User' :
+                    'Unknown User'
+                  ) : user ? (
+                    `${user.firstName} ${user.lastName}`
+                  ) : 'Anonymous'}
                 </div>
               </div>
 
               {/* Location */}
               <div className="bg-gray-50 rounded-lg p-2">
                 <div className="text-xs font-semibold text-gray-600">Location</div>
-                <div className="text-sm">📍 Real-time GPS</div>
-                <div className="text-xs text-gray-600 mt-1">
-                  14.5995° N, 120.9842° E
-                </div>
+                <div className="text-sm">📍 {currentReport?.address || reportId ? (
+                  reportId.startsWith('temp_') ? 'Temporary Location' :
+                  reportId.startsWith('anonymous_') ? 'Anonymous Location' :
+                  'Real-time GPS'
+                ) : 'Not Available'}</div>
+                {currentReport?.location && (
+                  <div className="text-xs text-gray-600 mt-1">
+                    {currentReport.location.lat.toFixed(6)}, {currentReport.location.lng.toFixed(6)}
+                  </div>
+                )}
               </div>
 
               {/* Contact Info */}
               <div className="bg-gray-50 rounded-lg p-2">
                 <div className="text-xs font-semibold text-gray-600">Contact</div>
-                <div className="text-sm">📞 {user?.phone || 'Not provided'}</div>
+                <div className="text-sm">📞 {currentReport?.userPhone || reportId ? (
+                  reportId.startsWith('temp_') ? 'Temporary Contact' :
+                  reportId.startsWith('anonymous_') ? 'Anonymous Contact' :
+                  user?.phone || 'Not provided'
+                ) : user?.phone || 'Not provided'}</div>
                 <div className="text-xs text-gray-600 mt-1">
-                  {user?.email || 'Not provided'}
+                  {currentReport?.userName ? `${currentReport.userName}@example.com` : 
+                   reportId ? (
+                     reportId.startsWith('temp_') ? 'temp@example.com' :
+                     reportId.startsWith('anonymous_') ? 'anonymous@example.com' :
+                     user?.email || 'Not provided'
+                   ) : user?.email || 'Not provided'}
                 </div>
               </div>
 
               {/* Incident Type */}
-              {category && (
+              {currentReport && (
                 <div className="bg-gray-50 rounded-lg p-2">
                   <div className="text-xs font-semibold text-gray-600">Incident</div>
-                  <div className="text-sm">{category.name}</div>
+                  <div className="text-sm">{currentReport.category}</div>
                   <div className="text-xs text-gray-600 mt-1">
-                    {category.subcategories.join(', ') || 'None'}
+                    {currentReport.subcategory || 'None'}
                   </div>
                 </div>
               )}
@@ -1011,8 +1055,26 @@ export function ChatBox({ reportId, category, onClose, onSendMessage, onSendImag
               <div className="bg-gray-50 rounded-lg p-2">
                 <div className="text-xs font-semibold text-gray-600">Status</div>
                 <div className="text-sm">
-                  <span className="px-2 py-1 bg-green-100 text-green-800 rounded-full text-xs font-semibold">
-                    Active
+                  <span className={`px-2 py-1 rounded-full text-xs font-semibold ${
+                    currentReport?.status === 'approved' ? 'bg-green-100 text-green-800' :
+                    currentReport?.status === 'current' ? 'bg-blue-100 text-blue-800' :
+                    currentReport?.status === 'pending' ? 'bg-yellow-100 text-yellow-800' :
+                    currentReport?.status === 'rejected' ? 'bg-red-100 text-red-800' :
+                    reportId ? (
+                      reportId.startsWith('temp_') ? 'bg-blue-100 text-blue-800' :
+                      reportId.startsWith('anonymous_') ? 'bg-yellow-100 text-yellow-800' :
+                      'bg-green-100 text-green-800'
+                    ) : 'bg-green-100 text-green-800'
+                  }`}>
+                    {currentReport?.status === 'approved' ? 'Approved' :
+                     currentReport?.status === 'current' ? 'Active' :
+                     currentReport?.status === 'pending' ? 'Pending' :
+                     currentReport?.status === 'rejected' ? 'Rejected' :
+                     reportId ? (
+                       reportId.startsWith('temp_') ? 'Temporary' :
+                       reportId.startsWith('anonymous_') ? 'Anonymous' :
+                       'Active'
+                     ) : 'Active'}
                   </span>
                 </div>
               </div>
