@@ -3,6 +3,54 @@
 import { useState, useEffect } from 'react';
 import type { EmergencyContact } from '@/types';
 
+// Default offline emergency contacts data
+const DEFAULT_EMERGENCY_CONTACTS: EmergencyContact[] = [
+  {
+    id: 'default_fire',
+    name: 'Manila Fire Station',
+    type: 'fire',
+    phone: '+63 2 8527 7000',
+    address: '1015 Padre Burgos Ave, Ermita, Manila',
+    location: { lat: 14.5820, lng: 120.9730 },
+    description: 'Main fire station for Manila City',
+    created_at: new Date().toISOString(),
+    updated_at: new Date().toISOString()
+  },
+  {
+    id: 'default_police',
+    name: 'Manila Police Station',
+    type: 'police',
+    phone: '+63 2 8527 0000',
+    address: '275 Padre Burgos Ave, Ermita, Manila',
+    location: { lat: 14.5800, lng: 120.9750 },
+    description: 'Central police station for Manila',
+    created_at: new Date().toISOString(),
+    updated_at: new Date().toISOString()
+  },
+  {
+    id: 'default_medical',
+    name: 'Philippine General Hospital',
+    type: 'medical',
+    phone: '+63 2 8554 8400',
+    address: 'Taft Avenue, Ermita, Manila',
+    location: { lat: 14.5600, lng: 120.9890 },
+    description: 'National university hospital',
+    created_at: new Date().toISOString(),
+    updated_at: new Date().toISOString()
+  },
+  {
+    id: 'default_barangay',
+    name: 'Barangay San Antonio',
+    type: 'barangay',
+    phone: '+63 2 8527 1234',
+    address: 'San Antonio St, Ermita, Manila',
+    location: { lat: 14.5800, lng: 120.9700 },
+    description: 'Local barangay hall for community assistance',
+    created_at: new Date().toISOString(),
+    updated_at: new Date().toISOString()
+  }
+];
+
 interface ResidentEmergencyContactsProps {
   onRefresh?: () => void;
 }
@@ -19,13 +67,36 @@ export function ResidentEmergencyContacts({ onRefresh }: ResidentEmergencyContac
       if (response.ok) {
         const data = await response.json();
         setContacts(data.contacts || []);
+        
+        // Cache data locally for offline access
+        try {
+          localStorage.setItem('bready_emergency_contacts', JSON.stringify(data.contacts || []));
+        } catch (storageError) {
+          console.warn('Failed to cache emergency contacts locally:', storageError);
+        }
       } else {
-        console.error('Failed to load contacts');
-        setContacts([]);
+        throw new Error('Failed to load contacts');
       }
     } catch (error) {
-      console.error('Error loading contacts:', error);
-      setContacts([]);
+      console.error('Error loading contacts from API:', error);
+
+      // Try to load from local cache first
+      try {
+        const cachedContacts = localStorage.getItem('bready_emergency_contacts');
+
+        if (cachedContacts) {
+          setContacts(JSON.parse(cachedContacts));
+          console.log('✅ Loaded emergency contacts from local cache');
+        } else {
+          // No cached data, use defaults
+          setContacts(DEFAULT_EMERGENCY_CONTACTS);
+          console.log('ℹ️ Using default emergency contacts (no cache available)');
+        }
+      } catch (cacheError) {
+        console.error('Error loading from cache:', cacheError);
+        // Use default data
+        setContacts(DEFAULT_EMERGENCY_CONTACTS);
+      }
     } finally {
       setLoading(false);
     }

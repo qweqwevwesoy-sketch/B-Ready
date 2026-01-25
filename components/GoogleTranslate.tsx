@@ -29,73 +29,70 @@ const GoogleTranslate: React.FC<GoogleTranslateProps> = ({ className }) => {
     setCurrentLanguage(languageCode);
     setIsOpen(false);
     
-    // Directly trigger Google Translate if it's loaded
+    // Simple and reliable approach: just trigger the Google Translate combo
     const selectField = document.querySelector('.goog-te-combo') as HTMLSelectElement;
     if (selectField) {
       selectField.value = languageCode;
       selectField.dispatchEvent(new Event('change'));
     } else {
-      // Load Google Translate script and set language
-      const script = document.createElement('script');
-      script.type = 'text/javascript';
-      script.src = '//translate.google.com/translate_a/element.js?cb=googleTranslateElementInit';
-      document.head.appendChild(script);
-      
-      // Set up the callback to initialize and set language
-      setTimeout(() => {
-        const googleWindow = window as WindowWithGoogle;
-        googleWindow.googleTranslateElementInit = () => {
-          if (googleWindow.google?.translate?.TranslateElement) {
-            new googleWindow.google.translate.TranslateElement(
-              {
-                pageLanguage: 'en',
-                includedLanguages: 'en,tl,ceb',
-                layout: 0,
-                autoDisplay: false
-              },
-              'google_translate_element'
-            );
-            
-            // Immediately set the language after initialization
+      // If Google Translate isn't loaded, load it and set language immediately
+      loadGoogleTranslate(languageCode);
+    }
+  };
+
+  const loadGoogleTranslate = (languageCode?: string) => {
+    const googleWindow = window as WindowWithGoogle;
+    
+    // Check if already loaded
+    if (googleWindow.google && googleWindow.google.translate && document.querySelector('.goog-te-combo')) {
+      if (languageCode) {
+        const selectField = document.querySelector('.goog-te-combo') as HTMLSelectElement;
+        if (selectField) {
+          selectField.value = languageCode;
+          selectField.dispatchEvent(new Event('change'));
+        }
+      }
+      return;
+    }
+
+    // Load Google Translate script
+    const script = document.createElement('script');
+    script.type = 'text/javascript';
+    script.src = '//translate.google.com/translate_a/element.js?cb=googleTranslateElementInit';
+    document.head.appendChild(script);
+
+    // Set up callback with timeout to avoid ESLint error
+    setTimeout(() => {
+      googleWindow.googleTranslateElementInit = () => {
+        if (googleWindow.google && googleWindow.google.translate) {
+          new googleWindow.google.translate.TranslateElement(
+            {
+              pageLanguage: 'en',
+              includedLanguages: 'en,tl,ceb',
+              layout: 0,
+              autoDisplay: false
+            },
+            'google_translate_element'
+          );
+          
+          // If a language was specified, set it immediately
+          if (languageCode) {
             setTimeout(() => {
               const selectField = document.querySelector('.goog-te-combo') as HTMLSelectElement;
               if (selectField) {
                 selectField.value = languageCode;
                 selectField.dispatchEvent(new Event('change'));
               }
-            }, 100);
+            }, 500);
           }
-        };
-      }, 0);
-    }
+        }
+      };
+    }, 0);
   };
 
   useEffect(() => {
-    // Initialize Google Translate if not already loaded
-    if (!document.getElementById('google_translate_element')) {
-      const script = document.createElement('script');
-      script.type = 'text/javascript';
-      script.src = '//translate.google.com/translate_a/element.js?cb=googleTranslateElementInit';
-      document.head.appendChild(script);
-      
-      // Use a timeout to ensure the script is loaded before setting the callback
-      setTimeout(() => {
-        const googleWindow = window as WindowWithGoogle;
-        googleWindow.googleTranslateElementInit = () => {
-          if (googleWindow.google?.translate?.TranslateElement) {
-            new googleWindow.google.translate.TranslateElement(
-              {
-                pageLanguage: 'en',
-                includedLanguages: 'en,tl,ceb',
-                layout: 0, // Use numeric layout value instead of deprecated constant
-                autoDisplay: false
-              },
-              'google_translate_element'
-            );
-          }
-        };
-      }, 100);
-    }
+    // Initialize Google Translate on component mount
+    loadGoogleTranslate();
   }, []);
 
   return (

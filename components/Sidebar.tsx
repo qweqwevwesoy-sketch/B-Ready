@@ -66,6 +66,7 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
   ] : [
     { path: '/dashboard', label: 'Home Dashboard', icon: '🏠' },
     { path: '/real-time-map', label: 'Real Time Map', icon: '🗺️' },
+    { path: '/emergency', label: 'Emergency Contacts', icon: '🚨' },
     { path: '/profile', label: 'Account Settings', icon: '👤' },
     { path: '/safety-tips', label: 'Safety Tips', icon: '⚠️' },
     ...(user.role === 'admin' ? [{ path: '/status-update', label: 'Status Update', icon: '📊' }] : []),

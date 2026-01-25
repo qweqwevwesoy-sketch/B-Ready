@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
-import type { SafetyTip, EmergencyKitItem } from '@/types';
+import type { SafetyTip, EmergencyKitItem, Station } from '@/types';
 import { SafetyTipsAdmin } from '@/components/SafetyTipsAdmin';
 
 // Default offline safety tips data
@@ -139,6 +139,8 @@ export default function SafetyTipsContent() {
   const [loading, setLoading] = useState(true);
   const [showAdminPanel, setShowAdminPanel] = useState(false);
   const [isClient, setIsClient] = useState(false);
+  const [stations, setStations] = useState<Station[]>([]);
+  const [stationsLoading, setStationsLoading] = useState(true);
 
   useEffect(() => {
     setIsClient(true);
@@ -185,9 +187,47 @@ export default function SafetyTipsContent() {
     }
   };
 
+  const fetchStations = async () => {
+    try {
+      const response = await fetch('/api/stations');
+      const data = await response.json();
+      if (data.success) {
+        setStations(data.stations);
+
+        // Cache data locally for offline access
+        try {
+          localStorage.setItem('bready_stations', JSON.stringify(data.stations));
+        } catch (storageError) {
+          console.warn('Failed to cache stations locally:', storageError);
+        }
+      }
+    } catch (error) {
+      console.error('Error fetching stations from API:', error);
+
+      // Try to load from local cache first
+      try {
+        const cachedStations = localStorage.getItem('bready_stations');
+
+        if (cachedStations) {
+          setStations(JSON.parse(cachedStations));
+          console.log('✅ Loaded stations from local cache');
+        } else {
+          // No cached data, use defaults
+          console.log('ℹ️ Using default stations (no cache available)');
+        }
+      } catch (cacheError) {
+        console.error('Error loading from cache:', cacheError);
+        // Keep empty array
+      }
+    } finally {
+      setStationsLoading(false);
+    }
+  };
+
   useEffect(() => {
     if (isClient) {
       fetchSafetyTips();
+      fetchStations();
     }
   }, [isClient]);
 
@@ -233,7 +273,7 @@ export default function SafetyTipsContent() {
               <ul className="space-y-2">
                 {kitItem.items.map((item, idx) => (
                   <li key={idx} className="flex items-start gap-2">
-                    <span className="text-green-500 font-bold">✓</span>
+                    <span className="text-green-500 font-bold mt-1">✓</span>
                     <span>{item}</span>
                   </li>
                 ))}
@@ -242,6 +282,35 @@ export default function SafetyTipsContent() {
           ))}
         </div>
       </div>
+
+      {/* Emergency Stations Section for Residents */}
+      {user?.role === 'resident' && (
+        <div className="bg-blue-50 rounded-xl p-8 mt-8">
+          <h2 className="text-2xl font-bold mb-6">Emergency Response Stations</h2>
+          {stationsLoading ? (
+            <div className="text-center py-4">Loading stations...</div>
+          ) : stations.length === 0 ? (
+            <div className="text-center py-4 text-gray-500">No emergency stations available</div>
+          ) : (
+            <div className="space-y-4">
+              {stations.map((station) => (
+                <div key={station.id} className="bg-white p-4 rounded-lg shadow-sm border">
+                  <div className="flex justify-between items-center">
+                    <div>
+                      <strong className="text-lg">{station.name}</strong>
+                      <p className="text-sm text-gray-600 mt-1">{station.address}</p>
+                      {station.contact && (
+                        <p className="text-sm text-blue-600 mt-1">📞 {station.contact}</p>
+                      )}
+                    </div>
+                    <div className="text-xs text-gray-500">Emergency Response Station</div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
 
 
       {/* Admin Controls */}

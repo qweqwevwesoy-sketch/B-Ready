@@ -98,3 +98,18 @@ export interface EmergencyContact {
   created_at: string;
   updated_at: string;
 }
+
+export interface Station {
+  id: string;
+  name: string;
+  type: 'fire' | 'police' | 'medical' | 'barangay';
+  location: Location;
+  address: string;
+  capacity: number;
+  currentLoad: number;
+  status: 'operational' | 'overloaded' | 'closed';
+  contact: string;
+  description?: string;
+  created_at: string;
+  updated_at: string;
+}

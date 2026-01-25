@@ -1,14 +1,70 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { PencilIcon, TrashIcon } from '@heroicons/react/24/outline';
+import { useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
-import dynamic from 'next/dynamic';
 import { notificationManager } from '@/components/NotificationManager';
-import type { EmergencyContact } from '@/types';
-import { ResidentEmergencyContacts } from './ResidentEmergencyContacts';
+import type { Station } from '@/types';
 
-const MapPicker = dynamic(() => import('./MapPicker').then(mod => mod.MapPicker), { ssr: false });
+// Default offline stations data (copied from Real Time Map)
+const DEFAULT_STATIONS: Station[] = [
+  {
+    id: 'fire_1',
+    name: 'Manila Fire Station',
+    type: 'fire',
+    location: { lat: 14.5820, lng: 120.9730 },
+    address: '1015 Padre Burgos Ave, Ermita, Manila',
+    capacity: 10,
+    currentLoad: 3,
+    status: 'operational',
+    contact: '+63 2 8527 7000',
+    description: 'Main fire station for Manila City',
+    created_at: new Date().toISOString(),
+    updated_at: new Date().toISOString()
+  },
+  {
+    id: 'police_1',
+    name: 'Manila Police Station',
+    type: 'police',
+    location: { lat: 14.5800, lng: 120.9750 },
+    address: '275 Padre Burgos Ave, Ermita, Manila',
+    capacity: 20,
+    currentLoad: 8,
+    status: 'operational',
+    contact: '+63 2 8527 0000',
+    description: 'Central police station for Manila',
+    created_at: new Date().toISOString(),
+    updated_at: new Date().toISOString()
+  },
+  {
+    id: 'medical_1',
+    name: 'Philippine General Hospital',
+    type: 'medical',
+    location: { lat: 14.5600, lng: 120.9890 },
+    address: 'Taft Avenue, Ermita, Manila',
+    capacity: 500,
+    currentLoad: 245,
+    status: 'operational',
+    contact: '+63 2 8554 8400',
+    description: 'National university hospital',
+    created_at: new Date().toISOString(),
+    updated_at: new Date().toISOString()
+  },
+  {
+    id: 'barangay_1',
+    name: 'Barangay San Antonio',
+    type: 'barangay',
+    location: { lat: 14.5800, lng: 120.9700 },
+    address: 'San Antonio St, Ermita, Manila',
+    capacity: 100,
+    currentLoad: 15,
+    status: 'operational',
+    contact: '+63 2 8527 1234',
+    description: 'Local barangay hall for community assistance',
+    created_at: new Date().toISOString(),
+    updated_at: new Date().toISOString()
+  }
+];
 
 interface EmergencyContactsProps {
   userLocation?: { lat: number; lng: number } | null;
@@ -17,274 +73,105 @@ interface EmergencyContactsProps {
 
 export function EmergencyContacts({ userLocation, variant = 'display' }: EmergencyContactsProps) {
   const { user } = useAuth();
-  const [contacts, setContacts] = useState<EmergencyContact[]>([]);
+  const router = useRouter();
+  const [stations, setStations] = useState<Station[]>([]);
   const [loading, setLoading] = useState(true);
-  const [showAddForm, setShowAddForm] = useState(false);
-  const [showEditForm, setShowEditForm] = useState<string | null>(null);
-  const [showMapPicker, setShowMapPicker] = useState(false);
-  const [showDetails, setShowDetails] = useState<string | null>(null);
-  const [newContact, setNewContact] = useState({
-    name: '',
-    type: 'fire' as EmergencyContact['type'],
-    phone: '',
-    address: '',
-    location: { lat: 0, lng: 0 }
-  });
-  const [editingContact, setEditingContact] = useState<EmergencyContact | null>(null);
 
   useEffect(() => {
-    fetchContacts();
-  }, [user?.role]);
+    fetchStations();
+  }, []);
 
-  const fetchContacts = async () => {
+  const fetchStations = async () => {
     try {
       setLoading(true);
-      const response = await fetch('/api/emergency-contacts');
+      const response = await fetch('/api/stations');
       if (response.ok) {
         const data = await response.json();
-        setContacts(data.contacts || []);
+        setStations(data.stations || []);
+        
+        // Cache data locally for offline access
+        try {
+          localStorage.setItem('bready_stations', JSON.stringify(data.stations || []));
+        } catch (storageError) {
+          console.warn('Failed to cache stations locally:', storageError);
+        }
       } else {
-        throw new Error('Failed to fetch contacts');
+        throw new Error('Failed to fetch stations');
       }
     } catch (error) {
-      console.error('Error fetching contacts:', error);
-      if (variant === 'admin') {
-        notificationManager.error('Error fetching emergency contacts');
+      console.error('Error fetching stations from API:', error);
+
+      // Try to load from local cache first
+      try {
+        const cachedStations = localStorage.getItem('bready_stations');
+
+        if (cachedStations) {
+          setStations(JSON.parse(cachedStations));
+          console.log('✅ Loaded stations from local cache');
+        } else {
+          // No cached data, use defaults
+          setStations(DEFAULT_STATIONS);
+          console.log('ℹ️ Using default stations (no cache available)');
+        }
+      } catch (cacheError) {
+        console.error('Error loading from cache:', cacheError);
+        // Use default data
+        setStations(DEFAULT_STATIONS);
       }
     } finally {
       setLoading(false);
     }
   };
 
-  const addContact = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!newContact.name || !newContact.type || !newContact.phone) {
-      if (variant === 'admin') {
-        notificationManager.error('Please fill in all required fields');
-      } else {
-        alert('Please fill in all required fields');
-      }
-      return;
-    }
-
-    try {
-      const response = await fetch('/api/emergency-contacts', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          name: newContact.name,
-          type: newContact.type,
-          phone: newContact.phone,
-          address: newContact.address || '',
-          location: newContact.location
-        }),
-      });
-
-      if (response.ok) {
-        if (variant === 'admin') {
-          notificationManager.success('Emergency contact added successfully');
-        } else {
-          alert('Emergency contact added successfully');
-        }
-        setNewContact({ name: '', type: 'fire', phone: '', address: '', location: { lat: 0, lng: 0 } });
-        setShowAddForm(false);
-        fetchContacts();
-      } else {
-        const errorData = await response.json();
-        console.error('Error response:', errorData);
-        const errorMsg = errorData.error || 'Failed to add emergency contact';
-        if (variant === 'admin') {
-          notificationManager.error(errorMsg);
-        } else {
-          alert(errorMsg);
-        }
-      }
-    } catch (error) {
-      console.error('Error adding contact:', error);
-      const errorMsg = 'Error adding emergency contact. Please check your internet connection.';
-      if (variant === 'admin') {
-        notificationManager.error(errorMsg);
-      } else {
-        alert(errorMsg);
-      }
-    }
-  };
-
-  const deleteContact = async (id: string) => {
-    const confirmDelete = variant === 'admin' 
-      ? confirm('Are you sure you want to delete this emergency contact?')
-      : window.confirm('Are you sure you want to delete this emergency contact?');
-
-    if (!confirmDelete) {
-      return;
-    }
-
-    try {
-      const response = await fetch(`/api/emergency-contacts?id=${id}`, {
-        method: 'DELETE',
-      });
-
-      if (response.ok) {
-        if (variant === 'admin') {
-          notificationManager.success('Emergency contact deleted successfully');
-        } else {
-          alert('Emergency contact deleted successfully');
-        }
-        fetchContacts();
-      } else {
-        throw new Error('Failed to delete emergency contact');
-      }
-    } catch (error) {
-      console.error('Error deleting contact:', error);
-      const errorMsg = 'Error deleting emergency contact';
-      if (variant === 'admin') {
-        notificationManager.error(errorMsg);
-      } else {
-        alert(errorMsg);
-      }
-    }
-  };
-
-  const editContact = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!editingContact) return;
-
-    if (!editingContact.name || !editingContact.type || !editingContact.phone) {
-      if (variant === 'admin') {
-        notificationManager.error('Please fill in all required fields');
-      } else {
-        alert('Please fill in all required fields');
-      }
-      return;
-    }
-
-    try {
-      const response = await fetch('/api/emergency-contacts', {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          id: editingContact.id,
-          name: editingContact.name,
-          type: editingContact.type,
-          phone: editingContact.phone,
-          address: editingContact.address || '',
-          location: editingContact.location
-        }),
-      });
-
-      if (response.ok) {
-        if (variant === 'admin') {
-          notificationManager.success('Emergency contact updated successfully');
-        } else {
-          alert('Emergency contact updated successfully');
-        }
-        setEditingContact(null);
-        setShowEditForm(null);
-        fetchContacts();
-      } else {
-        throw new Error('Failed to update emergency contact');
-      }
-    } catch (error) {
-      console.error('Error updating contact:', error);
-      const errorMsg = 'Error updating emergency contact';
-      if (variant === 'admin') {
-        notificationManager.error(errorMsg);
-      } else {
-        alert(errorMsg);
-      }
-    }
-  };
-
-  const startEditContact = (contact: EmergencyContact) => {
-    setEditingContact(contact);
-    setShowEditForm(contact.id);
-    // Reset the newContact form to avoid confusion
-    setNewContact({
-      name: '',
-      type: 'fire',
-      phone: '',
-      address: '',
-      location: { lat: 0, lng: 0 }
-    });
-  };
-
-  const cancelEdit = () => {
-    setEditingContact(null);
-    setShowEditForm(null);
-  };
-
-  const getContactIcon = (type: string) => {
+  const getStationIcon = (type: string) => {
     switch (type) {
       case 'fire': return '🔥';
       case 'police': return '🚓';
       case 'medical': return '🏥';
       case 'barangay': return '🏘️';
-      case 'other': return '📞';
-      default: return '📞';
+      default: return '🏢';
     }
   };
 
-  const getContactColor = (type: string) => {
-    switch (type) {
-      case 'fire': return 'bg-red-500';
-      case 'police': return 'bg-blue-500';
-      case 'medical': return 'bg-green-500';
-      case 'barangay': return 'bg-yellow-500';
-      case 'other': return 'bg-gray-500';
-      default: return 'bg-gray-500';
-    }
-  };
-
-  const getContactTypeLabel = (type: string) => {
+  const getStationTypeLabel = (type: string) => {
     switch (type) {
       case 'fire': return 'Fire Station';
       case 'police': return 'Police Station';
       case 'medical': return 'Medical Center';
       case 'barangay': return 'Barangay Hall';
-      case 'other': return 'Other Service';
-      default: return 'Service';
+      default: return 'Station';
     }
   };
 
-  const calculateDistance = (lat1: number, lng1: number, lat2: number, lng2: number) => {
-    const R = 6371; // Earth's radius in kilometers
-    const dLat = (lat2 - lat1) * Math.PI / 180;
-    const dLng = (lng2 - lng1) * Math.PI / 180;
-    const a = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
-              Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
-              Math.sin(dLng / 2) * Math.sin(dLng / 2);
-    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-    return R * c;
-  };
-
-  const getDistanceText = (contact: EmergencyContact) => {
-    if (!userLocation || !contact.location) {
-      return 'Distance unknown';
+  const getStationStatusColor = (status: string) => {
+    switch (status) {
+      case 'operational': return 'bg-green-500';
+      case 'overloaded': return 'bg-yellow-500';
+      case 'closed': return 'bg-red-500';
+      default: return 'bg-gray-500';
     }
-    const distance = calculateDistance(
-      userLocation.lat, userLocation.lng,
-      contact.location.lat, contact.location.lng
-    );
-    return `${distance.toFixed(1)} km away`;
   };
 
-  const handleCallContact = (phone: string) => {
+  const getStationStatusText = (status: string) => {
+    switch (status) {
+      case 'operational': return 'Operational';
+      case 'overloaded': return 'Overloaded';
+      case 'closed': return 'Closed';
+      default: return 'Unknown';
+    }
+  };
+
+  const handleEditStations = () => {
+    router.push('/real-time-map');
+  };
+
+  const handleCallStation = (contact: string) => {
     if (typeof window !== 'undefined') {
-      window.open(`tel:${phone}`);
+      window.open(`tel:${contact}`);
     }
   };
 
-  const handleCopyPhone = (phone: string) => {
-    if (typeof navigator !== 'undefined' && navigator.clipboard) {
-      navigator.clipboard.writeText(phone).then(() => {
-        notificationManager.success('Phone number copied to clipboard');
-      }).catch(() => {
-        notificationManager.error('Failed to copy phone number');
-      });
-    }
-  };
-
-  // Admin variant - full management interface
+  // Admin variant - show edit stations button
   if (variant === 'admin' && (!user || user.role !== 'admin')) {
     return null;
   }
@@ -294,263 +181,47 @@ export function EmergencyContacts({ userLocation, variant = 'display' }: Emergen
     return (
       <div className="bg-white rounded-lg p-6 shadow-lg">
         <div className="flex justify-between items-center mb-4">
-          <h3 className="text-lg font-semibold">Emergency Contacts Management</h3>
+          <h3 className="text-lg font-semibold">Emergency Stations</h3>
           <button
-            onClick={() => setShowAddForm(!showAddForm)}
-            className="px-4 py-2 bg-green-600 text-white rounded-lg font-semibold hover:bg-green-700"
+            onClick={handleEditStations}
+            className="px-4 py-2 bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-700"
           >
-            ➕ Add Contact
+            📍 Edit Stations
           </button>
         </div>
 
-        {showAddForm && (
-          <div className="border-2 border-green-300 rounded-lg p-6 mb-6 bg-green-50">
-            <h4 className="text-lg font-semibold mb-4">Add New Emergency Contact</h4>
-
-            <form onSubmit={addContact} className="space-y-4">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium mb-1">Contact Name</label>
-                  <input
-                    type="text"
-                    value={newContact.name}
-                    onChange={(e) => setNewContact({ ...newContact, name: e.target.value })}
-                    className="w-full p-2 border rounded"
-                    placeholder="e.g., Manila Fire Station"
-                    required
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium mb-1">Phone Number</label>
-                  <input
-                    type="tel"
-                    value={newContact.phone}
-                    onChange={(e) => setNewContact({ ...newContact, phone: e.target.value })}
-                    className="w-full p-2 border rounded"
-                    placeholder="e.g., +63 2 123 4567"
-                    required
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium mb-1">Contact Type</label>
-                  <select
-                    value={newContact.type}
-                    onChange={(e) => setNewContact({ ...newContact, type: e.target.value as EmergencyContact['type'] })}
-                    className="w-full p-2 border rounded"
-                    required
-                  >
-                    <option value="fire">Fire Station</option>
-                    <option value="police">Police Station</option>
-                    <option value="medical">Medical Center</option>
-                    <option value="barangay">Barangay Hall</option>
-                    <option value="other">Other Service</option>
-                  </select>
-                </div>
-                <div>
-                  <label className="block text-sm font-medium mb-1">Location</label>
-                  <div className="flex gap-2">
-                    <input
-                      type="text"
-                      value={newContact.address || ''}
-                      readOnly
-                      placeholder="e.g., Manila, Metro Manila"
-                      className="flex-1 p-2 border rounded bg-gray-100"
-                    />
-                    <button
-                      type="button"
-                      onClick={() => setShowMapPicker(true)}
-                      className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
-                    >
-                      📍 Select Location
-                    </button>
-                  </div>
-                  {newContact.location.lat !== 0 && newContact.location.lng !== 0 && (
-                    <div className="mt-2 text-sm text-gray-600">
-                      Coordinates: {newContact.location.lat.toFixed(6)}, {newContact.location.lng.toFixed(6)}
-                    </div>
-                  )}
-                </div>
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium mb-1">Description (Optional)</label>
-                <textarea
-                  value={newContact.address}
-                  onChange={(e) => setNewContact({ ...newContact, address: e.target.value })}
-                  className="w-full p-2 border rounded"
-                  placeholder="Additional information about this contact..."
-                  rows={3}
-                />
-              </div>
-
-              <div className="flex gap-4">
-                <button
-                  type="submit"
-                  className="px-6 py-2 bg-green-600 text-white rounded font-semibold hover:bg-green-700"
-                >
-                  Add Contact
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setShowAddForm(false)}
-                  className="px-6 py-2 bg-gray-500 text-white rounded font-semibold hover:bg-gray-600"
-                >
-                  Cancel
-                </button>
-              </div>
-            </form>
-          </div>
-        )}
-
-        {showMapPicker && (
-          <MapPicker
-            onSelect={(address) => {
-              setNewContact(prev => ({ ...prev, address }));
-              setShowMapPicker(false);
-            }}
-            onClose={() => setShowMapPicker(false)}
-          />
-        )}
-
-        {showEditForm && editingContact && (
-          <div className="border-2 border-blue-300 rounded-lg p-6 mb-6 bg-blue-50">
-            <h4 className="text-lg font-semibold mb-4">Edit Emergency Contact</h4>
-
-            <form onSubmit={editContact} className="space-y-4">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium mb-1">Contact Name</label>
-                  <input
-                    type="text"
-                    value={editingContact.name}
-                    onChange={(e) => setEditingContact({ ...editingContact, name: e.target.value })}
-                    className="w-full p-2 border rounded"
-                    placeholder="e.g., Manila Fire Station"
-                    required
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium mb-1">Phone Number</label>
-                  <input
-                    type="tel"
-                    value={editingContact.phone}
-                    onChange={(e) => setEditingContact({ ...editingContact, phone: e.target.value })}
-                    className="w-full p-2 border rounded"
-                    placeholder="e.g., +63 2 123 4567"
-                    required
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium mb-1">Contact Type</label>
-                  <select
-                    value={editingContact.type}
-                    onChange={(e) => setEditingContact({ ...editingContact, type: e.target.value as EmergencyContact['type'] })}
-                    className="w-full p-2 border rounded"
-                    required
-                  >
-                    <option value="fire">Fire Station</option>
-                    <option value="police">Police Station</option>
-                    <option value="medical">Medical Center</option>
-                    <option value="barangay">Barangay Hall</option>
-                    <option value="other">Other Service</option>
-                  </select>
-                </div>
-                <div>
-                  <label className="block text-sm font-medium mb-1">Location</label>
-                  <div className="flex gap-2">
-                    <input
-                      type="text"
-                      value={editingContact.address || ''}
-                      readOnly
-                      placeholder="e.g., Manila, Metro Manila"
-                      className="flex-1 p-2 border rounded bg-gray-100"
-                    />
-                    <button
-                      type="button"
-                      onClick={() => setShowMapPicker(true)}
-                      className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
-                    >
-                      📍 Select Location
-                    </button>
-                  </div>
-                  {editingContact.location && editingContact.location.lat !== 0 && editingContact.location.lng !== 0 && (
-                    <div className="mt-2 text-sm text-gray-600">
-                      Coordinates: {editingContact.location.lat.toFixed(6)}, {editingContact.location.lng.toFixed(6)}
-                    </div>
-                  )}
-                </div>
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium mb-1">Description (Optional)</label>
-                <textarea
-                  value={editingContact.address || ''}
-                  onChange={(e) => setEditingContact({ 
-                    ...editingContact, 
-                    address: e.target.value
-                  })}
-                  className="w-full p-2 border rounded"
-                  placeholder="Additional information about this contact..."
-                  rows={3}
-                />
-              </div>
-
-              <div className="flex gap-4">
-                <button
-                  type="submit"
-                  className="px-6 py-2 bg-blue-600 text-white rounded font-semibold hover:bg-blue-700"
-                >
-                  Update Contact
-                </button>
-                <button
-                  type="button"
-                  onClick={cancelEdit}
-                  className="px-6 py-2 bg-gray-500 text-white rounded font-semibold hover:bg-gray-600"
-                >
-                  Cancel
-                </button>
-              </div>
-            </form>
-          </div>
-        )}
-
         {loading ? (
-          <div className="text-center py-4">Loading contacts...</div>
-        ) : contacts.length === 0 ? (
-          <div className="text-center py-4 text-gray-500">No emergency contacts found</div>
+          <div className="text-center py-4">Loading stations...</div>
+        ) : stations.length === 0 ? (
+          <div className="text-center py-4 text-gray-500">No stations found</div>
         ) : (
           <div className="space-y-4">
-            {contacts.map((contact) => (
-              <div key={contact.id} className="border rounded-lg p-4 bg-gray-50">
+            {stations.map((station) => (
+              <div key={station.id} className="border rounded-lg p-4 bg-gray-50">
                 <div className="flex justify-between items-start">
                   <div className="flex-1">
                     <div className="flex items-center gap-3 mb-2">
-                      <h4 className="text-lg font-semibold">{contact.name}</h4>
-                      <span className="text-sm text-gray-500 capitalize">{getContactTypeLabel(contact.type)}</span>
+                      <h4 className="text-lg font-semibold">{station.name}</h4>
+                      <span className="text-sm text-gray-500 capitalize">{getStationTypeLabel(station.type)}</span>
                     </div>
-                    <div className="text-sm text-gray-600 mb-1">{contact.phone}</div>
-                    {contact.address && <div className="text-sm text-gray-500 mb-2">{contact.address}</div>}
-                    {contact.location && (
-                      <div className="text-xs text-gray-400">
-                        Coordinates: {contact.location.lat.toFixed(6)}, {contact.location.lng.toFixed(6)}
+                    <div className="text-sm text-gray-600 mb-1">📞 {station.contact}</div>
+                    <div className="text-sm text-gray-500 mb-2">📍 {station.address}</div>
+                    <div className="flex gap-4 text-sm text-gray-600 mb-2">
+                      <span>Capacity: {station.currentLoad}/{station.capacity}</span>
+                      <span className={`px-2 py-1 rounded text-white text-xs ${getStationStatusColor(station.status)}`}>
+                        {getStationStatusText(station.status)}
+                      </span>
+                    </div>
+                    {station.location && (
+                      <div className="text-xs text-gray-400 mb-2">
+                        Coordinates: {station.location.lat.toFixed(6)}, {station.location.lng.toFixed(6)}
                       </div>
                     )}
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <button
-                      type="button"
-                      onClick={() => startEditContact(contact)}
-                      className="bg-blue-500 text-white px-3 py-1 rounded text-sm hover:bg-blue-600"
-                    >
-                      Edit
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => deleteContact(contact.id)}
-                      className="bg-red-500 text-white px-3 py-1 rounded text-sm hover:bg-red-600"
-                    >
-                      Delete
-                    </button>
+                    {station.description && (
+                      <div className="text-sm text-gray-600">
+                        {station.description}
+                      </div>
+                    )}
                   </div>
                 </div>
               </div>
@@ -561,67 +232,127 @@ export function EmergencyContacts({ userLocation, variant = 'display' }: Emergen
     );
   }
 
-  // Display variant - user-facing with distance calculation
+  // Display variant - user-facing
   if (variant === 'display') {
-    return <ResidentEmergencyContacts />;
+    return (
+      <div className="mt-8 bg-white rounded-xl p-6 shadow-lg border">
+        <h2 className="text-2xl font-bold mb-6">Emergency Stations</h2>
+        
+        {loading ? (
+          <div className="text-center py-4">Loading stations...</div>
+        ) : stations.length === 0 ? (
+          <div className="text-center py-4 text-gray-500">No stations available</div>
+        ) : (
+          <div className="space-y-4">
+            {stations.map((station) => (
+              <div key={station.id} className="border rounded-lg p-4 bg-gray-50 hover:bg-gray-100 transition-colors">
+                <div className="flex justify-between items-start">
+                  <div className="flex-1">
+                    <div className="flex items-center gap-3 mb-2">
+                      <h4 className="text-lg font-semibold">{station.name}</h4>
+                      <span className="text-sm text-blue-600 capitalize bg-blue-100 px-2 py-1 rounded">
+                        {getStationTypeLabel(station.type)}
+                      </span>
+                    </div>
+                    <div className="text-sm text-gray-600 mb-1">
+                      <span className="font-medium">Contact:</span> {station.contact}
+                    </div>
+                    <div className="text-sm text-gray-500 mb-2">
+                      <span className="font-medium">Address:</span> {station.address}
+                    </div>
+                    <div className="flex gap-4 text-sm text-gray-600 mb-2">
+                      <span>Capacity: {station.currentLoad}/{station.capacity}</span>
+                      <span className={`px-2 py-1 rounded text-white text-xs ${getStationStatusColor(station.status)}`}>
+                        {getStationStatusText(station.status)}
+                      </span>
+                    </div>
+                    {station.location && (
+                      <div className="text-xs text-gray-400 mb-2">
+                        <span className="font-medium">Location:</span> {station.location.lat.toFixed(6)}, {station.location.lng.toFixed(6)}
+                      </div>
+                    )}
+                    {station.description && (
+                      <div className="text-sm text-gray-600">
+                        <span className="font-medium">Details:</span> {station.description}
+                      </div>
+                    )}
+                  </div>
+                  <div className="flex gap-2">
+                    <button
+                      onClick={() => handleCallStation(station.contact)}
+                      className="px-3 py-1 bg-green-500 text-white rounded-lg hover:bg-green-600 text-sm"
+                    >
+                      Call
+                    </button>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+    );
   }
 
   // Safety Tips variant - simplified display for safety tips page
   return (
     <div className="bg-white rounded-lg p-6 shadow-lg">
       <div className="flex justify-between items-center mb-4">
-        <h3 className="text-lg font-semibold">Emergency Contacts</h3>
+        <h3 className="text-lg font-semibold">Emergency Stations</h3>
+        {user?.role === 'admin' && (
+          <button
+            onClick={handleEditStations}
+            className="px-4 py-2 bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-700"
+          >
+            📍 Edit Stations
+          </button>
+        )}
       </div>
 
       {loading ? (
         <div className="text-center text-gray-500 py-4">
-          Loading contacts...
+          Loading stations...
         </div>
-      ) : contacts.length === 0 ? (
+      ) : stations.length === 0 ? (
         <div className="text-center text-gray-500 py-4">
-          <p>No emergency contacts available yet.</p>
+          <p>No emergency stations available yet.</p>
           {user?.role === 'admin' && (
-            <p className="text-sm mt-2">Admins can add emergency contacts using the button above.</p>
+            <p className="text-sm mt-2">Admins can add stations using the Edit Stations button above.</p>
           )}
         </div>
       ) : (
         <div className="space-y-4">
-          {contacts.map((contact) => (
+          {stations.map((station) => (
             <div
-              key={contact.id}
+              key={station.id}
               className="border border-gray-200 rounded-lg p-4 hover:bg-gray-50 transition-colors"
             >
-                <div className="flex items-start justify-between">
+              <div className="flex items-start justify-between">
                 <div className="flex items-start gap-3">
                   <div className="w-10 h-10 bg-primary text-white rounded-full flex items-center justify-center font-bold text-lg">
-                    {getContactIcon(contact.type)}
+                    {getStationIcon(station.type)}
                   </div>
                   <div>
-                    <div className="font-bold text-lg">{contact.name}</div>
-                    <div className="text-sm text-gray-600">{getContactTypeLabel(contact.type)}</div>
-                    <div className="text-sm text-gray-600 mt-1">📍 {contact.address || 'Location not specified'}</div>
-                    {contact.address && (
-                      <div className="text-sm text-gray-700 mt-2">{contact.address}</div>
-                    )}
+                    <div className="font-bold text-lg">{station.name}</div>
+                    <div className="text-sm text-gray-600">{getStationTypeLabel(station.type)}</div>
+                    <div className="text-sm text-gray-600 mt-1">📍 {station.address}</div>
+                    <div className="flex gap-4 text-sm text-gray-600 mt-2">
+                      <span>📞 {station.contact}</span>
+                      <span className={`px-2 py-1 rounded text-white text-xs ${getStationStatusColor(station.status)}`}>
+                        {getStationStatusText(station.status)}
+                      </span>
+                    </div>
                   </div>
                 </div>
                 <div className="flex flex-col items-end gap-2">
-                  <div className="text-lg font-bold text-primary">📞 {contact.phone}</div>
+                  <div className="text-sm text-gray-500">Capacity: {station.currentLoad}/{station.capacity}</div>
                   {user?.role === 'admin' && (
-                    <>
-                      <button
-                        onClick={() => deleteContact(contact.id)}
-                        className="px-3 py-1 bg-red-500 text-white text-sm rounded hover:bg-red-600"
-                      >
-                        Delete
-                      </button>
-                      <button
-                        onClick={() => startEditContact(contact)}
-                        className="px-3 py-1 bg-blue-500 text-white text-sm rounded hover:bg-blue-600"
-                      >
-                        Edit
-                      </button>
-                    </>
+                    <button
+                      onClick={handleEditStations}
+                      className="px-3 py-1 bg-blue-500 text-white text-sm rounded hover:bg-blue-600"
+                    >
+                      Edit
+                    </button>
                   )}
                 </div>
               </div>
@@ -632,8 +363,8 @@ export function EmergencyContacts({ userLocation, variant = 'display' }: Emergen
 
       <div className="mt-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
         <div className="text-sm text-blue-800">
-          <strong>Note:</strong> Emergency contacts are displayed based on your location and the type of emergency.
-          Admins can add, edit, and manage emergency contacts for their area.
+          <strong>Note:</strong> Emergency stations are displayed based on your location and the type of emergency.
+          Admins can edit stations using the Edit Stations button above.
         </div>
       </div>
     </div>

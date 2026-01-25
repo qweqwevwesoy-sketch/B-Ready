@@ -29,7 +29,17 @@ export function Header() {
                   height={32}
                   className="w-8 h-8"
                 />
-                <span>B-READY</span>
+                <div 
+                  className="notranslate font-extrabold tracking-tight text-white" 
+                  style={{ 
+                    display: 'inline-block',
+                    whiteSpace: 'nowrap',
+                    direction: 'ltr'
+                  }}
+                  translate="no"
+                >
+                  B-READY
+                </div>
               </div>
               <span className="text-xs opacity-90 -mt-1">Real-time reporting and response</span>
             </div>
