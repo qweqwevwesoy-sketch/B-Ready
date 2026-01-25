@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
 import { Sidebar } from './Sidebar';
+import GoogleTranslate from './GoogleTranslate';
 import Image from 'next/image';
 
 export function Header() {
@@ -34,6 +35,9 @@ export function Header() {
             </div>
           </h1>
           <div className="flex items-center gap-4">
+            {/* Google Translate Dropdown */}
+            <GoogleTranslate />
+            
             {/* Menu Button */}
             <button
               onClick={() => setSidebarOpen(true)}
