@@ -87,6 +87,7 @@ export default function RealTimeMapContent() {
   const [mapReady, setMapReady] = useState(false); // Track when map is ready
   const [mapError, setMapError] = useState<string | null>(null); // Track map errors
   const [mapLoading, setMapLoading] = useState(true); // Track map loading state
+  const [mapInitialized, setMapInitialized] = useState(false); // Track if map has been initialized
   const stationIdCounter = useRef(0);
   const mapRef = useRef<L.Map | null>(null);
   const mapContainerRef = useRef<HTMLDivElement>(null);
@@ -710,7 +711,7 @@ export default function RealTimeMapContent() {
                 onKeyDown={async (e) => {
                   if (e.key === 'Enter') {
                     const results = await searchLocation(searchQuery);
-                    if (results.length > 0) selectSearchResult(results[0]);
+                  if (results.length > 0) selectSearchResult(results[0]);
                   }
                 }}
                 className="flex-1 px-4 py-2 border-2 border-gray-300 rounded-lg focus:border-primary focus:outline-none"

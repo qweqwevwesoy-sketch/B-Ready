@@ -555,16 +555,16 @@ export function EmergencyContacts({ userLocation, variant = 'display' }: Emergen
                     <button
                       type="button"
                       onClick={() => startEditContact(contact)}
-                      className="text-blue-600 hover:text-blue-800 p-1 rounded hover:bg-blue-50 transition-colors"
+                      className="bg-blue-500 text-white px-3 py-1 rounded text-sm hover:bg-blue-600"
                     >
-                      ✏️ Edit
+                      Edit
                     </button>
                     <button
                       type="button"
                       onClick={() => deleteContact(contact.id)}
-                      className="text-red-600 hover:text-red-800 p-1 rounded hover:bg-red-50 transition-colors"
+                      className="bg-red-500 text-white px-3 py-1 rounded text-sm hover:bg-red-600"
                     >
-                      🗑️ Delete
+                      Delete
                     </button>
                   </div>
                 </div>
