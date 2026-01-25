@@ -701,14 +701,9 @@ export function ChatBox({ reportId, category, onClose, onSendMessage, onSendImag
               {reportId ? 'Continuing conversation' : (category ? `Reporting: ${category.name}` : 'Emergency Reporting')}
             </p>
           </div>
-          <div className="flex items-center gap-2">
-            {reportId && (
-              <span className="text-xs text-white/80">ID: {reportId}</span>
-            )}
-            <button onClick={onClose} className="text-white hover:opacity-80 text-2xl">
-              ×
-            </button>
-          </div>
+          <button onClick={onClose} className="text-white hover:opacity-80 text-2xl">
+            ×
+          </button>
         </div>
 
         {/* Messages */}
@@ -949,7 +944,7 @@ export function ChatBox({ reportId, category, onClose, onSendMessage, onSendImag
             <div className="bg-gradient-to-r from-primary to-primary-dark text-white p-3 rounded-t-2xl">
               <div className="flex justify-between items-center">
                 <div>
-                  <h3 className="font-semibold text-sm">Report #{reportId}</h3>
+                  <h3 className="font-semibold text-sm">Report Information</h3>
                 </div>
                 <button
                   onClick={() => setShowReportInfo(false)}

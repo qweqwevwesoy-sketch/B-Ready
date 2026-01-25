@@ -62,10 +62,7 @@ export function ReportCard({
         <div className="flex-1 min-w-0">
           <div className="flex justify-between items-start mb-2">
             <h3 className="font-semibold text-lg truncate">{report.type || 'Emergency Report'}</h3>
-            <div className="flex items-center gap-2">
-              {getStatusBadge()}
-              <span className="text-xs text-gray-500">ID: {report.id}</span>
-            </div>
+            {getStatusBadge()}
           </div>
           <p className="text-gray-600 text-sm mb-2">{report.address || 'Location not specified'}</p>
           <p className="text-gray-500 text-xs mb-3">{report.userName || 'Resident'}</p>
