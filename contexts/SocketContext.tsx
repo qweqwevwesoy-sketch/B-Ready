@@ -26,7 +26,7 @@ export function SocketProvider({ children }: { children: React.ReactNode }) {
   const isOfflineMode = process.env.NEXT_PUBLIC_USE_LOCAL_BACKEND === 'true';
 
   const socketConnection = useSocketConnection();
-  const { socket, connected, connectionError } = isOfflineMode ? { socket: null, connected: false, connectionError: null } : socketConnection;
+  const { socket, connected, connectionError } = isOfflineMode || !socketConnection.socket ? { socket: null, connected: false, connectionError: null } : socketConnection;
 
   const [reports, setReports] = useState<Report[]>([]);
   const [chatMessages, setChatMessages] = useState<{ [reportId: string]: Array<{ id: string; text: string; userName: string; userRole: string; timestamp: string; reportId: string }> }>({});

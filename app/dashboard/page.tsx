@@ -35,6 +35,7 @@ function DashboardContent({ searchParams }: { searchParams: URLSearchParams }) {
   const router = useRouter();
   const { user, loading: authLoading } = useAuth();
   const { socket, connected, connectionError, reports, submitReport, updateReport, joinReportChat, sendChatMessage, chatMessages, setChatMessages } = useSocketContext();
+  const isWebSocketAvailable = socket !== null;
   const [selectedCategory, setSelectedCategory] = useState<Category | null>(null);
   const [showChatbox, setShowChatbox] = useState(false);
   const [currentReportChat, setCurrentReportChat] = useState<string | null>(null);

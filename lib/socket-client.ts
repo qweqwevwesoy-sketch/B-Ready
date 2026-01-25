@@ -23,16 +23,8 @@ export function useSocket() {
     // For Vercel and Render deployments, disable WebSocket connection
     if (window.location.hostname.includes('vercel.app') || window.location.hostname.includes('onrender.com')) {
       console.log('🔌 WebSocket disabled for cloud deployment (Vercel/Render)');
-      // For Render deployments, try to use the same domain with WebSocket protocol
-      if (window.location.hostname.includes('onrender.com')) {
-        // Try WebSocket on the same domain
-        if (window.location.protocol === 'https:') {
-          return `wss://${window.location.hostname}`;
-        } else {
-          return `ws://${window.location.hostname}`;
-        }
-      }
-      return null; // Return null to indicate no WebSocket server for Vercel
+      // Render doesn't support WebSocket on the same domain, so return null
+      return null;
     }
 
     // If we're running on localhost, use localhost
@@ -58,7 +50,7 @@ export function useSocket() {
 
     // Otherwise, use the same hostname but port 3001
     return `http://${window.location.hostname}:3001`;
-  }, []);
+  }, [typeof window, window?.location?.hostname, window?.location?.protocol]);
 
   useEffect(() => {
     // For Firebase deployments, initialize Firebase Realtime Database
