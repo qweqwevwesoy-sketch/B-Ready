@@ -45,8 +45,13 @@ export function ReportCard({
   };
 
   const handleClick = () => {
-    if (canOpenChat && onOpenChat) {
-      onOpenChat(report.id);
+    try {
+      if (canOpenChat && onOpenChat && report?.id) {
+        onOpenChat(report.id);
+      }
+    } catch (error) {
+      console.error('Error handling report card click:', error);
+      // Prevent the error from bubbling up and causing React error #418
     }
   };
 

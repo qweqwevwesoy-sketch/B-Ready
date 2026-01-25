@@ -5,12 +5,18 @@ import { useEffect, useState } from 'react';
 export default function WebSocketConfig() {
   const [wsUrl, setWsUrl] = useState(() => {
     // Initialize with saved WebSocket URL
-    if (typeof window !== 'undefined') {
-      return localStorage.getItem('bready_websocket_url') || '';
+    try {
+      if (typeof window !== 'undefined') {
+        return localStorage.getItem('bready_websocket_url') || '';
+      }
+      return '';
+    } catch (error) {
+      console.error('Error initializing WebSocket URL:', error);
+      return '';
     }
-    return '';
   });
   const [saved, setSaved] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const saveWebSocketUrl = () => {
     if (typeof window !== 'undefined') {

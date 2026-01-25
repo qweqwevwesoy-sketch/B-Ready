@@ -12,44 +12,49 @@ export function useSocket() {
 
   // Determine the correct WebSocket URL dynamically
   const socketUrl = useMemo(() => {
-    if (typeof window === 'undefined') return 'http://localhost:3001';
+    try {
+      if (typeof window === 'undefined') return 'http://localhost:3001';
 
-    // Check for environment variable first (for global deployments)
-    const envSocketUrl = process.env.NEXT_PUBLIC_SOCKET_URL;
-    if (envSocketUrl) {
-      return envSocketUrl;
-    }
+      // Check for environment variable first (for global deployments)
+      const envSocketUrl = process.env.NEXT_PUBLIC_SOCKET_URL;
+      if (envSocketUrl) {
+        return envSocketUrl;
+      }
 
-    // For Vercel and Render deployments, disable WebSocket connection
-    if (window.location.hostname.includes('vercel.app') || window.location.hostname.includes('onrender.com')) {
-      console.log('🔌 WebSocket disabled for cloud deployment (Vercel/Render)');
-      // Render doesn't support WebSocket on the same domain, so return null
+      // For Vercel and Render deployments, disable WebSocket connection
+      if (window.location.hostname.includes('vercel.app') || window.location.hostname.includes('onrender.com')) {
+        console.log('🔌 WebSocket disabled for cloud deployment (Vercel/Render)');
+        // Render doesn't support WebSocket on the same domain, so return null
+        return null;
+      }
+
+      // If we're running on localhost, use localhost
+      if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
+        return 'http://localhost:3001';
+      }
+
+      // For ngrok URLs, try to use the same domain but port 3001
+      // This handles cases where frontend and WebSocket are on different ngrok URLs
+      if (window.location.hostname.includes('ngrok.io')) {
+        // For ngrok, we need to get the WebSocket URL from localStorage or use a default
+        const storedWsUrl = localStorage.getItem('bready_websocket_url');
+        if (storedWsUrl) {
+          // Ensure we use WSS for HTTPS pages
+          if (window.location.protocol === 'https:') {
+            return storedWsUrl.replace(/^http:/, 'https:');
+          }
+          return storedWsUrl;
+        }
+        // Fallback: assume WebSocket is on the same ngrok domain but port 3001
+        return `https://${window.location.hostname}:3001`;
+      }
+
+      // Otherwise, use the same hostname but port 3001
+      return `http://${window.location.hostname}:3001`;
+    } catch (error) {
+      console.error('Error determining WebSocket URL:', error);
       return null;
     }
-
-    // If we're running on localhost, use localhost
-    if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
-      return 'http://localhost:3001';
-    }
-
-    // For ngrok URLs, try to use the same domain but port 3001
-    // This handles cases where frontend and WebSocket are on different ngrok URLs
-    if (window.location.hostname.includes('ngrok.io')) {
-      // For ngrok, we need to get the WebSocket URL from localStorage or use a default
-      const storedWsUrl = localStorage.getItem('bready_websocket_url');
-      if (storedWsUrl) {
-        // Ensure we use WSS for HTTPS pages
-        if (window.location.protocol === 'https:') {
-          return storedWsUrl.replace(/^http:/, 'https:');
-        }
-        return storedWsUrl;
-      }
-      // Fallback: assume WebSocket is on the same ngrok domain but port 3001
-      return `https://${window.location.hostname}:3001`;
-    }
-
-    // Otherwise, use the same hostname but port 3001
-    return `http://${window.location.hostname}:3001`;
   }, []);
 
   useEffect(() => {
