@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { PencilIcon, TrashIcon } from '@heroicons/react/24/outline';
 import { useAuth } from '@/contexts/AuthContext';
 import dynamic from 'next/dynamic';
 import { notificationManager } from '@/components/NotificationManager';
@@ -498,7 +499,11 @@ export function EmergencyContacts({ userLocation, variant = 'display' }: Emergen
                 <label className="block text-sm font-medium mb-1">Description (Optional)</label>
                 <textarea
                   value={editingContact.address || ''}
-                  onChange={(e) => setEditingContact({ ...editingContact, address: e.target.value })}
+                  onChange={(e) => setEditingContact({ 
+                    ...editingContact, 
+                    address: e.target.value,
+                    location: editingContact.location || { lat: 0, lng: 0 }
+                  })}
                   className="w-full p-2 border rounded"
                   placeholder="Additional information about this contact..."
                   rows={3}
@@ -546,18 +551,20 @@ export function EmergencyContacts({ userLocation, variant = 'display' }: Emergen
                       </div>
                     )}
                   </div>
-                  <div className="flex flex-col gap-2">
+                  <div className="flex items-center gap-2">
                     <button
-                      onClick={() => deleteContact(contact.id)}
-                      className="px-3 py-1 bg-red-500 text-white rounded-lg hover:bg-red-600 text-sm"
+                      type="button"
+                      onClick={() => startEditContact(contact)}
+                      className="text-blue-600 hover:text-blue-800 p-1 rounded hover:bg-blue-50 transition-colors"
                     >
-                      Delete
+                      ✏️ Edit
                     </button>
                     <button
-                      onClick={() => startEditContact(contact)}
-                      className="px-3 py-1 bg-blue-500 text-white rounded-lg hover:bg-blue-600 text-sm"
+                      type="button"
+                      onClick={() => deleteContact(contact.id)}
+                      className="text-red-600 hover:text-red-800 p-1 rounded hover:bg-red-50 transition-colors"
                     >
-                      Edit
+                      🗑️ Delete
                     </button>
                   </div>
                 </div>

@@ -414,13 +414,23 @@ export default function RealTimeMapContent() {
         setMapError('Failed to load map tiles. Please check your internet connection.');
       });
 
-      // Try to get current location using our utility function
+      // Add real tile layer
+      const tileLayer = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '© OpenStreetMap contributors',
+        maxZoom: 19,
+        maxNativeZoom: 19,
+        detectRetina: true,
+        updateWhenIdle: true,
+        updateWhenZooming: true,
+        keepBuffer: 2
+      }).addTo(map);
+
+      // Try to get current location in background
       const setInitialLocation = async () => {
         try {
           const location = await getCurrentLocation();
           setUserLocation(location);
           
-          // Add user marker
           const userIcon = L.divIcon({
             html: '<div style="background-color: #10b981; width: 20px; height: 20px; border-radius: 50%; border: 3px solid white; box-shadow: 0 2px 4px rgba(0,0,0,0.3);"></div>',
             className: 'user-location-marker',
@@ -433,14 +443,18 @@ export default function RealTimeMapContent() {
             zIndexOffset: 1000
           }).addTo(map).bindPopup('<strong>You are here</strong><br><small>Location detected</small>');
 
-          map.setView([location.lat, location.lng], 14);
+          // Smoothly fly to user location
+          map.flyTo([location.lat, location.lng], 14, {
+            animate: true,
+            duration: 1
+          });
         } catch (error) {
-          console.log('Location tracking failed, using default location');
-          // Still show the map even if location fails
+          console.log('Location tracking failed - using default view');
         }
       };
 
-      setInitialLocation();
+      // Don't wait for location to initialize map
+      setInitialLocation().finally(() => setMapLoading(false));
 
       // Handle map loading completion
       map.whenReady(() => {
