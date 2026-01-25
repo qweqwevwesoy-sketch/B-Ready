@@ -1,3 +1,5 @@
+import { auth } from './firebase';
+
 /**
  * Utility functions for client-side only operations
  * These functions check if they're running in a browser environment
@@ -63,4 +65,31 @@ export const removeOnlineEventListener = (callback: () => void): void => {
 export const removeOfflineEventListener = (callback: () => void): void => {
   if (!isClientSide()) return;
   window.removeEventListener('offline', callback);
+};
+
+// Admin permission checking
+export const checkAdminPermissions = async (): Promise<boolean> => {
+  if (!isClientSide()) return false;
+  
+  try {
+    const currentUser = auth.currentUser;
+    if (!currentUser) return false;
+    
+    // Get the current user's ID token to check custom claims
+    const idTokenResult = await currentUser.getIdTokenResult();
+    const isAdmin = idTokenResult.claims.admin === true;
+    
+    return isAdmin;
+  } catch (error) {
+    console.error('Error checking admin permissions:', error);
+    return false;
+  }
+};
+
+// Get current user (for convenience)
+export const getCurrentUser = () => auth.currentUser;
+
+// Sign out user (for convenience)
+export const signOutUser = async () => {
+  await auth.signOut();
 };

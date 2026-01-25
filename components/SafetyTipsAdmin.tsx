@@ -19,6 +19,7 @@ import {
   deleteEmergencyContact,
   fetchEmergencyContacts
 } from '@/lib/firebase-service';
+import { checkAdminPermissions } from '@/lib/client-utils';
 
 // Dynamically import MapPicker to avoid SSR issues
 const MapPicker = dynamic(() => import('./MapPicker').then(mod => ({ default: mod.MapPicker })), {
@@ -64,6 +65,13 @@ export function SafetyTipsAdmin({ tips, emergencyKit, onRefresh }: SafetyTipsAdm
 
   const handleSaveTip = async (tipData: Partial<SafetyTip>) => {
     try {
+      // Check admin permissions first
+      const hasAdminPermissions = await checkAdminPermissions();
+      if (!hasAdminPermissions) {
+        alert('You do not have permission to edit safety tips. Please contact an administrator.');
+        return;
+      }
+
       if (editingTip) {
         // Update existing tip
         await updateSafetyTip(editingTip.id, tipData);
@@ -78,7 +86,17 @@ export function SafetyTipsAdmin({ tips, emergencyKit, onRefresh }: SafetyTipsAdm
       setIsCreating(false);
     } catch (error) {
       console.error('Error saving tip:', error);
-      alert('Error saving safety tip');
+      
+      // Handle specific Firebase permission errors
+      if (error instanceof Error) {
+        if (error.message.includes('permission-denied') || error.message.includes('permission')) {
+          alert('Access denied: You do not have permission to edit safety tips. Please contact an administrator.');
+        } else {
+          alert('Error saving safety tip. Please try again.');
+        }
+      } else {
+        alert('Error saving safety tip. Please try again.');
+      }
     }
   };
 
@@ -86,6 +104,13 @@ export function SafetyTipsAdmin({ tips, emergencyKit, onRefresh }: SafetyTipsAdm
     if (!confirm('Are you sure you want to delete this safety tip?')) return;
 
     try {
+      // Check admin permissions first
+      const hasAdminPermissions = await checkAdminPermissions();
+      if (!hasAdminPermissions) {
+        alert('You do not have permission to delete safety tips. Please contact an administrator.');
+        return;
+      }
+
       await deleteSafetyTip(tipId);
       alert('Safety tip deleted successfully');
       onRefresh();
@@ -97,6 +122,13 @@ export function SafetyTipsAdmin({ tips, emergencyKit, onRefresh }: SafetyTipsAdm
 
   const handleSaveKit = async (kitData: Partial<EmergencyKitItem>) => {
     try {
+      // Check admin permissions first
+      const hasAdminPermissions = await checkAdminPermissions();
+      if (!hasAdminPermissions) {
+        alert('You do not have permission to edit emergency kit items. Please contact an administrator.');
+        return;
+      }
+
       if (editingKit) {
         // Update existing kit item
         await updateEmergencyKitItem(editingKit.id, kitData);
@@ -119,6 +151,13 @@ export function SafetyTipsAdmin({ tips, emergencyKit, onRefresh }: SafetyTipsAdm
     if (!confirm('Are you sure you want to delete this emergency kit item?')) return;
 
     try {
+      // Check admin permissions first
+      const hasAdminPermissions = await checkAdminPermissions();
+      if (!hasAdminPermissions) {
+        alert('You do not have permission to delete emergency kit items. Please contact an administrator.');
+        return;
+      }
+
       await deleteEmergencyKitItem(kitId);
       alert('Emergency kit item deleted successfully');
       onRefresh();
