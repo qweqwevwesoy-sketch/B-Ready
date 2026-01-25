@@ -3,10 +3,17 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { Header } from '@/components/Header';
+import { FAB } from '@/components/FAB';
+import { ChatBox } from '@/components/ChatBox';
+import { categories } from '@/lib/categories';
+import type { Category } from '@/types';
 
 export default function LandingPage() {
   const router = useRouter();
   const [isOffline, setIsOffline] = useState(() => !navigator.onLine);
+  const [showChatbox, setShowChatbox] = useState(false);
+  const [currentReportChat, setCurrentReportChat] = useState<string | null>(null);
+  const [selectedCategory, setSelectedCategory] = useState<Category | null>(null);
 
   useEffect(() => {
 
@@ -109,6 +116,35 @@ export default function LandingPage() {
           </button>
         </div>
       </section>
+
+      {/* Floating Action Button for Anonymous Emergency Reporting */}
+      <FAB onCategorySelect={(category) => {
+        setSelectedCategory(category);
+        setShowChatbox(true);
+        setCurrentReportChat(`anonymous_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`);
+      }} />
+
+      {/* ChatBox for Anonymous Users */}
+      {showChatbox && (
+        <ChatBox
+          reportId={currentReportChat}
+          category={selectedCategory}
+          onClose={() => {
+            setShowChatbox(false);
+            setCurrentReportChat(null);
+            setSelectedCategory(null);
+          }}
+          onSendMessage={(text) => {
+            // Handle anonymous message sending
+            console.log('Anonymous message:', text);
+          }}
+          onSendImage={(imageData) => {
+            // Handle anonymous image sending
+            console.log('Anonymous image sent');
+          }}
+          isAnonymous={true}
+        />
+      )}
 
       {/* Offline Message Overlay */}
       {isOffline && (
