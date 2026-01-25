@@ -5,6 +5,20 @@ import dynamic from 'next/dynamic';
 import type { SafetyTip, EmergencyKitItem, EmergencyContact } from '@/types';
 import { useAuth } from '@/contexts/AuthContext';
 import { EmergencyContacts } from './EmergencyContacts';
+import { 
+  createSafetyTip, 
+  updateSafetyTip, 
+  deleteSafetyTip, 
+  fetchSafetyTips,
+  createEmergencyKitItem,
+  updateEmergencyKitItem,
+  deleteEmergencyKitItem,
+  fetchEmergencyKitItems,
+  createEmergencyContact,
+  updateEmergencyContact,
+  deleteEmergencyContact,
+  fetchEmergencyContacts
+} from '@/lib/firebase-service';
 
 // Dynamically import MapPicker to avoid SSR issues
 const MapPicker = dynamic(() => import('./MapPicker').then(mod => ({ default: mod.MapPicker })), {
@@ -50,22 +64,18 @@ export function SafetyTipsAdmin({ tips, emergencyKit, onRefresh }: SafetyTipsAdm
 
   const handleSaveTip = async (tipData: Partial<SafetyTip>) => {
     try {
-      const method = editingTip ? 'PUT' : 'POST';
-      const body = editingTip ? { ...tipData, id: editingTip.id } : tipData;
-
-      const response = await fetch('/api/safety-tips', {
-        method,
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(body),
-      });
-
-      if (response.ok) {
-        onRefresh();
-        setEditingTip(null);
-        setIsCreating(false);
+      if (editingTip) {
+        // Update existing tip
+        await updateSafetyTip(editingTip.id, tipData);
+        alert('Safety tip updated successfully');
       } else {
-        alert('Failed to save safety tip');
+        // Create new tip
+        await createSafetyTip(tipData as Omit<SafetyTip, 'id' | 'updated_at'>);
+        alert('Safety tip created successfully');
       }
+      onRefresh();
+      setEditingTip(null);
+      setIsCreating(false);
     } catch (error) {
       console.error('Error saving tip:', error);
       alert('Error saving safety tip');
@@ -76,15 +86,9 @@ export function SafetyTipsAdmin({ tips, emergencyKit, onRefresh }: SafetyTipsAdm
     if (!confirm('Are you sure you want to delete this safety tip?')) return;
 
     try {
-      const response = await fetch(`/api/safety-tips?id=${tipId}`, {
-        method: 'DELETE',
-      });
-
-      if (response.ok) {
-        onRefresh();
-      } else {
-        alert('Failed to delete safety tip');
-      }
+      await deleteSafetyTip(tipId);
+      alert('Safety tip deleted successfully');
+      onRefresh();
     } catch (error) {
       console.error('Error deleting tip:', error);
       alert('Error deleting safety tip');
@@ -92,14 +96,36 @@ export function SafetyTipsAdmin({ tips, emergencyKit, onRefresh }: SafetyTipsAdm
   };
 
   const handleSaveKit = async (kitData: Partial<EmergencyKitItem>) => {
-    // For now, emergency kit management is not implemented via separate API
-    // This would require creating a separate API route for emergency kit items
-    alert('Emergency kit management will be implemented in a future update');
+    try {
+      if (editingKit) {
+        // Update existing kit item
+        await updateEmergencyKitItem(editingKit.id, kitData);
+        alert('Emergency kit item updated successfully');
+      } else {
+        // Create new kit item
+        await createEmergencyKitItem(kitData as Omit<EmergencyKitItem, 'id' | 'updated_at'>);
+        alert('Emergency kit item created successfully');
+      }
+      onRefresh();
+      setEditingKit(null);
+      setIsCreating(false);
+    } catch (error) {
+      console.error('Error saving emergency kit item:', error);
+      alert('Error saving emergency kit item');
+    }
   };
 
   const handleDeleteKit = async (kitId: string) => {
-    // For now, emergency kit management is not implemented via separate API
-    alert('Emergency kit management will be implemented in a future update');
+    if (!confirm('Are you sure you want to delete this emergency kit item?')) return;
+
+    try {
+      await deleteEmergencyKitItem(kitId);
+      alert('Emergency kit item deleted successfully');
+      onRefresh();
+    } catch (error) {
+      console.error('Error deleting emergency kit item:', error);
+      alert('Error deleting emergency kit item');
+    }
   };
 
   // Emergency Contacts functions
@@ -525,18 +551,20 @@ export function SafetyTipsAdmin({ tips, emergencyKit, onRefresh }: SafetyTipsAdm
                           </div>
                         )}
                       </div>
-                      <button
-                        onClick={() => startEditContact(contact)}
-                        className="px-3 py-1 bg-blue-500 text-white rounded-lg hover:bg-blue-600 text-sm"
-                      >
-                        Edit
-                      </button>
-                      <button
-                        onClick={() => deleteContact(contact.id)}
-                        className="px-3 py-1 bg-red-500 text-white rounded-lg hover:bg-red-600 text-sm"
-                      >
-                        Delete
-                      </button>
+                      <div className="flex gap-2">
+                        <button
+                          onClick={() => startEditContact(contact)}
+                          className="px-3 py-1 bg-blue-500 text-white rounded-lg hover:bg-blue-600 text-sm"
+                        >
+                          Edit
+                        </button>
+                        <button
+                          onClick={() => deleteContact(contact.id)}
+                          className="px-3 py-1 bg-red-500 text-white rounded-lg hover:bg-red-600 text-sm"
+                        >
+                          Delete
+                        </button>
+                      </div>
                     </div>
                   </div>
                 ))}

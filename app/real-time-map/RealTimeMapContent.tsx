@@ -6,7 +6,6 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useSocketContext } from '@/contexts/SocketContext';
 import { Header } from '@/components/Header';
 import { getCurrentLocation } from '@/lib/utils';
-import L from 'leaflet';
 
 // Import Leaflet CSS for proper map rendering
 import 'leaflet/dist/leaflet.css';
@@ -89,12 +88,12 @@ export default function RealTimeMapContent() {
   const [mapLoading, setMapLoading] = useState(true); // Track map loading state
   const [mapInitialized, setMapInitialized] = useState(false); // Track if map has been initialized
   const stationIdCounter = useRef(0);
-  const mapRef = useRef<L.Map | null>(null);
+  const mapRef = useRef<any>(null);
   const mapContainerRef = useRef<HTMLDivElement>(null);
   const mapInitializedRef = useRef(false);
-  const userMarkerRef = useRef<L.Marker | null>(null);
-  const reportMarkersRef = useRef<L.Marker[]>([]);
-  const stationMarkersRef = useRef<L.Marker[]>([]);
+  const userMarkerRef = useRef<any>(null);
+  const reportMarkersRef = useRef<any[]>([]);
+  const stationMarkersRef = useRef<any[]>([]);
   const locationTrackingIntervalRef = useRef<NodeJS.Timeout | null>(null);
   const searchTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
@@ -375,6 +374,13 @@ export default function RealTimeMapContent() {
   };
 
   useEffect(() => {
+    // Early return if not in browser environment
+    if (typeof window === 'undefined') {
+      console.log('Skipping map initialization - not in browser environment');
+      return;
+    }
+
+    // Early return if map container ref is null
     if (!mapContainerRef.current) {
       console.log('Map container ref is null');
       return;
@@ -400,6 +406,16 @@ export default function RealTimeMapContent() {
           setMapLoading(false);
           return;
         }
+
+        // Import Leaflet only when we're sure we're in browser and container exists
+        const L = require('leaflet');
+        // Fix for Leaflet default icon issue
+        delete (L.Icon.Default.prototype as { _getIconUrl?: string })._getIconUrl;
+        L.Icon.Default.mergeOptions({
+          iconRetinaUrl: 'https://unpkg.com/leaflet@1.7.1/dist/images/marker-icon-2x.png',
+          iconUrl: 'https://unpkg.com/leaflet@1.7.1/dist/images/marker-icon.png',
+          shadowUrl: 'https://unpkg.com/leaflet@1.7.1/dist/images/marker-shadow.png',
+        });
 
         // Initialize map centered on Philippines
         const map = L.map(mapContainerRef.current, {
@@ -432,7 +448,7 @@ export default function RealTimeMapContent() {
         tileLayer.addTo(map);
 
         // Handle tile loading errors
-        tileLayer.on('tileerror', (error) => {
+        tileLayer.on('tileerror', (error: any) => {
           console.error('Tile loading error:', error);
           setMapError('Failed to load map tiles. Please check your internet connection.');
         });
@@ -518,7 +534,7 @@ export default function RealTimeMapContent() {
     let clickTimeout: NodeJS.Timeout | null = null;
     let hasDragged = false;
 
-    const handleClick = (e: L.LeafletMouseEvent) => {
+    const handleClick = (e: any) => {
       if (!addingStation) return;
 
       // Delay the click action to allow drag detection
@@ -556,8 +572,6 @@ export default function RealTimeMapContent() {
     mapRef.current.on('click', handleClick);
     mapRef.current.on('dragstart', handleDragStart);
     mapRef.current.on('dragend', handleDragEnd);
-
-
 
     return () => {
       if (mapRef.current) {
@@ -890,7 +904,7 @@ export default function RealTimeMapContent() {
                       // Let user click to set their location manually
                       alert('Click on the map to set your location manually.');
 
-                      const handleManualLocation = (e: L.LeafletMouseEvent) => {
+                      const handleManualLocation = (e: any) => {
                         const location = { lat: e.latlng.lat, lng: e.latlng.lng };
                         setUserLocation(location);
 
