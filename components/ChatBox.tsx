@@ -60,12 +60,12 @@ export function ChatBox({ reportId, category, onClose, onSendMessage, onSendImag
 
         return {
           text: msg.text,
-          sender: isCurrentUser ? 'You' : msg.userName,
+          sender: isCurrentUser ? 'You' : msg.userName || 'User',
           time: new Date(msg.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
           type: (isCurrentUser ? 'sent' : 'received') as const,
           imageData: msg.imageData,
-          userName: msg.userName, // Keep original username for profile lookup
-          userRole: msg.userRole,
+          userName: msg.userName || 'User', // Ensure username exists
+          userRole: msg.userRole || 'user', // Ensure userRole exists
         };
       });
     }

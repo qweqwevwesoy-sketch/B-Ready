@@ -36,6 +36,7 @@ export function SafetyTipsAdmin({ tips, emergencyKit, onRefresh }: SafetyTipsAdm
   // Emergency Contacts state
   const [showAddForm, setShowAddForm] = useState(false);
   const [showMapPicker, setShowMapPicker] = useState(false);
+  const [showEditForm, setShowEditForm] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [contacts, setContacts] = useState<EmergencyContact[]>([]);
   const [newContact, setNewContact] = useState<Partial<EmergencyContact>>({
@@ -136,6 +137,11 @@ export function SafetyTipsAdmin({ tips, emergencyKit, onRefresh }: SafetyTipsAdm
     } finally {
       setLoading(false);
     }
+  };
+
+  const startEditContact = (contact: EmergencyContact) => {
+    setNewContact(contact);
+    setShowEditForm(contact.id);
   };
 
   const deleteContact = async (contactId: string) => {
@@ -524,6 +530,12 @@ export function SafetyTipsAdmin({ tips, emergencyKit, onRefresh }: SafetyTipsAdm
                         className="px-3 py-1 bg-red-500 text-white rounded-lg hover:bg-red-600 text-sm"
                       >
                         Delete
+                      </button>
+                      <button
+                        onClick={() => startEditContact(contact)}
+                        className="px-3 py-1 bg-blue-500 text-white rounded-lg hover:bg-blue-600 text-sm"
+                      >
+                        Edit
                       </button>
                     </div>
                   </div>
