@@ -526,16 +526,16 @@ export function SafetyTipsAdmin({ tips, emergencyKit, onRefresh }: SafetyTipsAdm
                         )}
                       </div>
                       <button
-                        onClick={() => deleteContact(contact.id)}
-                        className="px-3 py-1 bg-red-500 text-white rounded-lg hover:bg-red-600 text-sm"
-                      >
-                        Delete
-                      </button>
-                      <button
                         onClick={() => startEditContact(contact)}
                         className="px-3 py-1 bg-blue-500 text-white rounded-lg hover:bg-blue-600 text-sm"
                       >
                         Edit
+                      </button>
+                      <button
+                        onClick={() => deleteContact(contact.id)}
+                        className="px-3 py-1 bg-red-500 text-white rounded-lg hover:bg-red-600 text-sm"
+                      >
+                        Delete
                       </button>
                     </div>
                   </div>

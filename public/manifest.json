@@ -12,6 +12,11 @@
   "categories": ["emergency", "utilities", "social"],
   "icons": [
     {
+      "src": "/favicon.ico",
+      "sizes": "32x32",
+      "type": "image/x-icon"
+    },
+    {
       "src": "/BLogo.png",
       "sizes": "192x192",
       "type": "image/png",

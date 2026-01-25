@@ -553,17 +553,17 @@ export function EmergencyContacts({ userLocation, variant = 'display' }: Emergen
                   <div className="flex items-center gap-2">
                     <button
                       type="button"
-                      onClick={() => deleteContact(contact.id)}
-                      className="bg-red-500 text-white px-3 py-1 rounded text-sm hover:bg-red-600"
-                    >
-                      Delete
-                    </button>
-                    <button
-                      type="button"
                       onClick={() => startEditContact(contact)}
                       className="bg-blue-500 text-white px-3 py-1 rounded text-sm hover:bg-blue-600"
                     >
                       Edit
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => deleteContact(contact.id)}
+                      className="bg-red-500 text-white px-3 py-1 rounded text-sm hover:bg-red-600"
+                    >
+                      Delete
                     </button>
                   </div>
                 </div>
@@ -715,16 +715,16 @@ export function EmergencyContacts({ userLocation, variant = 'display' }: Emergen
                   {user?.role === 'admin' && (
                     <>
                       <button
-                        onClick={() => startEditContact(contact)}
-                        className="px-3 py-1 bg-blue-500 text-white text-sm rounded hover:bg-blue-600"
-                      >
-                        Edit
-                      </button>
-                      <button
                         onClick={() => deleteContact(contact.id)}
                         className="px-3 py-1 bg-red-500 text-white text-sm rounded hover:bg-red-600"
                       >
                         Delete
+                      </button>
+                      <button
+                        onClick={() => startEditContact(contact)}
+                        className="px-3 py-1 bg-blue-500 text-white text-sm rounded hover:bg-blue-600"
+                      >
+                        Edit
                       </button>
                     </>
                   )}
