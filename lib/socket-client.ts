@@ -30,7 +30,7 @@ export function useSocket() {
 
       // If we're running on localhost, use localhost
       if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
-        return 'http://localhost:3001';
+        return 'http://localhost:3000';
       }
 
       // For ngrok URLs, try to use the same domain but port 3001

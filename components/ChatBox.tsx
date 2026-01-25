@@ -69,14 +69,45 @@ export function ChatBox({ reportId, category, onClose, onSendMessage, onSendImag
       });
     }
 
-{/* Incident Type */}
+              {/* Incident Type */}
               {currentReport && (
                 <div className="bg-gray-50 rounded-lg p-2">
                   <div className="text-xs font-semibold text-gray-600 mb-1">Incident</div>
-                  <div className="text-sm">{currentReport.category}</div>
-                  <div className="text-xs text-gray-600 mt-1">
-                    {currentReport.subcategory || 'None'}
-                  </div>
+                  {user?.role === 'admin' ? (
+                    <div className="space-y-2">
+                      <input
+                        type="text"
+                        defaultValue={currentReport.category}
+                        className="w-full px-2 py-1 text-sm border border-gray-300 rounded bg-white focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
+                        placeholder="Enter incident type..."
+                        onBlur={(e) => {
+                          const newCategory = e.target.value;
+                          // Here you would typically call an API to update the report
+                          console.log('Admin updated incident category:', newCategory);
+                          // For now, just log the change - you would implement the actual update logic here
+                        }}
+                      />
+                      <input
+                        type="text"
+                        defaultValue={currentReport.subcategory || ''}
+                        className="w-full px-2 py-1 text-sm border border-gray-300 rounded bg-white focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
+                        placeholder="Enter subcategory..."
+                        onBlur={(e) => {
+                          const newSubcategory = e.target.value;
+                          // Here you would typically call an API to update the report
+                          console.log('Admin updated subcategory:', newSubcategory);
+                          // For now, just log the change - you would implement the actual update logic here
+                        }}
+                      />
+                    </div>
+                  ) : (
+                    <>
+                      <div className="text-sm">{currentReport.category}</div>
+                      <div className="text-xs text-gray-600 mt-1">
+                        {currentReport.subcategory || 'None'}
+                      </div>
+                    </>
+                  )}
                   {user?.role === 'admin' && (
                     <div className="mt-2">
                       <div className="text-xs font-semibold text-gray-600 mb-1">Admin Notes</div>
@@ -96,6 +127,8 @@ export function ChatBox({ reportId, category, onClose, onSendMessage, onSendImag
                   )}
                 </div>
               )}
+
+    let offlineMessages: Array<{ text: string; sender: string; time: string; type: 'sent' | 'received'; imageData?: string }> = [];
 
     if (reportId) {
       const offlineMsgs = getOfflineMessagesForReport(reportId);
