@@ -14,6 +14,7 @@ import 'leaflet/dist/leaflet.css';
 declare global {
   interface Window {
     removeStation?: (id: string) => void;
+    editStation?: (id: string) => void;
   }
 }
 
@@ -240,6 +241,76 @@ export default function RealTimeMapContent() {
       alert('Error removing station');
     }
   };
+
+  const editStation = async (stationId: string) => {
+    const station = stations.find(s => s.id === stationId);
+    if (!station) return;
+
+    // Set the station data for editing
+    setEditingStation(station);
+    setEditingStationId(stationId);
+    setEditingStationName(station.name);
+    setEditingStationPhone(station.phone || '');
+    setEditingStationEmail(station.email || '');
+    setEditingStationWebsite(station.website || '');
+    setEditingStationDescription(station.description || '');
+    setShowEditModal(true);
+  };
+
+  const updateStation = async () => {
+    if (!editingStationId || !editingStationName.trim()) {
+      alert('Please provide a station name');
+      return;
+    }
+
+    try {
+      const response = await fetch(`/api/stations?id=${editingStationId}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          name: editingStationName,
+          phone: editingStationPhone,
+          email: editingStationEmail,
+          website: editingStationWebsite,
+          description: editingStationDescription,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (data.success) {
+        setStations(prev => prev.map(s => 
+          s.id === editingStationId 
+            ? { ...s, ...data.station }
+            : s
+        ));
+        setShowEditModal(false);
+        setEditingStationId(null);
+        setEditingStationName('');
+        setEditingStationPhone('');
+        setEditingStationEmail('');
+        setEditingStationWebsite('');
+        setEditingStationDescription('');
+      } else {
+        console.error('Failed to update station:', data.error);
+        alert('Failed to update station: ' + data.error);
+      }
+    } catch (error) {
+      console.error('Error updating station:', error);
+      alert('Error updating station');
+    }
+  };
+
+  const [editingStation, setEditingStation] = useState<Station | null>(null);
+  const [editingStationId, setEditingStationId] = useState<string | null>(null);
+  const [editingStationName, setEditingStationName] = useState('');
+  const [editingStationPhone, setEditingStationPhone] = useState('');
+  const [editingStationEmail, setEditingStationEmail] = useState('');
+  const [editingStationWebsite, setEditingStationWebsite] = useState('');
+  const [editingStationDescription, setEditingStationDescription] = useState('');
+  const [showEditModal, setShowEditModal] = useState(false);
 
   const addStation = async (lat: number, lng: number) => {
     if (!newStationName.trim()) {
@@ -516,7 +587,19 @@ export default function RealTimeMapContent() {
             <h3 class="font-bold">${station.name}</h3>
             <p class="text-sm text-gray-600">${station.address}</p>
             ${station.phone ? `<p class="text-sm text-blue-600 mt-2"><strong>Contact:</strong> ${station.phone}</p>` : ''}
-            ${user?.role === 'admin' ? '<button class="mt-2 px-2 py-1 bg-red-500 text-white text-xs rounded" onclick="window.removeStation(\'' + station.id + '\')">Remove</button>' : '<p class="text-xs text-gray-500 mt-1">Emergency Response Station</p>'}
+            ${station.email ? `<p class="text-sm text-blue-600 mt-1"><strong>Email:</strong> ${station.email}</p>` : ''}
+            ${station.website ? `<p class="text-sm text-blue-600 mt-1"><strong>Website:</strong> ${station.website}</p>` : ''}
+            ${station.description ? `<p class="text-sm text-gray-600 mt-2"><strong>Description:</strong> ${station.description}</p>` : ''}
+            ${user?.role === 'admin' ? `
+              <div class="mt-3 flex gap-2">
+                <button class="px-2 py-1 bg-yellow-500 text-white text-xs rounded hover:bg-yellow-600" onclick="window.editStation('${station.id}')">
+                  ✏️ Edit
+                </button>
+                <button class="px-2 py-1 bg-red-500 text-white text-xs rounded hover:bg-red-600" onclick="window.removeStation('${station.id}')">
+                  🗑️ Delete
+                </button>
+              </div>
+            ` : '<p class="text-xs text-gray-500 mt-3">Emergency Response Station</p>'}
           </div>
         `);
 
@@ -533,6 +616,7 @@ export default function RealTimeMapContent() {
     // Add global function for popup button
     if (typeof window !== 'undefined' && user?.role === 'admin') {
       window.removeStation = removeStation;
+      window.editStation = editStation;
     }
 
     // Cleanup global function on unmount or when user role changes
@@ -615,7 +699,7 @@ export default function RealTimeMapContent() {
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 onKeyDown={async (e) => {
-                if (e.key === 'Enter') {
+                  if (e.key === 'Enter') {
                     const results = await searchLocation(searchQuery);
                     if (results.length > 0) selectSearchResult(results[0]);
                   }
@@ -885,17 +969,109 @@ export default function RealTimeMapContent() {
                           {station.phone && <p className="text-xs text-blue-600">📞 {station.phone}</p>}
                           {station.email && <p className="text-xs text-blue-600">✉️ {station.email}</p>}
                         </div>
-                        <button
-                          onClick={() => removeStation(station.id)}
-                          className="px-3 py-1 bg-red-500 text-white rounded hover:bg-red-600 text-sm"
-                        >
-                          Remove
-                        </button>
+                        <div className="flex gap-2">
+                          <button
+                            onClick={() => editStation(station.id)}
+                            className="px-3 py-1 bg-yellow-500 text-white rounded hover:bg-yellow-600 text-sm"
+                          >
+                            Edit
+                          </button>
+                          <button
+                            onClick={() => removeStation(station.id)}
+                            className="px-3 py-1 bg-red-500 text-white rounded hover:bg-red-600 text-sm"
+                          >
+                            Remove
+                          </button>
+                        </div>
                       </div>
                     ))}
                   </div>
                 </div>
               )}
+            </div>
+          )}
+
+          {/* Edit Station Modal */}
+          {showEditModal && editingStation && (
+            <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4 z-50">
+              <div className="bg-white rounded-xl p-6 max-w-md w-full shadow-xl">
+                <div className="flex justify-between items-center mb-4">
+                  <h3 className="text-xl font-bold">Edit Station</h3>
+                  <button
+                    onClick={() => setShowEditModal(false)}
+                    className="text-gray-500 hover:text-gray-700 text-2xl"
+                  >
+                    ×
+                  </button>
+                </div>
+
+                <div className="space-y-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Station Name</label>
+                    <input
+                      type="text"
+                      value={editingStationName}
+                      onChange={(e) => setEditingStationName(e.target.value)}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:border-primary focus:outline-none"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Phone Number</label>
+                    <input
+                      type="tel"
+                      value={editingStationPhone}
+                      onChange={(e) => setEditingStationPhone(e.target.value)}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:border-primary focus:outline-none"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Email Address</label>
+                    <input
+                      type="email"
+                      value={editingStationEmail}
+                      onChange={(e) => setEditingStationEmail(e.target.value)}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:border-primary focus:outline-none"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Website URL</label>
+                    <input
+                      type="url"
+                      value={editingStationWebsite}
+                      onChange={(e) => setEditingStationWebsite(e.target.value)}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:border-primary focus:outline-none"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Description</label>
+                    <input
+                      type="text"
+                      value={editingStationDescription}
+                      onChange={(e) => setEditingStationDescription(e.target.value)}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:border-primary focus:outline-none"
+                    />
+                  </div>
+                </div>
+
+                <div className="flex justify-end gap-2 mt-6">
+                  <button
+                    onClick={() => setShowEditModal(false)}
+                    className="px-4 py-2 border-2 border-gray-300 rounded-lg hover:bg-gray-100"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    onClick={updateStation}
+                    className="px-4 py-2 bg-primary text-white rounded-lg hover:opacity-90"
+                  >
+                    Update Station
+                  </button>
+                </div>
+              </div>
             </div>
           )}
 

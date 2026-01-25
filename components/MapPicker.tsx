@@ -1,17 +1,21 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
-import L from 'leaflet';
 import { reverseGeocode, getCurrentLocation } from '@/lib/utils';
 import { useModalManager } from '@/contexts/ModalManager';
 
-// Fix for Leaflet default icon issue
-delete (L.Icon.Default.prototype as { _getIconUrl?: string })._getIconUrl;
-L.Icon.Default.mergeOptions({
-  iconRetinaUrl: 'https://unpkg.com/leaflet@1.7.1/dist/images/marker-icon-2x.png',
-  iconUrl: 'https://unpkg.com/leaflet@1.7.1/dist/images/marker-icon.png',
-  shadowUrl: 'https://unpkg.com/leaflet@1.7.1/dist/images/marker-shadow.png',
-});
+// Import Leaflet only on client side
+let L: any;
+if (typeof window !== 'undefined') {
+  L = require('leaflet');
+  // Fix for Leaflet default icon issue
+  delete (L.Icon.Default.prototype as { _getIconUrl?: string })._getIconUrl;
+  L.Icon.Default.mergeOptions({
+    iconRetinaUrl: 'https://unpkg.com/leaflet@1.7.1/dist/images/marker-icon-2x.png',
+    iconUrl: 'https://unpkg.com/leaflet@1.7.1/dist/images/marker-icon.png',
+    shadowUrl: 'https://unpkg.com/leaflet@1.7.1/dist/images/marker-shadow.png',
+  });
+}
 
 interface MapPickerProps {
   onSelect: (address: string) => void;
@@ -179,7 +183,7 @@ export function MapPicker({ onSelect, onClose }: MapPickerProps) {
     setInitialLocation();
 
     // Handle map clicks
-    map.on('click', (e) => {
+    map.on('click', (e: L.LeafletMouseEvent) => {
       const latLng = e.latlng;
       marker.setLatLng(latLng);
       setSelectedLocation({ lat: latLng.lat, lng: latLng.lng });
