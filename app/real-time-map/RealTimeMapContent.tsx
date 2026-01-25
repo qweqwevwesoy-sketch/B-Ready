@@ -5,7 +5,6 @@ import { useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
 import { useSocketContext } from '@/contexts/SocketContext';
 import { Header } from '@/components/Header';
-import { EmergencyResponseSystem } from '@/components/EmergencyResponseSystem';
 import { getCurrentLocation } from '@/lib/utils';
 import L from 'leaflet';
 
@@ -22,6 +21,9 @@ interface Station {
   lng: number;
   address: string;
   phone?: string;
+  email?: string;
+  website?: string;
+  description?: string;
 }
 
 interface SearchResult {
@@ -70,6 +72,10 @@ export default function RealTimeMapContent() {
   const [stationsLoading, setStationsLoading] = useState(true);
   const [addingStation, setAddingStation] = useState(false);
   const [newStationName, setNewStationName] = useState('');
+  const [newStationPhone, setNewStationPhone] = useState('');
+  const [newStationEmail, setNewStationEmail] = useState('');
+  const [newStationWebsite, setNewStationWebsite] = useState('');
+  const [newStationDescription, setNewStationDescription] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
   const [searchResults, setSearchResults] = useState<SearchResult[]>([]);
   const [showResults, setShowResults] = useState(false);
@@ -242,7 +248,7 @@ export default function RealTimeMapContent() {
       const data = await response.json();
       const address = data.display_name || `Lat: ${lat.toFixed(6)}, Lng: ${lng.toFixed(6)}`;
 
-      // Add station via API
+      // Add station via API with contact information
       const apiResponse = await fetch('/api/stations', {
         method: 'POST',
         headers: {
@@ -253,7 +259,10 @@ export default function RealTimeMapContent() {
           lat,
           lng,
           address,
-          phone: user?.phone || '',
+          phone: newStationPhone || user?.phone || '',
+          email: newStationEmail || '',
+          website: newStationWebsite || '',
+          description: newStationDescription || '',
           created_by: user?.uid || null,
         }),
       });
@@ -263,6 +272,10 @@ export default function RealTimeMapContent() {
       if (apiData.success) {
         setStations(prev => [...prev, apiData.station]);
         setNewStationName('');
+        setNewStationPhone('');
+        setNewStationEmail('');
+        setNewStationWebsite('');
+        setNewStationDescription('');
         setAddingStation(false);
       } else {
         console.error('Failed to add station:', apiData.error);
@@ -554,9 +567,9 @@ export default function RealTimeMapContent() {
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 onKeyDown={async (e) => {
-                  if (e.key === 'Enter') {
+                if (e.key === 'Enter') {
                     const results = await searchLocation(searchQuery);
-                  if (results.length > 0) selectSearchResult(results[0]);
+                    if (results.length > 0) selectSearchResult(results[0]);
                   }
                 }}
                 className="flex-1 px-4 py-2 border-2 border-gray-300 rounded-lg focus:border-primary focus:outline-none"
@@ -744,6 +757,43 @@ export default function RealTimeMapContent() {
                 )}
               </div>
 
+              {/* Contact Info Fields - Show when adding station */}
+              {addingStation && (
+                <div className="mt-4 p-3 bg-white rounded-lg border border-gray-200">
+                  <h4 className="font-medium mb-2 text-blue-600">Contact Information</h4>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                    <input
+                      type="tel"
+                      placeholder="Phone number"
+                      value={newStationPhone}
+                      onChange={(e) => setNewStationPhone(e.target.value)}
+                      className="px-3 py-2 border border-gray-300 rounded-lg"
+                    />
+                    <input
+                      type="email"
+                      placeholder="Email address"
+                      value={newStationEmail}
+                      onChange={(e) => setNewStationEmail(e.target.value)}
+                      className="px-3 py-2 border border-gray-300 rounded-lg"
+                    />
+                    <input
+                      type="url"
+                      placeholder="Website URL"
+                      value={newStationWebsite}
+                      onChange={(e) => setNewStationWebsite(e.target.value)}
+                      className="px-3 py-2 border border-gray-300 rounded-lg"
+                    />
+                    <input
+                      type="text"
+                      placeholder="Description"
+                      value={newStationDescription}
+                      onChange={(e) => setNewStationDescription(e.target.value)}
+                      className="px-3 py-2 border border-gray-300 rounded-lg"
+                    />
+                  </div>
+                </div>
+              )}
+
               {/* Stations List */}
               {stations.length > 0 && (
                 <div className="mt-4">
@@ -754,6 +804,8 @@ export default function RealTimeMapContent() {
                         <div>
                           <strong>{station.name}</strong>
                           <p className="text-sm text-gray-600">{station.address}</p>
+                          {station.phone && <p className="text-xs text-blue-600">📞 {station.phone}</p>}
+                          {station.email && <p className="text-xs text-blue-600">✉️ {station.email}</p>}
                         </div>
                         <button
                           onClick={() => removeStation(station.id)}
@@ -787,12 +839,6 @@ export default function RealTimeMapContent() {
             </div>
           )}
 
-          {/* Emergency Response System for Residents */}
-          {user.role === 'resident' && (
-            <div className="mb-6">
-              <EmergencyResponseSystem userLocation={userLocation} variant="display" />
-            </div>
-          )}
 
           {/* Statistics */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
