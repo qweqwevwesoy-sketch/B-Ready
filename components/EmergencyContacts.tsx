@@ -89,11 +89,18 @@ export function EmergencyContacts({ userLocation, variant = 'display' }: Emergen
         setShowAddForm(false);
         fetchContacts();
       } else {
-        throw new Error('Failed to add emergency contact');
+        const errorData = await response.json();
+        console.error('Error response:', errorData);
+        const errorMsg = errorData.error || 'Failed to add emergency contact';
+        if (variant === 'admin') {
+          notificationManager.error(errorMsg);
+        } else {
+          alert(errorMsg);
+        }
       }
     } catch (error) {
       console.error('Error adding contact:', error);
-      const errorMsg = 'Error adding emergency contact';
+      const errorMsg = 'Error adding emergency contact. Please check your internet connection.';
       if (variant === 'admin') {
         notificationManager.error(errorMsg);
       } else {

@@ -187,6 +187,15 @@ export async function POST(request: NextRequest) {
   console.log('📡 POST /api/safety-tips called');
 
   try {
+    // Check if user is authenticated and has admin permissions
+    const authHeader = request.headers.get('authorization');
+    if (!authHeader) {
+      return NextResponse.json(
+        { success: false, error: 'Authentication required' },
+        { status: 401 }
+      );
+    }
+
     const mysqlConnection = await import('@/lib/mysql-connection').then(mod => mod.mysqlConnection);
 
     const { icon, title, items, category, created_by } = await request.json();

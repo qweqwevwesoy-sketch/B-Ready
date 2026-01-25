@@ -58,6 +58,12 @@ export function SafetyTipsAdmin({ tips, emergencyKit, onRefresh }: SafetyTipsAdm
         return;
       }
 
+      // Validate required fields
+      if (!tipData.title || !tipData.items || tipData.items.length === 0) {
+        alert('Please provide a title and at least one item for the safety tip.');
+        return;
+      }
+
       if (editingTip) {
         // Update existing tip
         const response = await fetch('/api/safety-tips', {
@@ -72,7 +78,9 @@ export function SafetyTipsAdmin({ tips, emergencyKit, onRefresh }: SafetyTipsAdm
         if (response.ok) {
           alert('Safety tip updated successfully');
         } else {
-          throw new Error('Failed to update safety tip');
+          const errorData = await response.json();
+          console.error('Error response:', errorData);
+          alert(`Failed to update safety tip: ${errorData.error || 'Unknown error'}`);
         }
       } else {
         // Create new tip
@@ -85,7 +93,9 @@ export function SafetyTipsAdmin({ tips, emergencyKit, onRefresh }: SafetyTipsAdm
         if (response.ok) {
           alert('Safety tip created successfully');
         } else {
-          throw new Error('Failed to create safety tip');
+          const errorData = await response.json();
+          console.error('Error response:', errorData);
+          alert(`Failed to create safety tip: ${errorData.error || 'Unknown error'}`);
         }
       }
       onRefresh();
@@ -93,7 +103,7 @@ export function SafetyTipsAdmin({ tips, emergencyKit, onRefresh }: SafetyTipsAdm
       setIsCreating(false);
     } catch (error) {
       console.error('Error saving tip:', error);
-      alert('Error saving safety tip. Please try again.');
+      alert('Error saving safety tip. Please check your internet connection and try again.');
     }
   };
 

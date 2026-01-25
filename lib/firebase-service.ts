@@ -20,6 +20,10 @@ export const createSafetyTip = async (tip: Omit<SafetyTip, 'id' | 'updated_at'>)
 
 export const updateSafetyTip = async (id: string, tip: Partial<SafetyTip>): Promise<void> => {
   try {
+    if (!id || id.trim() === '') {
+      throw new Error('Safety tip ID cannot be empty');
+    }
+    
     const tipRef = doc(safetyTipsCollection, id);
     await updateDoc(tipRef, {
       ...tip,

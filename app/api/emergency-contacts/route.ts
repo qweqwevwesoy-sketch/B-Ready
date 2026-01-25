@@ -142,6 +142,15 @@ export async function GET() {
 
 export async function POST(request: NextRequest) {
   try {
+    // Check if user is authenticated and has admin permissions
+    const authHeader = request.headers.get('authorization');
+    if (!authHeader) {
+      return NextResponse.json(
+        { success: false, error: 'Authentication required' },
+        { status: 401 }
+      );
+    }
+
     const body = await request.json();
     const { name, type, phone, address, location } = body;
     
