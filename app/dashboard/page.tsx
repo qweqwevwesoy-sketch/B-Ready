@@ -360,87 +360,93 @@ function DashboardContent({ searchParams }: { searchParams: URLSearchParams }) {
             </div>
           </div>
 
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            {/* Approved Reports Column */}
-            <div className="bg-gray-50 rounded-xl overflow-hidden border border-gray-200 flex flex-col h-[70vh]">
-              <div className="bg-gradient-to-r from-green-500 to-green-600 text-white p-4 text-center font-semibold">
-                ✅ Approved Reports
-                <div className="text-sm opacity-90 mt-1">{approvedReports.length} reports</div>
-              </div>
-              <div className="flex-1 overflow-y-auto p-4 space-y-4">
-                {approvedReports.length > 0 ? (
-                  approvedReports.map((report) => (
-                    <ReportCard
-                      key={report.id}
-                      report={report}
-                      onOpenChat={handleOpenReportChat}
-                      canOpenChat={user.role === 'admin' || report.userId === user.uid}
-                    />
-                  ))
-                ) : (
-                  <div className="text-center text-gray-500 py-8">
-                    <p>No approved reports yet</p>
-                    <p className="text-sm mt-2">Reports approved by officials will appear here</p>
-                  </div>
-                )}
-              </div>
-            </div>
-
-            {/* Current Reports Column */}
-            <div className="bg-gray-50 rounded-xl overflow-hidden border border-gray-200 flex flex-col h-[70vh]">
-              <div className="bg-gradient-to-r from-blue-500 to-blue-600 text-white p-4 text-center font-semibold">
-                🔵 Active Reports
-                <div className="text-sm opacity-90 mt-1">{currentReports.length} reports</div>
-              </div>
-              <div className="flex-1 overflow-y-auto p-4 space-y-4">
-                {currentReports.length > 0 ? (
-                  currentReports.map((report) => (
-                    <ReportCard
-                      key={report.id}
-                      report={report}
-                      onOpenChat={handleOpenReportChat}
-                      canOpenChat={user.role === 'admin' || report.userId === user.uid}
-                    />
-                  ))
-                ) : (
-                  <div className="text-center text-gray-500 py-8">
-                    <p>No active reports</p>
-                    <p className="text-sm mt-2">Ongoing emergencies will appear here</p>
-                  </div>
-                )}
-              </div>
-            </div>
-
-            {/* Third Column (Pending/My Reports) */}
-            <div className="bg-gray-50 rounded-xl overflow-hidden border border-gray-200 flex flex-col h-[70vh]">
-              <div className="bg-gradient-to-r from-primary to-primary-dark text-white p-4 text-center font-semibold">
-                {user.role === 'admin' ? '⏳ Pending Review' : '📋 My Reports'}
-                <div className="text-sm opacity-90 mt-1">{thirdColumnReports.length} reports</div>
-              </div>
-              <div className="flex-1 overflow-y-auto p-4 space-y-4">
-                {thirdColumnReports.length > 0 ? (
-                  thirdColumnReports.map((report) => (
-                    <ReportCard
-                      key={report.id}
-                      report={report}
-                      onOpenChat={handleOpenReportChat}
-                      onApprove={user.role === 'admin' ? handleApprove : undefined}
-                      onReject={user.role === 'admin' ? handleReject : undefined}
-                      canOpenChat={user.role === 'admin' || report.userId === user.uid}
-                      showActions={user.role === 'admin'}
-                    />
-                  ))
-                ) : (
-                  <div className="text-center text-gray-500 py-8">
-                    <p>No reports here yet</p>
-                    <p className="text-sm mt-2">
-                      {user.role === 'admin' ? 'Pending reports will appear here' : 'Your reports will appear here'}
-                    </p>
-                  </div>
-                )}
-              </div>
-            </div>
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        {/* Approved Reports Column */}
+        <div className="bg-gray-50 rounded-xl overflow-hidden border border-gray-200 flex flex-col h-[70vh]">
+          <div className="bg-gradient-to-r from-green-500 to-green-600 text-white p-4 text-center font-semibold">
+            ✅ Approved Reports
+            <div className="text-sm opacity-90 mt-1">{approvedReports.length} reports</div>
           </div>
+          <div className="flex-1 overflow-y-auto p-4 space-y-4">
+            {approvedReports.length > 0 ? (
+              approvedReports
+                .filter(report => report && report.id) // Filter out invalid reports
+                .map((report) => (
+                  <ReportCard
+                    key={report.id}
+                    report={report}
+                    onOpenChat={handleOpenReportChat}
+                    canOpenChat={user.role === 'admin' || report.userId === user.uid}
+                  />
+                ))
+            ) : (
+              <div className="text-center text-gray-500 py-8">
+                <p>No approved reports yet</p>
+                <p className="text-sm mt-2">Reports approved by officials will appear here</p>
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Current Reports Column */}
+        <div className="bg-gray-50 rounded-xl overflow-hidden border border-gray-200 flex flex-col h-[70vh]">
+          <div className="bg-gradient-to-r from-blue-500 to-blue-600 text-white p-4 text-center font-semibold">
+            🔵 Active Reports
+            <div className="text-sm opacity-90 mt-1">{currentReports.length} reports</div>
+          </div>
+          <div className="flex-1 overflow-y-auto p-4 space-y-4">
+            {currentReports.length > 0 ? (
+              currentReports
+                .filter(report => report && report.id) // Filter out invalid reports
+                .map((report) => (
+                  <ReportCard
+                    key={report.id}
+                    report={report}
+                    onOpenChat={handleOpenReportChat}
+                    canOpenChat={user.role === 'admin' || report.userId === user.uid}
+                  />
+                ))
+            ) : (
+              <div className="text-center text-gray-500 py-8">
+                <p>No active reports</p>
+                <p className="text-sm mt-2">Ongoing emergencies will appear here</p>
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Third Column (Pending/My Reports) */}
+        <div className="bg-gray-50 rounded-xl overflow-hidden border border-gray-200 flex flex-col h-[70vh]">
+          <div className="bg-gradient-to-r from-primary to-primary-dark text-white p-4 text-center font-semibold">
+            {user.role === 'admin' ? '⏳ Pending Review' : '📋 My Reports'}
+            <div className="text-sm opacity-90 mt-1">{thirdColumnReports.length} reports</div>
+          </div>
+          <div className="flex-1 overflow-y-auto p-4 space-y-4">
+            {thirdColumnReports.length > 0 ? (
+              thirdColumnReports
+                .filter(report => report && report.id) // Filter out invalid reports
+                .map((report) => (
+                  <ReportCard
+                    key={report.id}
+                    report={report}
+                    onOpenChat={handleOpenReportChat}
+                    onApprove={user.role === 'admin' ? handleApprove : undefined}
+                    onReject={user.role === 'admin' ? handleReject : undefined}
+                    canOpenChat={user.role === 'admin' || report.userId === user.uid}
+                    showActions={user.role === 'admin'}
+                  />
+                ))
+            ) : (
+              <div className="text-center text-gray-500 py-8">
+                <p>No reports here yet</p>
+                <p className="text-sm mt-2">
+                  {user.role === 'admin' ? 'Pending reports will appear here' : 'Your reports will appear here'}
+                </p>
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
         </div>
       </main>
 
