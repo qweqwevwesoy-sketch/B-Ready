@@ -8,9 +8,6 @@ interface WindowWithGoogle extends Window {
   google?: {
     translate?: {
       TranslateElement: new (options: any, element: string | HTMLElement) => void;
-      TranslateElementInlinelayout: {
-        SIMPLE: string;
-      };
     };
   };
   googleTranslateElementInit?: () => void;
@@ -32,36 +29,44 @@ const GoogleTranslate: React.FC<GoogleTranslateProps> = ({ className }) => {
     setCurrentLanguage(languageCode);
     setIsOpen(false);
     
-    // Use Google Translate API
-    const googleTranslateElementInit = () => {
-      const googleWindow = window as WindowWithGoogle;
-      if (googleWindow.google?.translate?.TranslateElement) {
-        new googleWindow.google.translate.TranslateElement(
-          {
-            pageLanguage: 'en',
-            includedLanguages: 'en,tl,ceb',
-            layout: googleWindow.google.translate.TranslateElementInlinelayout.SIMPLE,
-            autoDisplay: false
-          },
-          'google_translate_element'
-        );
-      }
-    };
-
-    // Set the language preference
+    // Directly trigger Google Translate if it's loaded
     const selectField = document.querySelector('.goog-te-combo') as HTMLSelectElement;
     if (selectField) {
       selectField.value = languageCode;
       selectField.dispatchEvent(new Event('change'));
     } else {
-      // If Google Translate hasn't loaded yet, load it
+      // Load Google Translate script and set language
       const script = document.createElement('script');
       script.type = 'text/javascript';
       script.src = '//translate.google.com/translate_a/element.js?cb=googleTranslateElementInit';
       document.head.appendChild(script);
       
-      const googleWindow = window as WindowWithGoogle;
-      googleWindow.googleTranslateElementInit = googleTranslateElementInit;
+      // Set up the callback to initialize and set language
+      setTimeout(() => {
+        const googleWindow = window as WindowWithGoogle;
+        googleWindow.googleTranslateElementInit = () => {
+          if (googleWindow.google?.translate?.TranslateElement) {
+            new googleWindow.google.translate.TranslateElement(
+              {
+                pageLanguage: 'en',
+                includedLanguages: 'en,tl,ceb',
+                layout: 0,
+                autoDisplay: false
+              },
+              'google_translate_element'
+            );
+            
+            // Immediately set the language after initialization
+            setTimeout(() => {
+              const selectField = document.querySelector('.goog-te-combo') as HTMLSelectElement;
+              if (selectField) {
+                selectField.value = languageCode;
+                selectField.dispatchEvent(new Event('change'));
+              }
+            }, 100);
+          }
+        };
+      }, 0);
     }
   };
 
@@ -82,7 +87,7 @@ const GoogleTranslate: React.FC<GoogleTranslateProps> = ({ className }) => {
               {
                 pageLanguage: 'en',
                 includedLanguages: 'en,tl,ceb',
-                layout: googleWindow.google.translate.TranslateElementInlinelayout.SIMPLE,
+                layout: 0, // Use numeric layout value instead of deprecated constant
                 autoDisplay: false
               },
               'google_translate_element'
