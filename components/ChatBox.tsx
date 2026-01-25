@@ -701,9 +701,14 @@ export function ChatBox({ reportId, category, onClose, onSendMessage, onSendImag
               {reportId ? 'Continuing conversation' : (category ? `Reporting: ${category.name}` : 'Emergency Reporting')}
             </p>
           </div>
-          <button onClick={onClose} className="text-white hover:opacity-80 text-2xl">
-            ×
-          </button>
+          <div className="flex items-center gap-2">
+            {reportId && (
+              <span className="text-xs text-white/80">ID: {reportId}</span>
+            )}
+            <button onClick={onClose} className="text-white hover:opacity-80 text-2xl">
+              ×
+            </button>
+          </div>
         </div>
 
         {/* Messages */}

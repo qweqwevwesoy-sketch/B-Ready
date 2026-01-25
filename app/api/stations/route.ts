@@ -174,9 +174,9 @@ export async function POST(request: NextRequest) {
   try {
     const { name, lat, lng, address, phone, email, website, description, created_by } = await request.json();
 
-    if (!name || lat === undefined || lng === undefined) {
+    if (!name) {
       return NextResponse.json(
-        { success: false, error: 'Name, latitude, and longitude are required' },
+        { success: false, error: 'Station name is required' },
         { status: 400 }
       );
     }
@@ -283,8 +283,8 @@ export async function PUT(request: NextRequest) {
     const params: (string | number | null)[] = [];
 
     if (name !== undefined) { updates.push('name = ?'); params.push(name); }
-    if (lat !== undefined) { updates.push('lat = ?'); params.push(parseFloat(lat)); }
-    if (lng !== undefined) { updates.push('lng = ?'); params.push(parseFloat(lng)); }
+    if (lat !== undefined && lat !== null) { updates.push('lat = ?'); params.push(parseFloat(lat)); }
+    if (lng !== undefined && lng !== null) { updates.push('lng = ?'); params.push(parseFloat(lng)); }
     if (address !== undefined) { updates.push('address = ?'); params.push(address); }
     if (phone !== undefined) { updates.push('phone = ?'); params.push(phone); }
     if (email !== undefined) { updates.push('email = ?'); params.push(email); }

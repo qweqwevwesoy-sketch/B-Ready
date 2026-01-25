@@ -24,7 +24,7 @@ const MapPicker = dynamic(() => import('@/components/MapPicker').then(mod => ({ 
 
 export default function ProfilePage() {
   const router = useRouter();
-  const { user, updateProfile, uploadProfilePicture, changePassword } = useAuth();
+  const { user, loading, updateProfile, uploadProfilePicture, changePassword } = useAuth();
   const [showMapPicker, setShowMapPicker] = useState(false);
   const [formData, setFormData] = useState({
     firstName: '',
@@ -34,7 +34,7 @@ export default function ProfilePage() {
     birthdate: '',
     employeeId: '',
   });
-  const [loading, setLoading] = useState(false);
+  const [formLoading, setFormLoading] = useState(false);
   const [uploadingPicture, setUploadingPicture] = useState(false);
   const [showLocationPicker, setShowLocationPicker] = useState(false);
   const [currentLocation, setCurrentLocation] = useState<{ lat: number; lng: number } | null>(null);
@@ -53,6 +53,18 @@ export default function ProfilePage() {
     }
   }, [user]);
 
+  // Wait for authentication to complete before redirecting
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-200 flex items-center justify-center">
+        <div className="bg-white/95 backdrop-blur-lg rounded-2xl p-8 shadow-xl text-center">
+          <div className="text-4xl mb-4">⏳</div>
+          <p className="text-gray-600 font-semibold">Loading profile...</p>
+        </div>
+      </div>
+    );
+  }
+
   if (!user) {
     router.push('/login');
     return null;
@@ -60,7 +72,7 @@ export default function ProfilePage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setLoading(true);
+    setFormLoading(true);
     try {
       await updateProfile(formData);
       notificationManager.success('Profile updated successfully!');
@@ -68,7 +80,7 @@ export default function ProfilePage() {
       const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
       notificationManager.error('Error updating profile: ' + errorMessage);
     } finally {
-      setLoading(false);
+      setFormLoading(false);
     }
   };
 
@@ -300,10 +312,10 @@ export default function ProfilePage() {
             <div className="flex gap-4 pt-4">
               <button
                 type="submit"
-                disabled={loading}
+                disabled={formLoading}
                 className="px-6 py-3 bg-gradient-to-r from-primary to-primary-dark text-white rounded-lg font-semibold hover:opacity-90 disabled:opacity-50"
               >
-                {loading ? 'Updating...' : 'Update Profile'}
+                {formLoading ? 'Updating...' : 'Update Profile'}
               </button>
               <button
                 type="button"

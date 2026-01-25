@@ -65,6 +65,12 @@ export default function LandingPage() {
               🚀 Get Started
             </button>
             <button
+              onClick={() => router.push('/safety-tips')}
+              className="px-8 py-4 bg-transparent border-2 border-white text-white rounded-xl font-semibold text-lg hover:bg-white/10 transition-colors"
+            >
+              🛡️ View Safety Tips
+            </button>
+            <button
               onClick={() => {
                 document.getElementById('features')?.scrollIntoView({ behavior: 'smooth' });
               }}
@@ -163,12 +169,6 @@ export default function LandingPage() {
                 className="w-full px-6 py-3 bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-700 transition-colors"
               >
                 🛡️ View Safety Tips
-              </button>
-              <button
-                onClick={() => router.push('/offline')}
-                className="w-full px-6 py-3 bg-red-600 text-white rounded-lg font-semibold hover:bg-red-700 transition-colors"
-              >
-                🚨 Emergency Reporting
               </button>
               <button
                 onClick={() => setIsOffline(false)}

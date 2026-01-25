@@ -151,12 +151,14 @@ export function SafetyTipsAdmin({ tips, emergencyKit, onRefresh }: SafetyTipsAdm
       const response = await fetch('/api/emergency-contacts');
       if (response.ok) {
         const data = await response.json();
-        setContacts(data);
+        setContacts(data.contacts || []);
       } else {
         console.error('Failed to load contacts');
+        setContacts([]);
       }
     } catch (error) {
       console.error('Error loading contacts:', error);
+      setContacts([]);
     } finally {
       setLoading(false);
     }
