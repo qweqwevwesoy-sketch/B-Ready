@@ -106,7 +106,15 @@ export function ChatBox({ reportId, category, onClose, onSendMessage, onSendImag
 
   // Get the actual report data for the modal
   const currentReport = useMemo(() => {
-    if (!reportId || reportId.startsWith('temp_')) return null;
+    if (!reportId) return null;
+    // For temporary reports, we need to get the data from local state or props
+    if (reportId.startsWith('temp_')) {
+      // Try to find in reports array first (in case it was synced)
+      const syncedReport = reports.find(r => r.id === reportId);
+      if (syncedReport) return syncedReport;
+      // If not found, we'll use the category prop or other available data
+      return null;
+    }
     return reports.find(r => r.id === reportId);
   }, [reportId, reports]);
 
@@ -967,21 +975,9 @@ export function ChatBox({ reportId, category, onClose, onSendMessage, onSendImag
                 <div className="text-xs font-semibold text-gray-600">Type</div>
                 <div className="text-sm">
                   {currentReport ? (
-                    currentReport.category === 'Earthquake' || currentReport.category === 'Landslide' || currentReport.category === 'Volcano' 
-                      ? 'Geological' 
-                      : currentReport.category === 'Fire' || currentReport.category === 'Explosion' 
-                      ? 'Intentional' 
-                      : currentReport.category === 'Flood' || currentReport.category === 'Storm' || currentReport.category === 'Tsunami'
-                      ? 'Natural'
-                      : currentReport.category || 'Unknown'
+                    currentReport.type || currentReport.category || 'Unknown'
                   ) : category ? (
-                    category.name === 'Earthquake' || category.name === 'Landslide' || category.name === 'Volcano' 
-                      ? 'Geological' 
-                      : category.name === 'Fire' || category.name === 'Explosion' 
-                      ? 'Intentional' 
-                      : category.name === 'Flood' || category.name === 'Storm' || category.name === 'Tsunami'
-                      ? 'Natural'
-                      : category.name || 'Unknown'
+                    category.name || 'Unknown'
                   ) : reportId ? (
                     reportId.startsWith('anonymous_') ? 'Anonymous Report' : 'Temporary Report'
                   ) : 'Unknown'}
@@ -996,7 +992,7 @@ export function ChatBox({ reportId, category, onClose, onSendMessage, onSendImag
                     currentReport.userName || 'Anonymous User'
                   ) : reportId ? (
                     reportId.startsWith('anonymous_') ? 'Anonymous User' :
-                    reportId.startsWith('temp_') ? 'Temporary User' :
+                    reportId.startsWith('temp_') ? (user ? `${user.firstName} ${user.lastName}` : 'Temporary User') :
                     'Unknown User'
                   ) : user ? (
                     `${user.firstName} ${user.lastName}`
@@ -1007,7 +1003,7 @@ export function ChatBox({ reportId, category, onClose, onSendMessage, onSendImag
               {/* Location */}
               <div className="bg-gray-50 rounded-lg p-2">
                 <div className="text-xs font-semibold text-gray-600">Location</div>
-                <div className="text-sm">📍 {currentReport?.address || 'Location not specified'}</div>
+                <div className="text-sm">📍 {currentReport?.address || (reportId?.startsWith('temp_') ? 'Location not specified' : 'Location not specified')}</div>
                 {currentReport?.location && (
                   <div className="text-xs text-gray-600 mt-1">
                     {currentReport.location.lat.toFixed(6)}, {currentReport.location.lng.toFixed(6)}
@@ -1018,10 +1014,9 @@ export function ChatBox({ reportId, category, onClose, onSendMessage, onSendImag
               {/* Contact Info */}
               <div className="bg-gray-50 rounded-lg p-2">
                 <div className="text-xs font-semibold text-gray-600">Contact</div>
-                <div className="text-sm">📞 {currentReport?.userPhone || user?.phone || 'Not provided'}</div>
+                <div className="text-sm">📞 {currentReport?.userPhone || (reportId?.startsWith('temp_') ? (user?.phone || 'Not provided') : 'Not provided')}</div>
                 <div className="text-xs text-gray-600 mt-1">
-                  {currentReport?.userName ? `${currentReport.userName}@example.com` : 
-                   user?.email || 'Not provided'}
+                  {currentReport?.userName ? `${currentReport.userName}@example.com` : (reportId?.startsWith('temp_') ? (user ? `${user.firstName} ${user.lastName}@example.com` : 'Not provided') : 'Not provided')}
                 </div>
               </div>
 
