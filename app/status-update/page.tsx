@@ -270,10 +270,6 @@ export default function StatusUpdatePage() {
         </div>
 
 
-        {/* Enhanced Notification System */}
-        <div className="mt-8">
-          <EnhancedNotificationSystem />
-        </div>
       </main>
     </div>
   );

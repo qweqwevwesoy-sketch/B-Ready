@@ -32,6 +32,7 @@ export function EmergencyContacts({ userLocation, variant = 'display' }: Emergen
   const [contacts, setContacts] = useState<EmergencyContact[]>([]);
   const [loading, setLoading] = useState(true);
   const [showAddForm, setShowAddForm] = useState(false);
+  const [showEditForm, setShowEditForm] = useState<string | null>(null);
   const [showMapPicker, setShowMapPicker] = useState(false);
   const [showDetails, setShowDetails] = useState<string | null>(null);
   const [newContact, setNewContact] = useState({
@@ -41,6 +42,7 @@ export function EmergencyContacts({ userLocation, variant = 'display' }: Emergen
     address: '',
     location: { lat: 0, lng: 0 }
   });
+  const [editingContact, setEditingContact] = useState<EmergencyContact | null>(null);
 
   useEffect(() => {
     fetchContacts();
@@ -160,6 +162,68 @@ export function EmergencyContacts({ userLocation, variant = 'display' }: Emergen
         alert(errorMsg);
       }
     }
+  };
+
+  const editContact = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingContact) return;
+
+    if (!editingContact.name || !editingContact.type || !editingContact.phone) {
+      if (variant === 'admin') {
+        notificationManager.error('Please fill in all required fields');
+      } else {
+        alert('Please fill in all required fields');
+      }
+      return;
+    }
+
+    try {
+      const response = await fetch(`/api/emergency-contacts?id=${editingContact.id}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(editingContact),
+      });
+
+      const data = await response.json();
+
+      if (data.success) {
+        if (variant === 'admin') {
+          notificationManager.success('Emergency contact updated successfully');
+        } else {
+          alert('Emergency contact updated successfully');
+        }
+        setEditingContact(null);
+        setShowEditForm(null);
+        fetchContacts();
+      } else {
+        const errorMsg = data.error || 'Failed to update emergency contact';
+        if (variant === 'admin') {
+          notificationManager.error(errorMsg);
+        } else {
+          alert(errorMsg);
+        }
+      }
+    } catch (error) {
+      console.error('Error updating contact:', error);
+      const errorMsg = 'Error updating emergency contact';
+      if (variant === 'admin') {
+        notificationManager.error(errorMsg);
+      } else {
+        alert(errorMsg);
+      }
+    }
+  };
+
+  const startEditContact = (contact: EmergencyContact) => {
+    setEditingContact(contact);
+    setShowEditForm(contact.id);
+  };
+
+  const cancelEdit = () => {
+    setEditingContact(null);
+    setShowEditForm(null);
   };
 
   const getContactIcon = (type: string) => {
@@ -361,6 +425,105 @@ export function EmergencyContacts({ userLocation, variant = 'display' }: Emergen
           />
         )}
 
+        {showEditForm && editingContact && (
+          <div className="border-2 border-blue-300 rounded-lg p-6 mb-6 bg-blue-50">
+            <h4 className="text-lg font-semibold mb-4">Edit Emergency Contact</h4>
+
+            <form onSubmit={editContact} className="space-y-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium mb-1">Contact Name</label>
+                  <input
+                    type="text"
+                    value={editingContact.name}
+                    onChange={(e) => setEditingContact({ ...editingContact, name: e.target.value })}
+                    className="w-full p-2 border rounded"
+                    placeholder="e.g., Manila Fire Station"
+                    required
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium mb-1">Phone Number</label>
+                  <input
+                    type="tel"
+                    value={editingContact.phone}
+                    onChange={(e) => setEditingContact({ ...editingContact, phone: e.target.value })}
+                    className="w-full p-2 border rounded"
+                    placeholder="e.g., +63 2 123 4567"
+                    required
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium mb-1">Contact Type</label>
+                  <select
+                    value={editingContact.type}
+                    onChange={(e) => setEditingContact({ ...editingContact, type: e.target.value as EmergencyContact['type'] })}
+                    className="w-full p-2 border rounded"
+                    required
+                  >
+                    <option value="fire">Fire Station</option>
+                    <option value="police">Police Station</option>
+                    <option value="medical">Medical Center</option>
+                    <option value="barangay">Barangay Hall</option>
+                    <option value="other">Other Service</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium mb-1">Location</label>
+                  <div className="flex gap-2">
+                    <input
+                      type="text"
+                      value={editingContact.address || ''}
+                      readOnly
+                      placeholder="e.g., Manila, Metro Manila"
+                      className="flex-1 p-2 border rounded bg-gray-100"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowMapPicker(true)}
+                      className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
+                    >
+                      📍 Select Location
+                    </button>
+                  </div>
+                  {editingContact.location && editingContact.location.lat !== 0 && editingContact.location.lng !== 0 && (
+                    <div className="mt-2 text-sm text-gray-600">
+                      Coordinates: {editingContact.location.lat.toFixed(6)}, {editingContact.location.lng.toFixed(6)}
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium mb-1">Description (Optional)</label>
+                <textarea
+                  value={editingContact.address || ''}
+                  onChange={(e) => setEditingContact({ ...editingContact, address: e.target.value })}
+                  className="w-full p-2 border rounded"
+                  placeholder="Additional information about this contact..."
+                  rows={3}
+                />
+              </div>
+
+              <div className="flex gap-4">
+                <button
+                  type="submit"
+                  className="px-6 py-2 bg-blue-600 text-white rounded font-semibold hover:bg-blue-700"
+                >
+                  Update Contact
+                </button>
+                <button
+                  type="button"
+                  onClick={cancelEdit}
+                  className="px-6 py-2 bg-gray-500 text-white rounded font-semibold hover:bg-gray-600"
+                >
+                  Cancel
+                </button>
+              </div>
+            </form>
+          </div>
+        )}
+
         {loading ? (
           <div className="text-center py-4">Loading contacts...</div>
         ) : contacts.length === 0 ? (
@@ -383,15 +546,23 @@ export function EmergencyContacts({ userLocation, variant = 'display' }: Emergen
                       </div>
                     )}
                   </div>
-                  <button
-                    onClick={() => deleteContact(contact.id)}
-                    className="px-3 py-1 bg-red-500 text-white rounded-lg hover:bg-red-600 text-sm"
-                  >
-                    Delete
-                  </button>
+                  <div className="flex flex-col gap-2">
+                    <button
+                      onClick={() => startEditContact(contact)}
+                      className="px-3 py-1 bg-blue-500 text-white rounded-lg hover:bg-blue-600 text-sm"
+                    >
+                      Edit
+                    </button>
+                    <button
+                      onClick={() => deleteContact(contact.id)}
+                      className="px-3 py-1 bg-red-500 text-white rounded-lg hover:bg-red-600 text-sm"
+                    >
+                      Delete
+                    </button>
+                  </div>
                 </div>
               </div>
-            ))}
+            ))} 
           </div>
         )}
       </div>
