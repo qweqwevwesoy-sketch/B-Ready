@@ -501,8 +501,7 @@ export function EmergencyContacts({ userLocation, variant = 'display' }: Emergen
                   value={editingContact.address || ''}
                   onChange={(e) => setEditingContact({ 
                     ...editingContact, 
-                    address: e.target.value,
-                    location: editingContact.location || { lat: 0, lng: 0 }
+                    address: e.target.value
                   })}
                   className="w-full p-2 border rounded"
                   placeholder="Additional information about this contact..."
@@ -554,17 +553,17 @@ export function EmergencyContacts({ userLocation, variant = 'display' }: Emergen
                   <div className="flex items-center gap-2">
                     <button
                       type="button"
-                      onClick={() => startEditContact(contact)}
-                      className="bg-blue-500 text-white px-3 py-1 rounded text-sm hover:bg-blue-600"
-                    >
-                      Edit
-                    </button>
-                    <button
-                      type="button"
                       onClick={() => deleteContact(contact.id)}
                       className="bg-red-500 text-white px-3 py-1 rounded text-sm hover:bg-red-600"
                     >
                       Delete
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => startEditContact(contact)}
+                      className="bg-blue-500 text-white px-3 py-1 rounded text-sm hover:bg-blue-600"
+                    >
+                      Edit
                     </button>
                   </div>
                 </div>

@@ -375,100 +375,140 @@ export default function RealTimeMapContent() {
   };
 
   useEffect(() => {
-    if (!mapContainerRef.current) return;
+    if (!mapContainerRef.current) {
+      console.log('Map container ref is null');
+      return;
+    }
+
+    console.log('Initializing map...');
 
     // Set map as loading
     setMapLoading(true);
     setMapError(null);
 
-    try {
-      // Initialize map centered on Philippines - IMMEDIATE INITIALIZATION
-      const map = L.map(mapContainerRef.current, {
-        zoomControl: true,
-        scrollWheelZoom: true,
-        doubleClickZoom: true,
-        dragging: true,
-        touchZoom: true,
-        bounceAtZoomLimits: true,
-        preferCanvas: true, // Use canvas for better performance
-        fadeAnimation: false, // Disable animations for faster loading
-        zoomAnimation: false,
-        markerZoomAnimation: false
-      }).setView([14.5995, 120.9842], 8);
+    // Use a timeout to ensure DOM is ready
+    const initMap = async () => {
+      try {
+        console.log('Map container exists:', mapContainerRef.current);
+        console.log('Container dimensions:', mapContainerRef.current.getBoundingClientRect());
 
-      mapRef.current = map;
-      setMapReady(true);
+        // Wait a bit to ensure container is fully mounted
+        await new Promise(resolve => setTimeout(resolve, 100));
 
-      // Add tile layer with optimized settings
-      const tileLayer = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-        attribution: '© OpenStreetMap contributors',
-        maxZoom: 19,
-        maxNativeZoom: 19,
-        detectRetina: true,
-        updateWhenIdle: true,
-        updateWhenZooming: true,
-        keepBuffer: 1, // Reduced buffer for faster loading
-      });
-
-      tileLayer.addTo(map);
-
-      // Handle tile loading errors
-      tileLayer.on('tileerror', (error) => {
-        console.error('Tile loading error:', error);
-        setMapError('Failed to load map tiles. Please check your internet connection.');
-      });
-
-      // IMMEDIATELY mark as loaded to show map instantly
-      setMapLoading(false);
-
-      // Try to get current location in background without blocking
-      const setInitialLocation = async () => {
-        try {
-          const location = await getCurrentLocation();
-          setUserLocation(location);
-          
-          const userIcon = L.divIcon({
-            html: '<div style="background-color: #10b981; width: 20px; height: 20px; border-radius: 50%; border: 3px solid white; box-shadow: 0 2px 4px rgba(0,0,0,0.3);"></div>',
-            className: 'user-location-marker',
-            iconSize: [20, 20],
-            iconAnchor: [10, 10],
-          });
-
-          L.marker([location.lat, location.lng], {
-            icon: userIcon,
-            zIndexOffset: 1000
-          }).addTo(map).bindPopup('<strong>You are here</strong><br><small>Location detected</small>');
-
-          // Smoothly fly to user location
-          map.flyTo([location.lat, location.lng], 14, {
-            animate: true,
-            duration: 0.5 // Faster animation
-          });
-        } catch (error) {
-          console.log('Location tracking failed - using default view');
+        if (!mapContainerRef.current) {
+          console.log('Map container ref became null after timeout');
+          setMapLoading(false);
+          return;
         }
-      };
 
-      // Run location detection in background
-      setInitialLocation();
+        // Initialize map centered on Philippines
+        const map = L.map(mapContainerRef.current, {
+          zoomControl: true,
+          scrollWheelZoom: true,
+          doubleClickZoom: true,
+          dragging: true,
+          touchZoom: true,
+          bounceAtZoomLimits: true,
+          preferCanvas: true, // Use canvas for better performance
+          fadeAnimation: false, // Disable animations for faster loading
+          zoomAnimation: false,
+          markerZoomAnimation: false
+        }).setView([14.5995, 120.9842], 8);
 
-      // Handle map loading completion
-      map.whenReady(() => {
-        console.log('Map loaded successfully');
-      });
+        mapRef.current = map;
+        setMapReady(true);
 
-      return () => {
+        // Add tile layer with optimized settings
+        const tileLayer = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+          attribution: '© OpenStreetMap contributors',
+          maxZoom: 19,
+          maxNativeZoom: 19,
+          detectRetina: true,
+          updateWhenIdle: true,
+          updateWhenZooming: true,
+          keepBuffer: 1, // Reduced buffer for faster loading
+        });
+
+        tileLayer.addTo(map);
+
+        // Handle tile loading errors
+        tileLayer.on('tileerror', (error) => {
+          console.error('Tile loading error:', error);
+          setMapError('Failed to load map tiles. Please check your internet connection.');
+        });
+
+        // Handle successful tile loading
+        tileLayer.on('load', () => {
+          setMapLoading(false);
+          console.log('Map tiles loaded successfully');
+        });
+
+        // Handle map loading completion
+        map.whenReady(() => {
+          console.log('Map loaded successfully');
+          setMapLoading(false);
+        });
+
+        // Try to get current location in background without blocking
+        const setInitialLocation = async () => {
+          try {
+            const location = await getCurrentLocation();
+            setUserLocation(location);
+            
+            const userIcon = L.divIcon({
+              html: '<div style="background-color: #10b981; width: 20px; height: 20px; border-radius: 50%; border: 3px solid white; box-shadow: 0 2px 4px rgba(0,0,0,0.3);"></div>',
+              className: 'user-location-marker',
+              iconSize: [20, 20],
+              iconAnchor: [10, 10],
+            });
+
+            L.marker([location.lat, location.lng], {
+              icon: userIcon,
+              zIndexOffset: 1000
+            }).addTo(map).bindPopup('<strong>You are here</strong><br><small>Location detected</small>');
+
+            // Smoothly fly to user location
+            map.flyTo([location.lat, location.lng], 14, {
+              animate: true,
+              duration: 0.5 // Faster animation
+            });
+          } catch (error) {
+            console.log('Location tracking failed - using default view');
+            // Still mark as loaded even if location fails
+            setMapLoading(false);
+          }
+        };
+
+        // Run location detection in background
+        setInitialLocation();
+
+        return () => {
+          try {
+            map.remove();
+          } catch (error) {
+            console.error('Error removing map:', error);
+          }
+        };
+      } catch (error) {
+        console.error('Map initialization error:', error);
+        setMapError('Failed to initialize map. Please refresh the page.');
+        setMapLoading(false);
+      }
+    };
+
+    initMap();
+
+    return () => {
+      // Cleanup function
+      if (mapRef.current) {
         try {
-          map.remove();
+          mapRef.current.remove();
         } catch (error) {
-          console.error('Error removing map:', error);
+          console.error('Error removing map on cleanup:', error);
         }
-      };
-    } catch (error) {
-      console.error('Map initialization error:', error);
-      setMapError('Failed to initialize map. Please refresh the page.');
-      setMapLoading(false);
-    }
+        mapRef.current = null;
+      }
+    };
   }, []); // Only run once on mount
 
   // Update map click handler when addingStation changes
