@@ -8,6 +8,9 @@ import { Header } from '@/components/Header';
 import { getCurrentLocation } from '@/lib/utils';
 import L from 'leaflet';
 
+// Import Leaflet CSS for proper map rendering
+import 'leaflet/dist/leaflet.css';
+
 declare global {
   interface Window {
     removeStation?: (id: string) => void;
@@ -82,6 +85,7 @@ export default function RealTimeMapContent() {
   const [mapKey, setMapKey] = useState(() => Date.now()); // Unique key to force re-mount
   const [mapReady, setMapReady] = useState(false); // Track when map is ready
   const [mapError, setMapError] = useState<string | null>(null); // Track map errors
+  const [mapLoading, setMapLoading] = useState(true); // Track map loading state
   const stationIdCounter = useRef(0);
   const mapRef = useRef<L.Map | null>(null);
   const mapContainerRef = useRef<HTMLDivElement>(null);
@@ -301,45 +305,89 @@ export default function RealTimeMapContent() {
   useEffect(() => {
     if (!mapContainerRef.current) return;
 
-    // Initialize map centered on Philippines
-    const map = L.map(mapContainerRef.current).setView([14.5995, 120.9842], 8);
-    mapRef.current = map;
+    // Set map as loading
+    setMapLoading(true);
+    setMapError(null);
 
-    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-      attribution: '© OpenStreetMap contributors',
-      maxZoom: 19,
-    }).addTo(map);
+    try {
+      // Initialize map centered on Philippines
+      const map = L.map(mapContainerRef.current, {
+        zoomControl: true,
+        scrollWheelZoom: true,
+        doubleClickZoom: true,
+        dragging: true,
+        touchZoom: true,
+        bounceAtZoomLimits: true
+      }).setView([14.5995, 120.9842], 8);
 
-    // Try to get current location using our utility function
-    const setInitialLocation = async () => {
-      try {
-        const location = await getCurrentLocation();
-        setUserLocation(location);
-        
-        // Add user marker
-        const userIcon = L.divIcon({
-          html: '<div style="background-color: #10b981; width: 20px; height: 20px; border-radius: 50%; border: 3px solid white; box-shadow: 0 2px 4px rgba(0,0,0,0.3);"></div>',
-          className: 'user-location-marker',
-          iconSize: [20, 20],
-          iconAnchor: [10, 10],
-        });
+      mapRef.current = map;
+      setMapReady(true);
+      setMapLoading(false);
 
-        L.marker([location.lat, location.lng], {
-          icon: userIcon,
-          zIndexOffset: 1000
-        }).addTo(map).bindPopup('<strong>You are here</strong><br><small>Location detected</small>');
+      // Add tile layer with error handling
+      const tileLayer = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '© OpenStreetMap contributors',
+        maxZoom: 19,
+        maxNativeZoom: 19,
+        detectRetina: true,
+        updateWhenIdle: true,
+        updateWhenZooming: true,
+        keepBuffer: 2
+      });
 
-        map.setView([location.lat, location.lng], 14);
-      } catch (error) {
-        console.log('Location tracking failed, using default location');
-      }
-    };
+      tileLayer.addTo(map);
 
-    setInitialLocation();
+      // Handle tile loading errors
+      tileLayer.on('tileerror', (error) => {
+        console.error('Tile loading error:', error);
+        setMapError('Failed to load map tiles. Please check your internet connection.');
+      });
 
-    return () => {
-      map.remove();
-    };
+      // Try to get current location using our utility function
+      const setInitialLocation = async () => {
+        try {
+          const location = await getCurrentLocation();
+          setUserLocation(location);
+          
+          // Add user marker
+          const userIcon = L.divIcon({
+            html: '<div style="background-color: #10b981; width: 20px; height: 20px; border-radius: 50%; border: 3px solid white; box-shadow: 0 2px 4px rgba(0,0,0,0.3);"></div>',
+            className: 'user-location-marker',
+            iconSize: [20, 20],
+            iconAnchor: [10, 10],
+          });
+
+          L.marker([location.lat, location.lng], {
+            icon: userIcon,
+            zIndexOffset: 1000
+          }).addTo(map).bindPopup('<strong>You are here</strong><br><small>Location detected</small>');
+
+          map.setView([location.lat, location.lng], 14);
+        } catch (error) {
+          console.log('Location tracking failed, using default location');
+          // Still show the map even if location fails
+        }
+      };
+
+      setInitialLocation();
+
+      // Handle map loading completion
+      map.whenReady(() => {
+        console.log('Map loaded successfully');
+      });
+
+      return () => {
+        try {
+          map.remove();
+        } catch (error) {
+          console.error('Error removing map:', error);
+        }
+      };
+    } catch (error) {
+      console.error('Map initialization error:', error);
+      setMapError('Failed to initialize map. Please refresh the page.');
+      setMapLoading(false);
+    }
   }, []); // Only run once on mount
 
   // Update map click handler when addingStation changes
@@ -604,15 +652,45 @@ export default function RealTimeMapContent() {
 
           {/* Map Container */}
           <div className="bg-gray-100 rounded-xl overflow-hidden mb-6">
-            <div
-              ref={mapContainerRef}
-              className="w-full rounded-xl"
-              style={{
-                height: '70vh',
-                minHeight: '500px',
-                position: 'relative'
-              }}
-            />
+            {mapLoading && (
+              <div className="flex items-center justify-center h-[70vh] min-h-[500px]">
+                <div className="text-center">
+                  <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
+                  <p className="text-gray-600">Loading map...</p>
+                </div>
+              </div>
+            )}
+            {mapError && (
+              <div className="flex items-center justify-center h-[70vh] min-h-[500px]">
+                <div className="text-center p-6 bg-red-50 border border-red-200 rounded-lg">
+                  <div className="text-red-500 text-4xl mb-2">⚠️</div>
+                  <h3 className="text-red-700 font-semibold mb-2">Map Error</h3>
+                  <p className="text-red-600 mb-4">{mapError}</p>
+                  <button
+                    onClick={() => {
+                      setMapError(null);
+                      setMapLoading(true);
+                      // Force re-initialization
+                      setMapKey(Date.now());
+                    }}
+                    className="px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600"
+                  >
+                    Retry Map
+                  </button>
+                </div>
+              </div>
+            )}
+            {!mapLoading && !mapError && (
+              <div
+                ref={mapContainerRef}
+                className="w-full rounded-xl"
+                style={{
+                  height: '70vh',
+                  minHeight: '500px',
+                  position: 'relative'
+                }}
+              />
+            )}
           </div>
 
           {/* Legend */}
@@ -831,6 +909,8 @@ export default function RealTimeMapContent() {
                     <div>
                       <strong>{station.name}</strong>
                       <p className="text-sm text-gray-600">{station.address}</p>
+                      {station.phone && <p className="text-xs text-blue-600">📞 {station.phone}</p>}
+                      {station.email && <p className="text-xs text-blue-600">✉️ {station.email}</p>}
                     </div>
                     <p className="text-xs text-gray-500">Emergency Response Station</p>
                   </div>
