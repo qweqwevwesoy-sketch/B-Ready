@@ -10,6 +10,9 @@ import { getCurrentLocation } from '@/lib/utils';
 // Import Leaflet CSS for proper map rendering
 import 'leaflet/dist/leaflet.css';
 
+// Import Leaflet types
+import * as L from 'leaflet';
+
 declare global {
   interface Window {
     removeStation?: (id: string) => void;
@@ -85,7 +88,6 @@ export default function RealTimeMapContent() {
   const [mapKey, setMapKey] = useState(() => Date.now()); // Unique key to force re-mount
   const [mapReady, setMapReady] = useState(false); // Track when map is ready
   const [mapError, setMapError] = useState<string | null>(null); // Track map errors
-  const [mapLoading, setMapLoading] = useState(true); // Track map loading state
   const [mapInitialized, setMapInitialized] = useState(false); // Track if map has been initialized
   const stationIdCounter = useRef(0);
   const mapRef = useRef<any>(null);
@@ -362,7 +364,7 @@ export default function RealTimeMapContent() {
     }
   };
 
-  const selectSearchResult = (result: SearchResult) => {
+  const selectSearchResult = (result: SearchResult): void => {
     const lat = parseFloat(result.lat);
     const lng = parseFloat(result.lon);
 
@@ -389,26 +391,22 @@ export default function RealTimeMapContent() {
     console.log('Initializing map...');
 
     // Set map as loading
-    setMapLoading(true);
     setMapError(null);
 
     // Use a timeout to ensure DOM is ready
     const initMap = async () => {
       try {
         console.log('Map container exists:', mapContainerRef.current);
-        console.log('Container dimensions:', mapContainerRef.current.getBoundingClientRect());
+        console.log('Container dimensions:', mapContainerRef.current?.getBoundingClientRect());
 
         // Wait a bit to ensure container is fully mounted
         await new Promise(resolve => setTimeout(resolve, 100));
 
         if (!mapContainerRef.current) {
           console.log('Map container ref became null after timeout');
-          setMapLoading(false);
           return;
         }
 
-        // Import Leaflet only when we're sure we're in browser and container exists
-        const L = require('leaflet');
         // Fix for Leaflet default icon issue
         delete (L.Icon.Default.prototype as { _getIconUrl?: string })._getIconUrl;
         L.Icon.Default.mergeOptions({
@@ -448,21 +446,19 @@ export default function RealTimeMapContent() {
         tileLayer.addTo(map);
 
         // Handle tile loading errors
-        tileLayer.on('tileerror', (error: any) => {
+        tileLayer.on('tileerror', (error: L.LeafletEvent) => {
           console.error('Tile loading error:', error);
           setMapError('Failed to load map tiles. Please check your internet connection.');
         });
 
         // Handle successful tile loading
         tileLayer.on('load', () => {
-          setMapLoading(false);
           console.log('Map tiles loaded successfully');
         });
 
         // Handle map loading completion
         map.whenReady(() => {
           console.log('Map loaded successfully');
-          setMapLoading(false);
         });
 
         // Try to get current location in background without blocking
@@ -490,8 +486,6 @@ export default function RealTimeMapContent() {
             });
           } catch (error) {
             console.log('Location tracking failed - using default view');
-            // Still mark as loaded even if location fails
-            setMapLoading(false);
           }
         };
 
@@ -508,7 +502,6 @@ export default function RealTimeMapContent() {
       } catch (error) {
         console.error('Map initialization error:', error);
         setMapError('Failed to initialize map. Please refresh the page.');
-        setMapLoading(false);
       }
     };
 
@@ -527,14 +520,14 @@ export default function RealTimeMapContent() {
     };
   }, []); // Only run once on mount
 
-  // Update map click handler when addingStation changes
+    // Update map click handler when addingStation changes
   useEffect(() => {
     if (!mapRef.current || user?.role !== 'admin') return;
 
     let clickTimeout: NodeJS.Timeout | null = null;
     let hasDragged = false;
 
-    const handleClick = (e: any) => {
+    const handleClick = (e: L.LeafletMouseEvent) => {
       if (!addingStation) return;
 
       // Delay the click action to allow drag detection
@@ -596,8 +589,8 @@ export default function RealTimeMapContent() {
     });
     reportMarkersRef.current = [];
 
-    // Add new report markers (red pins, 1.4x bigger = ~22px)
-    activeReports.forEach(report => {
+        // Add new report markers (red pins, 1.4x bigger = ~22px)
+    activeReports.forEach((report: any) => {
       if (!report.location) return;
 
       const reportIcon = L.divIcon({
@@ -635,8 +628,8 @@ export default function RealTimeMapContent() {
     });
     stationMarkersRef.current = [];
 
-    // Add new station markers (blue pins)
-    stations.forEach(station => {
+        // Add new station markers (blue pins)
+    stations.forEach((station: Station) => {
       const stationIcon = L.divIcon({
         html: '<div style="background-color: #3b82f6; width: 18px; height: 18px; border-radius: 50%; border: 2px solid white; box-shadow: 0 2px 4px rgba(0,0,0,0.3);"></div>',
         className: 'station-marker',
@@ -800,14 +793,6 @@ export default function RealTimeMapContent() {
 
           {/* Map Container */}
           <div className="bg-gray-100 rounded-xl overflow-hidden mb-6">
-            {mapLoading && (
-              <div className="flex items-center justify-center h-[70vh] min-h-[500px]">
-                <div className="text-center">
-                  <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
-                  <p className="text-gray-600">Loading map...</p>
-                </div>
-              </div>
-            )}
             {mapError && (
               <div className="flex items-center justify-center h-[70vh] min-h-[500px]">
                 <div className="text-center p-6 bg-red-50 border border-red-200 rounded-lg">
@@ -817,7 +802,6 @@ export default function RealTimeMapContent() {
                   <button
                     onClick={() => {
                       setMapError(null);
-                      setMapLoading(true);
                       // Force re-initialization
                       setMapKey(Date.now());
                     }}
@@ -828,7 +812,7 @@ export default function RealTimeMapContent() {
                 </div>
               </div>
             )}
-            {!mapLoading && !mapError && (
+            {!mapError && (
               <div
                 ref={mapContainerRef}
                 className="w-full rounded-xl"
@@ -904,7 +888,7 @@ export default function RealTimeMapContent() {
                       // Let user click to set their location manually
                       alert('Click on the map to set your location manually.');
 
-                      const handleManualLocation = (e: any) => {
+                      const handleManualLocation = (e: L.LeafletMouseEvent) => {
                         const location = { lat: e.latlng.lat, lng: e.latlng.lng };
                         setUserLocation(location);
 
