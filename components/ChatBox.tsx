@@ -962,7 +962,7 @@ export function ChatBox({ reportId, category, onClose, onSendMessage, onSendImag
             </div>
 
             <div className="p-3 space-y-2 max-h-64 overflow-y-auto">
-            {/* Report Type */}
+              {/* Report Type */}
               <div className="bg-gray-50 rounded-lg p-2">
                 <div className="text-xs font-semibold text-gray-600">Type</div>
                 <div className="text-sm">
@@ -983,10 +983,7 @@ export function ChatBox({ reportId, category, onClose, onSendMessage, onSendImag
                       ? 'Natural'
                       : category.name || 'Unknown'
                   ) : reportId ? (
-                    // For reports without category data, try to infer from type
-                    reportId.startsWith('temp_') ? 'Temporary' :
-                    reportId.startsWith('anonymous_') ? 'Anonymous' :
-                    'Report'
+                    reportId.startsWith('anonymous_') ? 'Anonymous Report' : 'Temporary Report'
                   ) : 'Unknown'}
                 </div>
               </div>
@@ -998,8 +995,8 @@ export function ChatBox({ reportId, category, onClose, onSendMessage, onSendImag
                   {currentReport ? (
                     currentReport.userName || 'Anonymous User'
                   ) : reportId ? (
-                    reportId.startsWith('temp_') ? 'Temporary User' :
                     reportId.startsWith('anonymous_') ? 'Anonymous User' :
+                    reportId.startsWith('temp_') ? 'Temporary User' :
                     'Unknown User'
                   ) : user ? (
                     `${user.firstName} ${user.lastName}`
@@ -1010,11 +1007,7 @@ export function ChatBox({ reportId, category, onClose, onSendMessage, onSendImag
               {/* Location */}
               <div className="bg-gray-50 rounded-lg p-2">
                 <div className="text-xs font-semibold text-gray-600">Location</div>
-                <div className="text-sm">📍 {currentReport?.address || reportId ? (
-                  reportId.startsWith('temp_') ? 'Temporary Location' :
-                  reportId.startsWith('anonymous_') ? 'Anonymous Location' :
-                  'Real-time GPS'
-                ) : 'Not Available'}</div>
+                <div className="text-sm">📍 {currentReport?.address || 'Location not specified'}</div>
                 {currentReport?.location && (
                   <div className="text-xs text-gray-600 mt-1">
                     {currentReport.location.lat.toFixed(6)}, {currentReport.location.lng.toFixed(6)}
@@ -1023,7 +1016,14 @@ export function ChatBox({ reportId, category, onClose, onSendMessage, onSendImag
               </div>
 
               {/* Contact Info */}
-              <div className="bg-gray-50 rounded-lg p-2">
+              < className="bg-gray-50 rounded-lg p-2">
+                <div className="text-xs font-semibold text-gray-600">Contact</div>
+                <div className="text-sm">📞 {currentReport?.userPhone || user?.phone || 'Not provided'}</div>
+                <div className="text-xs text-gray-600 mt-1">
+                  {currentReport?.userName ? `${currentReport.userName}@example.com` : 
+                   user?.email || 'Not provided'}
+                </div>
+              </
                 <div className="text-xs font-semibold text-gray-600">Contact</div>
                 <div className="text-sm">📞 {currentReport?.userPhone || reportId ? (
                   reportId.startsWith('temp_') ? 'Temporary Contact' :
