@@ -5,12 +5,6 @@ import { PencilIcon, TrashIcon } from '@heroicons/react/24/outline';
 import { useAuth } from '@/contexts/AuthContext';
 import dynamic from 'next/dynamic';
 import { notificationManager } from '@/components/NotificationManager';
-import { 
-  fetchEmergencyContacts,
-  createEmergencyContact,
-  updateEmergencyContact,
-  deleteEmergencyContact
-} from '@/lib/firebase-service';
 import type { EmergencyContact } from '@/types';
 
 const MapPicker = dynamic(() => import('./MapPicker').then(mod => mod.MapPicker), { ssr: false });
@@ -44,8 +38,13 @@ export function EmergencyContacts({ userLocation, variant = 'display' }: Emergen
   const fetchContacts = async () => {
     try {
       setLoading(true);
-      const contactsData = await fetchEmergencyContacts();
-      setContacts(contactsData);
+      const response = await fetch('/api/emergency-contacts');
+      if (response.ok) {
+        const data = await response.json();
+        setContacts(data.contacts || []);
+      } else {
+        throw new Error('Failed to fetch contacts');
+      }
     } catch (error) {
       console.error('Error fetching contacts:', error);
       if (variant === 'admin') {
@@ -68,21 +67,30 @@ export function EmergencyContacts({ userLocation, variant = 'display' }: Emergen
     }
 
     try {
-      await createEmergencyContact({
-        name: newContact.name,
-        type: newContact.type,
-        phone: newContact.phone,
-        address: newContact.address || '',
-        location: newContact.location
+      const response = await fetch('/api/emergency-contacts', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name: newContact.name,
+          type: newContact.type,
+          phone: newContact.phone,
+          address: newContact.address || '',
+          location: newContact.location
+        }),
       });
-      if (variant === 'admin') {
-        notificationManager.success('Emergency contact added successfully');
+
+      if (response.ok) {
+        if (variant === 'admin') {
+          notificationManager.success('Emergency contact added successfully');
+        } else {
+          alert('Emergency contact added successfully');
+        }
+        setNewContact({ name: '', type: 'fire', phone: '', address: '', location: { lat: 0, lng: 0 } });
+        setShowAddForm(false);
+        fetchContacts();
       } else {
-        alert('Emergency contact added successfully');
+        throw new Error('Failed to add emergency contact');
       }
-      setNewContact({ name: '', type: 'fire', phone: '', address: '', location: { lat: 0, lng: 0 } });
-      setShowAddForm(false);
-      fetchContacts();
     } catch (error) {
       console.error('Error adding contact:', error);
       const errorMsg = 'Error adding emergency contact';
@@ -104,13 +112,20 @@ export function EmergencyContacts({ userLocation, variant = 'display' }: Emergen
     }
 
     try {
-      await deleteEmergencyContact(id);
-      if (variant === 'admin') {
-        notificationManager.success('Emergency contact deleted successfully');
+      const response = await fetch(`/api/emergency-contacts?id=${id}`, {
+        method: 'DELETE',
+      });
+
+      if (response.ok) {
+        if (variant === 'admin') {
+          notificationManager.success('Emergency contact deleted successfully');
+        } else {
+          alert('Emergency contact deleted successfully');
+        }
+        fetchContacts();
       } else {
-        alert('Emergency contact deleted successfully');
+        throw new Error('Failed to delete emergency contact');
       }
-      fetchContacts();
     } catch (error) {
       console.error('Error deleting contact:', error);
       const errorMsg = 'Error deleting emergency contact';
@@ -136,15 +151,31 @@ export function EmergencyContacts({ userLocation, variant = 'display' }: Emergen
     }
 
     try {
-      await updateEmergencyContact(editingContact.id, editingContact);
-      if (variant === 'admin') {
-        notificationManager.success('Emergency contact updated successfully');
+      const response = await fetch('/api/emergency-contacts', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          id: editingContact.id,
+          name: editingContact.name,
+          type: editingContact.type,
+          phone: editingContact.phone,
+          address: editingContact.address || '',
+          location: editingContact.location
+        }),
+      });
+
+      if (response.ok) {
+        if (variant === 'admin') {
+          notificationManager.success('Emergency contact updated successfully');
+        } else {
+          alert('Emergency contact updated successfully');
+        }
+        setEditingContact(null);
+        setShowEditForm(null);
+        fetchContacts();
       } else {
-        alert('Emergency contact updated successfully');
+        throw new Error('Failed to update emergency contact');
       }
-      setEditingContact(null);
-      setShowEditForm(null);
-      fetchContacts();
     } catch (error) {
       console.error('Error updating contact:', error);
       const errorMsg = 'Error updating emergency contact';

@@ -5,20 +5,6 @@ import dynamic from 'next/dynamic';
 import type { SafetyTip, EmergencyKitItem, EmergencyContact } from '@/types';
 import { useAuth } from '@/contexts/AuthContext';
 import { EmergencyContacts } from './EmergencyContacts';
-import { 
-  createSafetyTip, 
-  updateSafetyTip, 
-  deleteSafetyTip, 
-  fetchSafetyTips,
-  createEmergencyKitItem,
-  updateEmergencyKitItem,
-  deleteEmergencyKitItem,
-  fetchEmergencyKitItems,
-  createEmergencyContact,
-  updateEmergencyContact,
-  deleteEmergencyContact,
-  fetchEmergencyContacts
-} from '@/lib/firebase-service';
 import { checkAdminPermissions } from '@/lib/client-utils';
 
 // Dynamically import MapPicker to avoid SSR issues
@@ -74,29 +60,40 @@ export function SafetyTipsAdmin({ tips, emergencyKit, onRefresh }: SafetyTipsAdm
 
       if (editingTip) {
         // Update existing tip
-        await updateSafetyTip(editingTip.id, tipData);
-        alert('Safety tip updated successfully');
+        const response = await fetch('/api/safety-tips', {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            id: editingTip.id,
+            ...tipData
+          }),
+        });
+
+        if (response.ok) {
+          alert('Safety tip updated successfully');
+        } else {
+          throw new Error('Failed to update safety tip');
+        }
       } else {
         // Create new tip
-        await createSafetyTip(tipData as Omit<SafetyTip, 'id' | 'updated_at'>);
-        alert('Safety tip created successfully');
+        const response = await fetch('/api/safety-tips', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(tipData),
+        });
+
+        if (response.ok) {
+          alert('Safety tip created successfully');
+        } else {
+          throw new Error('Failed to create safety tip');
+        }
       }
       onRefresh();
       setEditingTip(null);
       setIsCreating(false);
     } catch (error) {
       console.error('Error saving tip:', error);
-      
-      // Handle specific Firebase permission errors
-      if (error instanceof Error) {
-        if (error.message.includes('permission-denied') || error.message.includes('permission')) {
-          alert('Access denied: You do not have permission to edit safety tips. Please contact an administrator.');
-        } else {
-          alert('Error saving safety tip. Please try again.');
-        }
-      } else {
-        alert('Error saving safety tip. Please try again.');
-      }
+      alert('Error saving safety tip. Please try again.');
     }
   };
 
@@ -111,9 +108,16 @@ export function SafetyTipsAdmin({ tips, emergencyKit, onRefresh }: SafetyTipsAdm
         return;
       }
 
-      await deleteSafetyTip(tipId);
-      alert('Safety tip deleted successfully');
-      onRefresh();
+      const response = await fetch(`/api/safety-tips?id=${tipId}`, {
+        method: 'DELETE',
+      });
+
+      if (response.ok) {
+        alert('Safety tip deleted successfully');
+        onRefresh();
+      } else {
+        throw new Error('Failed to delete safety tip');
+      }
     } catch (error) {
       console.error('Error deleting tip:', error);
       alert('Error deleting safety tip');
@@ -131,12 +135,33 @@ export function SafetyTipsAdmin({ tips, emergencyKit, onRefresh }: SafetyTipsAdm
 
       if (editingKit) {
         // Update existing kit item
-        await updateEmergencyKitItem(editingKit.id, kitData);
-        alert('Emergency kit item updated successfully');
+        const response = await fetch('/api/safety-tips', {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            id: editingKit.id,
+            ...kitData
+          }),
+        });
+
+        if (response.ok) {
+          alert('Emergency kit item updated successfully');
+        } else {
+          throw new Error('Failed to update emergency kit item');
+        }
       } else {
         // Create new kit item
-        await createEmergencyKitItem(kitData as Omit<EmergencyKitItem, 'id' | 'updated_at'>);
-        alert('Emergency kit item created successfully');
+        const response = await fetch('/api/safety-tips', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(kitData),
+        });
+
+        if (response.ok) {
+          alert('Emergency kit item created successfully');
+        } else {
+          throw new Error('Failed to create emergency kit item');
+        }
       }
       onRefresh();
       setEditingKit(null);
@@ -158,9 +183,16 @@ export function SafetyTipsAdmin({ tips, emergencyKit, onRefresh }: SafetyTipsAdm
         return;
       }
 
-      await deleteEmergencyKitItem(kitId);
-      alert('Emergency kit item deleted successfully');
-      onRefresh();
+      const response = await fetch(`/api/safety-tips?id=${kitId}`, {
+        method: 'DELETE',
+      });
+
+      if (response.ok) {
+        alert('Emergency kit item deleted successfully');
+        onRefresh();
+      } else {
+        throw new Error('Failed to delete emergency kit item');
+      }
     } catch (error) {
       console.error('Error deleting emergency kit item:', error);
       alert('Error deleting emergency kit item');
