@@ -381,21 +381,24 @@ export default function RealTimeMapContent() {
     setMapError(null);
 
     try {
-      // Initialize map centered on Philippines
+      // Initialize map centered on Philippines - IMMEDIATE INITIALIZATION
       const map = L.map(mapContainerRef.current, {
         zoomControl: true,
         scrollWheelZoom: true,
         doubleClickZoom: true,
         dragging: true,
         touchZoom: true,
-        bounceAtZoomLimits: true
+        bounceAtZoomLimits: true,
+        preferCanvas: true, // Use canvas for better performance
+        fadeAnimation: false, // Disable animations for faster loading
+        zoomAnimation: false,
+        markerZoomAnimation: false
       }).setView([14.5995, 120.9842], 8);
 
       mapRef.current = map;
       setMapReady(true);
-      setMapLoading(false);
 
-      // Add tile layer with error handling
+      // Add tile layer with optimized settings
       const tileLayer = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
         attribution: '© OpenStreetMap contributors',
         maxZoom: 19,
@@ -403,7 +406,7 @@ export default function RealTimeMapContent() {
         detectRetina: true,
         updateWhenIdle: true,
         updateWhenZooming: true,
-        keepBuffer: 2
+        keepBuffer: 1, // Reduced buffer for faster loading
       });
 
       tileLayer.addTo(map);
@@ -414,18 +417,10 @@ export default function RealTimeMapContent() {
         setMapError('Failed to load map tiles. Please check your internet connection.');
       });
 
-      // Add real tile layer
-      const tileLayer = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-        attribution: '© OpenStreetMap contributors',
-        maxZoom: 19,
-        maxNativeZoom: 19,
-        detectRetina: true,
-        updateWhenIdle: true,
-        updateWhenZooming: true,
-        keepBuffer: 2
-      }).addTo(map);
+      // IMMEDIATELY mark as loaded to show map instantly
+      setMapLoading(false);
 
-      // Try to get current location in background
+      // Try to get current location in background without blocking
       const setInitialLocation = async () => {
         try {
           const location = await getCurrentLocation();
@@ -446,15 +441,15 @@ export default function RealTimeMapContent() {
           // Smoothly fly to user location
           map.flyTo([location.lat, location.lng], 14, {
             animate: true,
-            duration: 1
+            duration: 0.5 // Faster animation
           });
         } catch (error) {
           console.log('Location tracking failed - using default view');
         }
       };
 
-      // Don't wait for location to initialize map
-      setInitialLocation().finally(() => setMapLoading(false));
+      // Run location detection in background
+      setInitialLocation();
 
       // Handle map loading completion
       map.whenReady(() => {
