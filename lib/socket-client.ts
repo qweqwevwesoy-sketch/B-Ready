@@ -50,7 +50,7 @@ export function useSocket() {
 
     // Otherwise, use the same hostname but port 3001
     return `http://${window.location.hostname}:3001`;
-  }, [typeof window, window?.location?.hostname, window?.location?.protocol]);
+  }, []);
 
   useEffect(() => {
     // For Firebase deployments, initialize Firebase Realtime Database

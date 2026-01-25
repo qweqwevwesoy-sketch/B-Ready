@@ -24,6 +24,7 @@ import {
   getOfflineMessagesForReport,
   type OfflineMessage
 } from '@/lib/offline-manager';
+import { getLocalStorageItem } from '@/lib/client-utils';
 
 function SearchParamsWrapper() {
   const searchParams = useSearchParams();
@@ -119,7 +120,7 @@ function DashboardContent({ searchParams }: { searchParams: URLSearchParams }) {
     if (!authLoading) {
       if (!user) {
         router.push('/login');
-      } else if (!localStorage.getItem('terms_accepted')) {
+      } else if (!getLocalStorageItem('terms_accepted')) {
         router.push('/terms');
       }
     }

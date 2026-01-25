@@ -1,4 +1,11 @@
 export async function getCurrentLocation(): Promise<{ lat: number; lng: number }> {
+  // Check if we're running in a browser environment
+  if (typeof window === 'undefined') {
+    // Return a default location during SSR
+    console.log('📍 Using SSR fallback location (Philippines)');
+    return { lat: 14.5995, lng: 120.9842 };
+  }
+
   return new Promise(async (resolve, reject) => {
     // First, check if user has manually set their location
     const manualLocation = localStorage.getItem('user_manual_location');

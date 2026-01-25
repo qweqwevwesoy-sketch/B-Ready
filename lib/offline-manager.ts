@@ -1,5 +1,14 @@
 // lib/offline-manager.ts - Handle offline report submission
 import type { Report } from '@/types';
+import {
+  isOnline as checkIsOnline,
+  addOnlineEventListener,
+  addOfflineEventListener,
+  removeOnlineEventListener,
+  removeOfflineEventListener,
+  getLocalStorageItem,
+  setLocalStorageItem
+} from '@/lib/client-utils';
 
 const OFFLINE_REPORTS_KEY = 'bready_offline_reports';
 const OFFLINE_MESSAGES_KEY = 'bready_offline_messages';
@@ -23,13 +32,13 @@ export interface OfflineMessage {
 
 // Check if user is online
 export const isOnline = (): boolean => {
-  return navigator.onLine;
+  return checkIsOnline();
 };
 
 // Get stored offline reports
 export const getOfflineReports = (): OfflineReport[] => {
   try {
-    const stored = localStorage.getItem(OFFLINE_REPORTS_KEY);
+    const stored = getLocalStorageItem(OFFLINE_REPORTS_KEY);
     return stored ? JSON.parse(stored) : [];
   } catch (error) {
     console.error('Error loading offline reports:', error);
@@ -50,7 +59,7 @@ export const storeOfflineReport = (report: Partial<Report>): OfflineReport => {
   existing.push(offlineReport);
 
   try {
-    localStorage.setItem(OFFLINE_REPORTS_KEY, JSON.stringify(existing));
+    setLocalStorageItem(OFFLINE_REPORTS_KEY, JSON.stringify(existing));
   } catch (error) {
     console.error('Error storing offline report:', error);
   }
@@ -66,7 +75,7 @@ export const markReportSynced = (offlineId: string): void => {
   );
 
   try {
-    localStorage.setItem(OFFLINE_REPORTS_KEY, JSON.stringify(updated));
+    setLocalStorageItem(OFFLINE_REPORTS_KEY, JSON.stringify(updated));
   } catch (error) {
     console.error('Error marking report synced:', error);
   }
@@ -78,7 +87,7 @@ export const cleanupSyncedReports = (): void => {
   const unsynced = reports.filter(report => !report.synced);
 
   try {
-    localStorage.setItem(OFFLINE_REPORTS_KEY, JSON.stringify(unsynced));
+    setLocalStorageItem(OFFLINE_REPORTS_KEY, JSON.stringify(unsynced));
   } catch (error) {
     console.error('Error cleaning up synced reports:', error);
   }
@@ -87,7 +96,7 @@ export const cleanupSyncedReports = (): void => {
 // Get stored offline messages
 export const getOfflineMessages = (): OfflineMessage[] => {
   try {
-    const stored = localStorage.getItem(OFFLINE_MESSAGES_KEY);
+    const stored = getLocalStorageItem(OFFLINE_MESSAGES_KEY);
     return stored ? JSON.parse(stored) : [];
   } catch (error) {
     console.error('Error loading offline messages:', error);
@@ -106,7 +115,7 @@ export const storeOfflineMessage = (message: Omit<OfflineMessage, 'offlineId'>):
   existing.push(offlineMessage);
 
   try {
-    localStorage.setItem(OFFLINE_MESSAGES_KEY, JSON.stringify(existing));
+    setLocalStorageItem(OFFLINE_MESSAGES_KEY, JSON.stringify(existing));
   } catch (error) {
     console.error('Error storing offline message:', error);
   }
@@ -120,7 +129,7 @@ export const removeSyncedMessages = (reportId: string): void => {
   const remaining = messages.filter(msg => msg.reportId !== reportId);
 
   try {
-    localStorage.setItem(OFFLINE_MESSAGES_KEY, JSON.stringify(remaining));
+    setLocalStorageItem(OFFLINE_MESSAGES_KEY, JSON.stringify(remaining));
   } catch (error) {
     console.error('Error removing synced messages:', error);
   }
@@ -140,12 +149,12 @@ export const useOfflineStatus = () => {
     const handleOnline = () => setIsOffline(false);
     const handleOffline = () => setIsOffline(true);
 
-    window.addEventListener('online', handleOnline);
-    window.addEventListener('offline', handleOffline);
+    addOnlineEventListener(handleOnline);
+    addOfflineEventListener(handleOffline);
 
     return () => {
-      window.removeEventListener('online', handleOnline);
-      window.removeEventListener('offline', handleOffline);
+      removeOnlineEventListener(handleOnline);
+      removeOfflineEventListener(handleOffline);
     };
   }, []);
 

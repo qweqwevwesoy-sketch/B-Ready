@@ -1,9 +1,10 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { isOnline as checkIsOnline } from '@/lib/client-utils';
 
 export function OfflineBanner() {
-  const [isOffline, setIsOffline] = useState(() => !navigator.onLine);
+  const [isOffline, setIsOffline] = useState(() => !checkIsOnline());
   const [showBanner, setShowBanner] = useState(false);
 
   useEffect(() => {
@@ -20,13 +21,15 @@ export function OfflineBanner() {
       setShowBanner(true);
     };
 
-    window.addEventListener('online', handleOnline);
-    window.addEventListener('offline', handleOffline);
+    if (typeof window !== 'undefined') {
+      window.addEventListener('online', handleOnline);
+      window.addEventListener('offline', handleOffline);
 
-    return () => {
-      window.removeEventListener('online', handleOnline);
-      window.removeEventListener('offline', handleOffline);
-    };
+      return () => {
+        window.removeEventListener('online', handleOnline);
+        window.removeEventListener('offline', handleOffline);
+      };
+    }
   }, []);
 
   if (!showBanner) return null;
