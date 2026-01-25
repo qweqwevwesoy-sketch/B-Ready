@@ -213,7 +213,7 @@ export function MapPicker({ onSelect, onClose }: MapPickerProps) {
   const mapPickerZIndex = getModalZIndex('mapPicker');
 
   return (
-    <div className={`fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4`} style={{ zIndex: mapPickerZIndex }}>
+    <div className={`fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4`} style={{ zIndex: mapPickerZIndex }}>
       <div className="bg-white rounded-xl p-6 max-w-2xl w-full max-h-[90vh] overflow-y-auto shadow-xl">
         <div className="flex justify-between items-center mb-4">
           <h3 className="text-2xl font-bold">📍 Select Your Location</h3>

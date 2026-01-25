@@ -69,8 +69,34 @@ export function ChatBox({ reportId, category, onClose, onSendMessage, onSendImag
       });
     }
 
-    // Add offline messages if available
-    let offlineMessages: Array<{ text: string; sender: string; time: string; type: 'sent' | 'received'; imageData?: string }> = [];
+{/* Incident Type */}
+              {currentReport && (
+                <div className="bg-gray-50 rounded-lg p-2">
+                  <div className="text-xs font-semibold text-gray-600 mb-1">Incident</div>
+                  <div className="text-sm">{currentReport.category}</div>
+                  <div className="text-xs text-gray-600 mt-1">
+                    {currentReport.subcategory || 'None'}
+                  </div>
+                  {user?.role === 'admin' && (
+                    <div className="mt-2">
+                      <div className="text-xs font-semibold text-gray-600 mb-1">Admin Notes</div>
+                      <textarea
+                        className="w-full px-2 py-1 text-sm border border-gray-300 rounded bg-white focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent resize-none"
+                        placeholder="Add admin notes about this incident..."
+                        rows={3}
+                        defaultValue={currentReport.notes || ''}
+                        onBlur={(e) => {
+                          const newNotes = e.target.value;
+                          // Here you would typically call an API to update the report
+                          console.log('Admin updated notes:', newNotes);
+                          // For now, just log the change - you would implement the actual update logic here
+                        }}
+                      />
+                    </div>
+                  )}
+                </div>
+              )}
+
     if (reportId) {
       const offlineMsgs = getOfflineMessagesForReport(reportId);
       offlineMessages = offlineMsgs.map(msg => ({
@@ -1023,11 +1049,28 @@ export function ChatBox({ reportId, category, onClose, onSendMessage, onSendImag
               {/* Incident Type */}
               {currentReport && (
                 <div className="bg-gray-50 rounded-lg p-2">
-                  <div className="text-xs font-semibold text-gray-600">Incident</div>
+                  <div className="text-xs font-semibold text-gray-600 mb-1">Incident</div>
                   <div className="text-sm">{currentReport.category}</div>
                   <div className="text-xs text-gray-600 mt-1">
                     {currentReport.subcategory || 'None'}
                   </div>
+                  {user?.role === 'admin' && (
+                    <div className="mt-2">
+                      <div className="text-xs font-semibold text-gray-600 mb-1">Admin Notes</div>
+                      <textarea
+                        className="w-full px-2 py-1 text-sm border border-gray-300 rounded bg-white focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent resize-none"
+                        placeholder="Add admin notes about this incident..."
+                        rows={3}
+                        defaultValue={currentReport.notes || ''}
+                        onBlur={(e) => {
+                          const newNotes = e.target.value;
+                          // Here you would typically call an API to update the report
+                          console.log('Admin updated notes:', newNotes);
+                          // For now, just log the change - you would implement the actual update logic here
+                        }}
+                      />
+                    </div>
+                  )}
                 </div>
               )}
 
