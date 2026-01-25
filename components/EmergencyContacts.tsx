@@ -6,6 +6,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import dynamic from 'next/dynamic';
 import { notificationManager } from '@/components/NotificationManager';
 import type { EmergencyContact } from '@/types';
+import { ResidentEmergencyContacts } from './ResidentEmergencyContacts';
 
 const MapPicker = dynamic(() => import('./MapPicker').then(mod => mod.MapPicker), { ssr: false });
 
@@ -562,98 +563,7 @@ export function EmergencyContacts({ userLocation, variant = 'display' }: Emergen
 
   // Display variant - user-facing with distance calculation
   if (variant === 'display') {
-    return (
-      <div className="bg-white rounded-lg p-6 shadow-lg">
-        <div className="flex items-center justify-between mb-4">
-          <h3 className="text-lg font-semibold">Emergency Contacts</h3>
-          <div className="text-sm text-gray-600">
-            {userLocation ? 'Near your location' : 'Available services'}
-          </div>
-        </div>
-
-        {loading ? (
-          <div className="text-center py-4">Loading contacts...</div>
-        ) : contacts.length === 0 ? (
-          <div className="text-center py-4 text-gray-500">
-            No emergency contacts available
-          </div>
-        ) : (
-          <div className="space-y-3">
-            {contacts.map((contact) => (
-              <div key={contact.id} className="border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow">
-                <div className="flex items-center justify-between mb-2">
-                  <div className="flex items-center gap-3">
-                    <div className={`w-10 h-10 ${getContactColor(contact.type)} rounded-full flex items-center justify-center text-white font-bold`}>
-                      {getContactIcon(contact.type)}
-                    </div>
-                    <div>
-                      <div className="font-medium">{contact.name}</div>
-                      <div className="text-sm text-gray-600 capitalize">{getContactTypeLabel(contact.type)}</div>
-                    </div>
-                  </div>
-                  <div className="text-right">
-                    <div className="text-sm font-semibold">{contact.phone}</div>
-                    {userLocation && contact.location && (
-                      <div className="text-xs text-gray-500">{getDistanceText(contact)}</div>
-                    )}
-                  </div>
-                </div>
-                
-                {contact.address && (
-                  <div className="text-sm text-gray-600 mb-3">{contact.address}</div>
-                )}
-
-                <div className="flex gap-2">
-                  <button
-                    onClick={() => handleCallContact(contact.phone)}
-                    className="flex-1 px-3 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 text-sm font-medium"
-                  >
-                    📞 Call
-                  </button>
-                  <button
-                    onClick={() => handleCopyPhone(contact.phone)}
-                    className="px-3 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 text-sm font-medium"
-                  >
-                    📋 Copy
-                  </button>
-                  <button
-                    onClick={() => setShowDetails(showDetails === contact.id ? null : contact.id)}
-                    className="px-3 py-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600 text-sm font-medium"
-                  >
-                    {showDetails === contact.id ? 'Hide' : 'More'}
-                  </button>
-                </div>
-
-                {showDetails === contact.id && (
-                  <div className="mt-3 p-3 bg-gray-50 rounded-lg">
-                    <div className="text-sm">
-                      <div className="font-medium mb-1">Contact Details:</div>
-                      <div><strong>Type:</strong> {getContactTypeLabel(contact.type)}</div>
-                      <div><strong>Phone:</strong> {contact.phone}</div>
-                      {contact.address && <div><strong>Address:</strong> {contact.address}</div>}
-                      {contact.location && (
-                        <div>
-                          <strong>Location:</strong> {contact.location.lat.toFixed(6)}, {contact.location.lng.toFixed(6)}
-                        </div>
-                      )}
-                      <div className="text-xs text-gray-600 mt-2">
-                        Last updated: {new Date(contact.updated_at).toLocaleDateString()}
-                      </div>
-                    </div>
-                  </div>
-                )}
-              </div>
-            ))}
-          </div>
-        )}
-
-        <div className="mt-4 p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
-          <div className="text-sm text-yellow-800">
-            <strong>Emergency Hotline:</strong> In case of immediate danger, dial 911 (or your local emergency number)
-          </div>
-        </div>
-      </div>
-    );
+    return <ResidentEmergencyContacts />;
   }
 
   // Safety Tips variant - simplified display for safety tips page

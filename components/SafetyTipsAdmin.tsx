@@ -28,16 +28,17 @@ interface SafetyTipsAdminProps {
   onRefresh: () => void;
 }
 
-export function SafetyTipsAdmin({ tips, emergencyKit, onRefresh }: SafetyTipsAdminProps) {
+export function SafetyTipsAdmin({ tips, emergencyKit, onRefresh, variant = 'admin' }: SafetyTipsAdminProps & { variant?: 'admin' }) {
+  const { user } = useAuth();
   const [activeTab, setActiveTab] = useState<'tips' | 'kit' | 'contacts'>('tips');
   const [editingTip, setEditingTip] = useState<SafetyTip | null>(null);
   const [editingKit, setEditingKit] = useState<EmergencyKitItem | null>(null);
+  const [editingContact, setEditingContact] = useState<EmergencyContact | null>(null);
   const [isCreating, setIsCreating] = useState(false);
   
   // Emergency Contacts state
   const [showAddForm, setShowAddForm] = useState(false);
   const [showMapPicker, setShowMapPicker] = useState(false);
-  const [showEditForm, setShowEditForm] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [contacts, setContacts] = useState<EmergencyContact[]>([]);
   const [newContact, setNewContact] = useState<Partial<EmergencyContact>>({
@@ -48,6 +49,9 @@ export function SafetyTipsAdmin({ tips, emergencyKit, onRefresh }: SafetyTipsAdm
     location: { lat: 0, lng: 0 },
     description: ''
   });
+
+  // Check if user is admin
+  const isAdmin = user?.role === 'admin';
 
   const handleSaveTip = async (tipData: Partial<SafetyTip>) => {
     try {
@@ -247,8 +251,47 @@ export function SafetyTipsAdmin({ tips, emergencyKit, onRefresh }: SafetyTipsAdm
   };
 
   const startEditContact = (contact: EmergencyContact) => {
+    setEditingContact(contact);
     setNewContact(contact);
-    setShowEditForm(contact.id);
+  };
+
+  const saveContact = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingContact) return;
+
+    try {
+      const response = await fetch('/api/emergency-contacts', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          id: editingContact.id,
+          name: newContact.name,
+          type: newContact.type,
+          phone: newContact.phone,
+          address: newContact.address,
+          location: newContact.location
+        }),
+      });
+
+      if (response.ok) {
+        alert('Emergency contact updated successfully');
+        setEditingContact(null);
+        setNewContact({
+          name: '',
+          phone: '',
+          type: 'fire',
+          address: '',
+          location: { lat: 0, lng: 0 },
+          description: ''
+        });
+        await loadContacts();
+      } else {
+        throw new Error('Failed to update emergency contact');
+      }
+    } catch (error) {
+      console.error('Error updating contact:', error);
+      alert('Error updating emergency contact');
+    }
   };
 
   const deleteContact = async (contactId: string) => {
@@ -309,6 +352,20 @@ export function SafetyTipsAdmin({ tips, emergencyKit, onRefresh }: SafetyTipsAdm
       loadContacts();
     }
   }, [activeTab]);
+
+  // Admin variant - full management interface
+  if (variant === 'admin') {
+    if (!user || user.role !== 'admin') {
+      return (
+        <div className="bg-red-50 border border-red-200 rounded-lg p-6">
+          <div className="text-center">
+            <h3 className="text-lg font-semibold text-red-800 mb-2">Access Denied</h3>
+            <p className="text-red-600">You do not have administrator privileges to access this panel.</p>
+          </div>
+        </div>
+      );
+    }
+  }
 
   return (
     <div className="mt-8 bg-white rounded-xl p-6 shadow-lg border">
@@ -489,170 +546,170 @@ export function SafetyTipsAdmin({ tips, emergencyKit, onRefresh }: SafetyTipsAdm
         </div>
       )}
 
-        {activeTab === 'contacts' && (
-          <div>
-            <div className="flex justify-between items-center mb-4">
-              <h3 className="text-xl font-semibold">Emergency Contacts Management</h3>
-              <button
-                onClick={() => setShowAddForm(!showAddForm)}
-                className="px-4 py-2 bg-green-600 text-white rounded-lg font-semibold hover:bg-green-700"
-              >
-                ➕ Add Contact
-              </button>
-            </div>
+      {activeTab === 'contacts' && (
+        <div>
+          <div className="flex justify-between items-center mb-4">
+            <h3 className="text-xl font-semibold">Emergency Contacts Management</h3>
+            <button
+              onClick={() => setShowAddForm(!showAddForm)}
+              className="px-4 py-2 bg-green-600 text-white rounded-lg font-semibold hover:bg-green-700"
+            >
+              ➕ Add Contact
+            </button>
+          </div>
 
-            {showAddForm && (
-              <div className="border-2 border-green-300 rounded-lg p-6 mb-6 bg-green-50">
-                <h4 className="text-lg font-semibold mb-4">Add New Emergency Contact</h4>
+          {showAddForm && (
+            <div className="border-2 border-green-300 rounded-lg p-6 mb-6 bg-green-50">
+              <h4 className="text-lg font-semibold mb-4">Add New Emergency Contact</h4>
 
-                <form onSubmit={addContact} className="space-y-4">
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div>
-                      <label className="block text-sm font-medium mb-1">Contact Name</label>
+              <form onSubmit={addContact} className="space-y-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium mb-1">Contact Name</label>
+                    <input
+                      type="text"
+                      value={newContact.name}
+                      onChange={(e) => setNewContact({ ...newContact, name: e.target.value })}
+                      className="w-full p-2 border rounded"
+                      placeholder="e.g., Manila Fire Station"
+                      required
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium mb-1">Phone Number</label>
+                    <input
+                      type="tel"
+                      value={newContact.phone}
+                      onChange={(e) => setNewContact({ ...newContact, phone: e.target.value })}
+                      className="w-full p-2 border rounded"
+                      placeholder="e.g., +63 2 123 4567"
+                      required
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium mb-1">Contact Type</label>
+                    <select
+                      value={newContact.type}
+                      onChange={(e) => setNewContact({ ...newContact, type: e.target.value as EmergencyContact['type'] })}
+                      className="w-full p-2 border rounded"
+                      required
+                    >
+                      <option value="fire">Fire Station</option>
+                      <option value="police">Police Station</option>
+                      <option value="medical">Medical Center</option>
+                      <option value="barangay">Barangay Hall</option>
+                      <option value="other">Other Service</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium mb-1">Location</label>
+                    <div className="flex gap-2">
                       <input
                         type="text"
-                        value={newContact.name}
-                        onChange={(e) => setNewContact({ ...newContact, name: e.target.value })}
-                        className="w-full p-2 border rounded"
-                        placeholder="e.g., Manila Fire Station"
-                        required
+                        value={newContact.address || ''}
+                        readOnly
+                        placeholder="e.g., Manila, Metro Manila"
+                        className="flex-1 p-2 border rounded bg-gray-100"
                       />
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium mb-1">Phone Number</label>
-                      <input
-                        type="tel"
-                        value={newContact.phone}
-                        onChange={(e) => setNewContact({ ...newContact, phone: e.target.value })}
-                        className="w-full p-2 border rounded"
-                        placeholder="e.g., +63 2 123 4567"
-                        required
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium mb-1">Contact Type</label>
-                      <select
-                        value={newContact.type}
-                        onChange={(e) => setNewContact({ ...newContact, type: e.target.value as EmergencyContact['type'] })}
-                        className="w-full p-2 border rounded"
-                        required
+                      <button
+                        type="button"
+                        onClick={() => setShowMapPicker(true)}
+                        className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
                       >
-                        <option value="fire">Fire Station</option>
-                        <option value="police">Police Station</option>
-                        <option value="medical">Medical Center</option>
-                        <option value="barangay">Barangay Hall</option>
-                        <option value="other">Other Service</option>
-                      </select>
+                        📍 Select Location
+                      </button>
                     </div>
-                    <div>
-                      <label className="block text-sm font-medium mb-1">Location</label>
-                      <div className="flex gap-2">
-                        <input
-                          type="text"
-                          value={newContact.address || ''}
-                          readOnly
-                          placeholder="e.g., Manila, Metro Manila"
-                          className="flex-1 p-2 border rounded bg-gray-100"
-                        />
-                        <button
-                          type="button"
-                          onClick={() => setShowMapPicker(true)}
-                          className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
-                        >
-                          📍 Select Location
-                        </button>
+                    {newContact.location && newContact.location.lat !== 0 && newContact.location.lng !== 0 && (
+                      <div className="mt-2 text-sm text-gray-600">
+                        Coordinates: {newContact.location.lat.toFixed(6)}, {newContact.location.lng.toFixed(6)}
                       </div>
-                      {newContact.location && newContact.location.lat !== 0 && newContact.location.lng !== 0 && (
-                        <div className="mt-2 text-sm text-gray-600">
-                          Coordinates: {newContact.location.lat.toFixed(6)}, {newContact.location.lng.toFixed(6)}
+                    )}
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium mb-1">Description (Optional)</label>
+                  <textarea
+                    value={newContact.address}
+                    onChange={(e) => setNewContact({ ...newContact, address: e.target.value })}
+                    className="w-full p-2 border rounded"
+                    placeholder="Additional information about this contact..."
+                    rows={3}
+                  />
+                </div>
+
+                <div className="flex gap-4">
+                  <button
+                    type="submit"
+                    className="px-6 py-2 bg-green-600 text-white rounded font-semibold hover:bg-green-700"
+                  >
+                    Add Contact
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setShowAddForm(false)}
+                    className="px-6 py-2 bg-gray-500 text-white rounded font-semibold hover:bg-gray-600"
+                  >
+                    Cancel
+                  </button>
+                </div>
+              </form>
+            </div>
+          )}
+
+          {showMapPicker && (
+            <MapPicker
+              onSelect={(address) => {
+                setNewContact(prev => ({ ...prev, address }));
+                setShowMapPicker(false);
+              }}
+              onClose={() => setShowMapPicker(false)}
+            />
+          )}
+
+          {loading ? (
+            <div className="text-center py-4">Loading contacts...</div>
+          ) : contacts.length === 0 ? (
+            <div className="text-center py-4 text-gray-500">No emergency contacts found</div>
+          ) : (
+            <div className="space-y-4">
+              {contacts.map((contact) => (
+                <div key={contact.id} className="border rounded-lg p-4 bg-gray-50">
+                  <div className="flex justify-between items-start">
+                    <div className="flex-1">
+                      <div className="flex items-center gap-3 mb-2">
+                        <h4 className="text-lg font-semibold">{contact.name}</h4>
+                        <span className="text-sm text-gray-500 capitalize">{getContactTypeLabel(contact.type)}</span>
+                      </div>
+                      <div className="text-sm text-gray-600 mb-1">{contact.phone}</div>
+                      {contact.address && <div className="text-sm text-gray-500 mb-2">{contact.address}</div>}
+                      {contact.location && (
+                        <div className="text-xs text-gray-400">
+                          Coordinates: {contact.location.lat.toFixed(6)}, {contact.location.lng.toFixed(6)}
                         </div>
                       )}
                     </div>
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium mb-1">Description (Optional)</label>
-                    <textarea
-                      value={newContact.address}
-                      onChange={(e) => setNewContact({ ...newContact, address: e.target.value })}
-                      className="w-full p-2 border rounded"
-                      placeholder="Additional information about this contact..."
-                      rows={3}
-                    />
-                  </div>
-
-                  <div className="flex gap-4">
-                    <button
-                      type="submit"
-                      className="px-6 py-2 bg-green-600 text-white rounded font-semibold hover:bg-green-700"
-                    >
-                      Add Contact
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setShowAddForm(false)}
-                      className="px-6 py-2 bg-gray-500 text-white rounded font-semibold hover:bg-gray-600"
-                    >
-                      Cancel
-                    </button>
-                  </div>
-                </form>
-              </div>
-            )}
-
-            {showMapPicker && (
-              <MapPicker
-                onSelect={(address) => {
-                  setNewContact(prev => ({ ...prev, address }));
-                  setShowMapPicker(false);
-                }}
-                onClose={() => setShowMapPicker(false)}
-              />
-            )}
-
-            {loading ? (
-              <div className="text-center py-4">Loading contacts...</div>
-            ) : contacts.length === 0 ? (
-              <div className="text-center py-4 text-gray-500">No emergency contacts found</div>
-            ) : (
-              <div className="space-y-4">
-                {contacts.map((contact) => (
-                  <div key={contact.id} className="border rounded-lg p-4 bg-gray-50">
-                    <div className="flex justify-between items-start">
-                      <div className="flex-1">
-                        <div className="flex items-center gap-3 mb-2">
-                          <h4 className="text-lg font-semibold">{contact.name}</h4>
-                          <span className="text-sm text-gray-500 capitalize">{getContactTypeLabel(contact.type)}</span>
-                        </div>
-                        <div className="text-sm text-gray-600 mb-1">{contact.phone}</div>
-                        {contact.address && <div className="text-sm text-gray-500 mb-2">{contact.address}</div>}
-                        {contact.location && (
-                          <div className="text-xs text-gray-400">
-                            Coordinates: {contact.location.lat.toFixed(6)}, {contact.location.lng.toFixed(6)}
-                          </div>
-                        )}
-                      </div>
-                      <div className="flex gap-2">
-                        <button
-                          onClick={() => startEditContact(contact)}
-                          className="px-3 py-1 bg-blue-500 text-white rounded-lg hover:bg-blue-600 text-sm"
-                        >
-                          Edit
-                        </button>
-                        <button
-                          onClick={() => deleteContact(contact.id)}
-                          className="px-3 py-1 bg-red-500 text-white rounded-lg hover:bg-red-600 text-sm"
-                        >
-                          Delete
-                        </button>
-                      </div>
+                    <div className="flex gap-2">
+                      <button
+                        onClick={() => startEditContact(contact)}
+                        className="px-3 py-1 bg-blue-500 text-white rounded-lg hover:bg-blue-600 text-sm"
+                      >
+                        Edit
+                      </button>
+                      <button
+                        onClick={() => deleteContact(contact.id)}
+                        className="px-3 py-1 bg-red-500 text-white rounded-lg hover:bg-red-600 text-sm"
+                      >
+                        Delete
+                      </button>
                     </div>
                   </div>
-                ))}
-              </div>
-            )}
-          </div>
-        )}
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
     </div>
   );
 }
