@@ -1016,27 +1016,12 @@ export function ChatBox({ reportId, category, onClose, onSendMessage, onSendImag
               </div>
 
               {/* Contact Info */}
-              < className="bg-gray-50 rounded-lg p-2">
+              <div className="bg-gray-50 rounded-lg p-2">
                 <div className="text-xs font-semibold text-gray-600">Contact</div>
                 <div className="text-sm">📞 {currentReport?.userPhone || user?.phone || 'Not provided'}</div>
                 <div className="text-xs text-gray-600 mt-1">
                   {currentReport?.userName ? `${currentReport.userName}@example.com` : 
                    user?.email || 'Not provided'}
-                </div>
-              </
-                <div className="text-xs font-semibold text-gray-600">Contact</div>
-                <div className="text-sm">📞 {currentReport?.userPhone || reportId ? (
-                  reportId.startsWith('temp_') ? 'Temporary Contact' :
-                  reportId.startsWith('anonymous_') ? 'Anonymous Contact' :
-                  user?.phone || 'Not provided'
-                ) : user?.phone || 'Not provided'}</div>
-                <div className="text-xs text-gray-600 mt-1">
-                  {currentReport?.userName ? `${currentReport.userName}@example.com` : 
-                   reportId ? (
-                     reportId.startsWith('temp_') ? 'temp@example.com' :
-                     reportId.startsWith('anonymous_') ? 'anonymous@example.com' :
-                     user?.email || 'Not provided'
-                   ) : user?.email || 'Not provided'}
                 </div>
               </div>
 
