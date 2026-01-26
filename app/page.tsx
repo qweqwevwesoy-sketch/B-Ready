@@ -38,8 +38,12 @@ export default function LandingPage() {
           backgroundImage: 'url("/background.jpg")',
           backgroundSize: 'cover',
           backgroundPosition: 'center',
-          filter: 'blur(8px) brightness(0.6)',
+          filter: 'blur(4px) brightness(0.7)',
           opacity: 0.3,
+          zIndex: 0
+        }} />
+        <div className="absolute inset-0" style={{
+          background: 'linear-gradient(to bottom, transparent 60%, rgba(59, 130, 246, 0.8))',
           zIndex: 0
         }} />
         <div className="absolute inset-0" style={{
@@ -119,8 +123,12 @@ export default function LandingPage() {
           backgroundImage: 'url("/background.jpg")',
           backgroundSize: 'cover',
           backgroundPosition: 'center',
-          filter: 'blur(8px) brightness(0.6)',
+          filter: 'blur(4px) brightness(0.7)',
           opacity: 0.3,
+          zIndex: 0
+        }} />
+        <div className="absolute inset-0" style={{
+          background: 'linear-gradient(to bottom, transparent 60%, rgba(59, 130, 246, 0.8))',
           zIndex: 0
         }} />
         <div className="absolute inset-0" style={{

@@ -30,6 +30,7 @@ interface Station {
   email?: string;
   website?: string;
   description?: string;
+  contact?: string;
 }
 
 interface SearchResult {
@@ -129,7 +130,7 @@ export default function RealTimeMapContent() {
       const data = await response.json();
 
       if (data.features && data.features.length > 0) {
-        const results: SearchResult[] = data.features.map((feature: PhotonFeature, index: number) => ({
+      const results: SearchResult[] = data.features.map((feature: PhotonFeature, index: number) => ({
           place_id: feature.properties.osm_id || `${feature.geometry.coordinates[0]}-${feature.geometry.coordinates[1]}-${index}`,
           display_name: feature.properties.name || feature.properties.city || feature.properties.state,
           lat: feature.geometry.coordinates[1].toString(),
@@ -365,8 +366,8 @@ export default function RealTimeMapContent() {
   };
 
   const selectSearchResult = (result: SearchResult): void => {
-    const lat = parseFloat(result.lat);
-    const lng = parseFloat(result.lon);
+        const lat = parseFloat(result.lat);
+        const lng = parseFloat(result.lon);
 
     if (mapRef.current) {
       mapRef.current.setView([lat, lng], 18);
@@ -642,10 +643,10 @@ export default function RealTimeMapContent() {
         .bindPopup(`
           <div class="p-2">
             <h3 class="font-bold">${station.name}</h3>
-            <p class="text-sm text-gray-600">${station.address}</p>
-            ${station.phone ? `<p class="text-sm text-blue-600 mt-2"><strong>Contact:</strong> ${station.phone}</p>` : ''}
-            ${station.email ? `<p class="text-sm text-blue-600 mt-1"><strong>Email:</strong> ${station.email}</p>` : ''}
-            ${station.website ? `<p class="text-sm text-blue-600 mt-1"><strong>Website:</strong> ${station.website}</p>` : ''}
+                        <p class="text-sm text-gray-600">${station.address}</p>
+                        ${station.phone || station.contact ? `<p class="text-sm text-blue-600 mt-2"><strong>Contact:</strong> ${station.phone || station.contact}</p>` : ''}
+                        ${station.email ? `<p class="text-sm text-blue-600 mt-1"><strong>Email:</strong> ${station.email}</p>` : ''}
+                        ${station.website ? `<p class="text-sm text-blue-600 mt-1"><strong>Website:</strong> ${station.website}</p>` : ''}
             ${station.description ? `<p class="text-sm text-gray-600 mt-2"><strong>Description:</strong> ${station.description}</p>` : ''}
             ${user?.role === 'admin' ? `
               <div class="mt-3 flex gap-2">
@@ -1014,7 +1015,7 @@ export default function RealTimeMapContent() {
                         <div>
                           <strong>{station.name}</strong>
                           <p className="text-sm text-gray-600">{station.address}</p>
-                          {station.phone && <p className="text-xs text-blue-600">📞 {station.phone}</p>}
+                          {(station.phone || station.contact) && <p className="text-xs text-blue-600">📞 {station.phone || station.contact}</p>}
                           {station.email && <p className="text-xs text-blue-600">✉️ {station.email}</p>}
                         </div>
                         <div className="flex gap-2">
@@ -1133,7 +1134,7 @@ export default function RealTimeMapContent() {
                     <div>
                       <strong>{station.name}</strong>
                       <p className="text-sm text-gray-600">{station.address}</p>
-                      {station.phone && <p className="text-xs text-blue-600">📞 {station.phone}</p>}
+                      {(station.phone || station.contact) && <p className="text-xs text-blue-600">📞 {station.phone || station.contact}</p>}
                       {station.email && <p className="text-xs text-blue-600">✉️ {station.email}</p>}
                     </div>
                     <p className="text-xs text-gray-500">Emergency Response Station</p>
