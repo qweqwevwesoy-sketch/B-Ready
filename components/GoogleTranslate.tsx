@@ -25,7 +25,7 @@ const GoogleTranslate: React.FC<GoogleTranslateProps> = ({ className }) => {
 
   const currentLang = languages.find(lang => lang.code === currentLanguage) || languages[0];
 
-  const translatePage = (languageCode: string) => {
+  const translatePage = (languageCode: string): void => {
     setCurrentLanguage(languageCode);
     setIsOpen(false);
     
@@ -40,7 +40,7 @@ const GoogleTranslate: React.FC<GoogleTranslateProps> = ({ className }) => {
     }
   };
 
-  const loadGoogleTranslate = (languageCode?: string) => {
+  const loadGoogleTranslate = (languageCode?: string): void => {
     const googleWindow = window as WindowWithGoogle;
     
     // Check if already loaded
@@ -62,7 +62,7 @@ const GoogleTranslate: React.FC<GoogleTranslateProps> = ({ className }) => {
     document.head.appendChild(script);
 
     // Set up callback with timeout to avoid ESLint error
-    setTimeout(() => {
+    setTimeout((): void => {
       googleWindow.googleTranslateElementInit = () => {
         if (googleWindow.google && googleWindow.google.translate) {
           new googleWindow.google.translate.TranslateElement(
@@ -90,7 +90,7 @@ const GoogleTranslate: React.FC<GoogleTranslateProps> = ({ className }) => {
     }, 0);
   };
 
-  useEffect(() => {
+  useEffect((): void => {
     // Initialize Google Translate on component mount
     loadGoogleTranslate();
   }, []);
@@ -101,7 +101,7 @@ const GoogleTranslate: React.FC<GoogleTranslateProps> = ({ className }) => {
       
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className="flex items-center gap-2 px-3 py-2 bg-white/10 hover:bg-white/20 rounded-lg transition-colors border border-white/20"
+        className="flex items-center gap-2 px-3 py-2 bg-yellow-400/20 hover:bg-yellow-400/30 rounded-lg transition-colors border border-yellow-400/40"
         aria-label="Translate page"
       >
         <span className="text-lg">{currentLang.flag}</span>
@@ -117,13 +117,13 @@ const GoogleTranslate: React.FC<GoogleTranslateProps> = ({ className }) => {
       </button>
 
       {isOpen && (
-        <div className="absolute top-full right-0 mt-2 w-48 bg-white rounded-lg shadow-lg border border-gray-200 py-2 z-50">
+        <div className="absolute top-full right-0 mt-2 w-48 bg-white rounded-lg shadow-lg border border-yellow-400/40 py-2 z-50">
           {languages.map((lang) => (
             <button
               key={lang.code}
               onClick={() => translatePage(lang.code)}
-              className={`w-full text-left px-4 py-2 hover:bg-gray-100 flex items-center gap-3 ${
-                currentLanguage === lang.code ? 'bg-blue-50 text-blue-600' : 'text-gray-700'
+              className={`w-full text-left px-4 py-2 hover:bg-yellow-50 flex items-center gap-3 ${
+                currentLanguage === lang.code ? 'bg-yellow-50 text-yellow-600' : 'text-gray-700'
               }`}
             >
               <span className="text-lg">{lang.flag}</span>

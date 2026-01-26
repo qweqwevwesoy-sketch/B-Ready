@@ -48,7 +48,7 @@ export default function LandingPage() {
             alt="B-READY Logo"
             className="w-24 h-24 mx-auto mb-6 animate-pulse"
           />
-          <h1 className="text-5xl md:text-6xl font-bold mb-4">
+          <h1 className="text-5xl md:text-6xl font-black mb-4">
             B-READY
           </h1>
           <p className="text-2xl md:text-3xl mb-6 opacity-90">
@@ -108,8 +108,21 @@ export default function LandingPage() {
       </section>
 
       {/* CTA Section */}
-      <section className="py-20 px-4 bg-gradient-to-r from-primary to-primary-dark text-white text-center">
-        <div className="max-w-4xl mx-auto">
+      <section className="py-20 px-4 bg-gradient-to-r from-primary to-primary-dark text-white text-center relative overflow-hidden">
+        <div className="absolute inset-0" style={{
+          backgroundImage: 'url("/background.jpg")',
+          backgroundSize: 'cover',
+          backgroundPosition: 'center',
+          filter: 'blur(8px) brightness(0.6)',
+          opacity: 0.3,
+          zIndex: 0
+        }} />
+        <div className="absolute inset-0" style={{
+          backgroundImage: 'radial-gradient(circle, rgba(255, 255, 255, 0.1) 1px, transparent 1px)',
+          backgroundSize: '50px 50px',
+          zIndex: 1
+        }} />
+        <div className="relative z-20 max-w-4xl mx-auto">
           <h2 className="text-4xl font-bold mb-4">Ready to Make Your Barangay Safer?</h2>
           <p className="text-xl mb-8 opacity-90">
             Join thousands of residents using B-READY for emergency reporting and response.

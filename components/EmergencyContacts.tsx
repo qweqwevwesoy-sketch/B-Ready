@@ -299,14 +299,6 @@ export function EmergencyContacts({ userLocation, variant = 'display' }: Emergen
     <div className="bg-white rounded-lg p-6 shadow-lg">
       <div className="flex justify-between items-center mb-4">
         <h3 className="text-lg font-semibold">Emergency Contacts</h3>
-        {user?.role === 'admin' && (
-          <button
-            onClick={handleEditStations}
-            className="px-4 py-2 bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-700"
-          >
-            📍 Edit Stations
-          </button>
-        )}
       </div>
 
       {loading ? (
@@ -316,9 +308,6 @@ export function EmergencyContacts({ userLocation, variant = 'display' }: Emergen
       ) : stations.length === 0 ? (
         <div className="text-center text-gray-500 py-4">
           <p>No emergency stations available yet.</p>
-          {user?.role === 'admin' && (
-            <p className="text-sm mt-2">Admins can add stations using the Edit Stations button above.</p>
-          )}
         </div>
       ) : (
         <div className="space-y-4">
@@ -361,14 +350,6 @@ export function EmergencyContacts({ userLocation, variant = 'display' }: Emergen
                 </div>
                 <div className="flex flex-col items-end gap-2">
                   <div className="text-sm text-gray-500">Capacity: {station.currentLoad}/{station.capacity}</div>
-                  {user?.role === 'admin' && (
-                    <button
-                      onClick={handleEditStations}
-                      className="px-3 py-1 bg-blue-500 text-white text-sm rounded hover:bg-blue-600"
-                    >
-                      Edit
-                    </button>
-                  )}
                 </div>
               </div>
             </div>
@@ -379,7 +360,6 @@ export function EmergencyContacts({ userLocation, variant = 'display' }: Emergen
       <div className="mt-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
         <div className="text-sm text-blue-800">
           <strong>Note:</strong> Emergency stations are displayed based on your location and the type of emergency.
-          Admins can edit stations using the Edit Stations button above.
         </div>
       </div>
     </div>
