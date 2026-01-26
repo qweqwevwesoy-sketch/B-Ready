@@ -30,7 +30,7 @@ export function ReportCard({
 
     const statusLabels = {
       pending: 'Pending',
-      approved: 'Approved',
+      approved: 'Approved'  ,
       current: 'Active',
       rejected: 'Rejected',
     };
@@ -56,8 +56,8 @@ export function ReportCard({
 
   return (
     <div
-      className={`bg-white rounded-lg p-4 shadow-md hover:shadow-lg transition-shadow border border-gray-200 ${
-        canOpenChat ? 'cursor-pointer' : ''
+      className={`bg-white rounded-lg p-4 shadow-md hover:shadow-lg transition-all duration-200 border border-gray-200 ${
+        canOpenChat ? 'cursor-pointer hover:scale-105' : ''
       }`}
       onClick={handleClick}
     >

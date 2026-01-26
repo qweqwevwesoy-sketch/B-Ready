@@ -44,6 +44,7 @@ export function ChatBox({ reportId, category, onClose, onSendMessage, onSendImag
   const [showCategorySelection, setShowCategorySelection] = useState(isAnonymous && !category && !reportId);
   const [selectedCategory, setSelectedCategory] = useState<Category | null>(category || null);
   const [anonymousReportId, setAnonymousReportId] = useState<string | null>(null);
+  const [isAnimating, setIsAnimating] = useState<boolean>(false);
   const videoRef = useRef<HTMLVideoElement>(null);
   const streamRef = useRef<MediaStream | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -120,6 +121,23 @@ export function ChatBox({ reportId, category, onClose, onSendMessage, onSendImag
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
+
+  // Animation state management
+  useEffect(() => {
+    if (reportId || category) {
+      // Trigger entrance animation
+      setIsAnimating(true);
+      // Remove animation class after animation completes
+      const timer = setTimeout(() => setIsAnimating(false), 300);
+      return () => clearTimeout(timer);
+    } else {
+      // Trigger exit animation
+      setIsAnimating(true);
+      // Keep animation state until fully closed
+      const timer = setTimeout(() => setIsAnimating(false), 300);
+      return () => clearTimeout(timer);
+    }
+  }, [reportId, category]);
 
   const startInstantCamera = () => {
     console.log('📸 Instant camera mode - opening file picker');
@@ -594,7 +612,7 @@ export function ChatBox({ reportId, category, onClose, onSendMessage, onSendImag
   if (showCategorySelection) {
     return (
       <div className="fixed inset-0 bg-black/70 flex items-center justify-center p-4" style={{ zIndex: chatBoxZIndex }}>
-        <div className="bg-white rounded-2xl w-full max-w-md h-[85vh] max-h-[700px] flex flex-col shadow-2xl">
+      <div className="bg-white rounded-2xl w-full max-w-md h-[85vh] max-h-[700px] flex flex-col shadow-2xl">
           <div className="bg-gradient-to-r from-red-600 to-red-700 text-white p-4 rounded-t-2xl flex justify-between items-center">
             <div>
               <h3 className="font-semibold">🚨 Anonymous Emergency Chat</h3>

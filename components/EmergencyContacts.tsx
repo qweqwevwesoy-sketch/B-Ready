@@ -209,7 +209,6 @@ export function EmergencyContacts({ userLocation, variant = 'display' }: Emergen
                     </div>
                     <div className="text-sm text-gray-500 mb-2">📍 {station.address}</div>
                     <div className="flex gap-4 text-sm text-gray-600 mb-2">
-                      <span>Capacity: {station.currentLoad ?? 0}/{station.capacity ?? 'N/A'}</span>
                       <span className={`px-2 py-1 rounded text-white text-xs ${getStationStatusColor(station.status)}`}>
                         {getStationStatusText(station.status)}
                       </span>
@@ -263,7 +262,6 @@ export function EmergencyContacts({ userLocation, variant = 'display' }: Emergen
                       <span className="font-medium">Address:</span> {station.address}
                     </div>
                     <div className="flex gap-4 text-sm text-gray-600 mb-2">
-                      <span>Capacity: {station.currentLoad ?? 0}/{station.capacity ?? 'N/A'}</span>
                       <span className={`px-2 py-1 rounded text-white text-xs ${getStationStatusColor(station.status)}`}>
                         {getStationStatusText(station.status)}
                       </span>
@@ -328,16 +326,10 @@ export function EmergencyContacts({ userLocation, variant = 'display' }: Emergen
                     <div className="text-sm text-gray-600">{getStationTypeLabel(station.type)}</div>
                     <div className="text-sm text-gray-600 mt-1">📍 {station.address}</div>
                     <div className="flex gap-4 text-sm text-gray-600 mt-2">
-                      <span>📞 {station.contact || station.phone || 'No contact available'}</span>
                       <span className={`px-2 py-1 rounded text-white text-xs ${getStationStatusColor(station.status)}`}>
                         {getStationStatusText(station.status)}
                       </span>
                     </div>
-                    {station.phone && station.phone !== station.contact && (
-                      <div className="text-sm text-blue-600 mt-1">
-                        <span className="font-medium">Phone:</span> {station.phone}
-                      </div>
-                    )}
                     {station.email && (
                       <div className="text-sm text-blue-600 mt-1">
                         <span className="font-medium">Email:</span> {station.email}
@@ -351,7 +343,6 @@ export function EmergencyContacts({ userLocation, variant = 'display' }: Emergen
                   </div>
                 </div>
                     <div className="flex flex-col items-end gap-2">
-                      <div className="text-sm text-gray-500">Capacity: {station.currentLoad ?? 0}/{station.capacity ?? 'N/A'}</div>
                     </div>
               </div>
             </div>
