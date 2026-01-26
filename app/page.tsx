@@ -16,7 +16,6 @@ export default function LandingPage() {
   const [selectedCategory, setSelectedCategory] = useState<Category | null>(null);
 
   useEffect(() => {
-
     const handleOnline = () => setIsOffline(false);
     const handleOffline = () => setIsOffline(true);
 
@@ -35,12 +34,19 @@ export default function LandingPage() {
 
       {/* Hero Section */}
       <section className="min-h-screen flex items-center justify-center p-8 bg-gradient-to-br from-primary to-primary-dark relative overflow-hidden">
-        <div className="absolute inset-0 opacity-10">
-          <div className="absolute inset-0" style={{
-            backgroundImage: 'radial-gradient(circle, rgba(255,255,255,0.1) 1px, transparent 1px)',
-            backgroundSize: '50px 50px',
-          }} />
-        </div>
+        <div className="absolute inset-0" style={{
+          backgroundImage: 'url("/background.jpg")',
+          backgroundSize: 'cover',
+          backgroundPosition: 'center',
+          filter: 'blur(8px) brightness(0.6)',
+          opacity: 0.3,
+          zIndex: 0
+        }} />
+        <div className="absolute inset-0" style={{
+          backgroundImage: 'radial-gradient(circle, rgba(255, 255, 255, 0.1) 1px, transparent 1px)',
+          backgroundSize: '50px 50px',
+          zIndex: 1
+        }} />
 
         <div className="text-center text-white z-10 max-w-4xl px-4">
           <img

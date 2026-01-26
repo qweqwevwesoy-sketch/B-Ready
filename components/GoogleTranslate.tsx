@@ -101,7 +101,7 @@ const GoogleTranslate: React.FC<GoogleTranslateProps> = ({ className }) => {
       
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className="flex items-center gap-2 px-3 py-2 bg-yellow-400/20 hover:bg-yellow-400/30 rounded-lg transition-colors border border-yellow-400/40"
+        className="flex items-center gap-2 px-3 py-2 bg-yellow-400/40 hover:bg-yellow-400/60 rounded-lg transition-colors border border-yellow-500/60"
         aria-label="Translate page"
       >
         <span className="text-lg">{currentLang.flag}</span>
@@ -117,13 +117,13 @@ const GoogleTranslate: React.FC<GoogleTranslateProps> = ({ className }) => {
       </button>
 
       {isOpen && (
-        <div className="absolute top-full right-0 mt-2 w-48 bg-white rounded-lg shadow-lg border border-yellow-400/40 py-2 z-50">
+        <div className="absolute top-full right-0 mt-2 w-48 bg-white rounded-lg shadow-lg border border-yellow-500/60 py-2 z-50">
           {languages.map((lang) => (
             <button
               key={lang.code}
               onClick={() => translatePage(lang.code)}
-              className={`w-full text-left px-4 py-2 hover:bg-yellow-50 flex items-center gap-3 ${
-                currentLanguage === lang.code ? 'bg-yellow-50 text-yellow-600' : 'text-gray-700'
+              className={`w-full text-left px-4 py-2 hover:bg-yellow-100 flex items-center gap-3 ${
+                currentLanguage === lang.code ? 'bg-yellow-100 text-yellow-700' : 'text-gray-700'
               }`}
             >
               <span className="text-lg">{lang.flag}</span>
