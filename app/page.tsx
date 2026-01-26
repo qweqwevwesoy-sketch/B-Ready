@@ -115,6 +115,136 @@ export default function LandingPage() {
             </div>
           ))}
         </div>
+        
+        {/* View Safety Tips Buttons - Moved from Hero and CTA */}
+        <div className="flex gap-4 justify-center flex-wrap mt-12">
+          <button
+            onClick={() => router.push('/safety-tips')}
+            className="px-8 py-4 bg-white text-primary rounded-xl font-semibold text-lg hover:bg-gray-100 transition-colors shadow-lg"
+          >
+            🛡️ View Safety Tips
+          </button>
+          <button
+            onClick={() => router.push('/emergency-contacts')}
+            className="px-8 py-4 bg-transparent border-2 border-primary text-primary rounded-xl font-semibold text-lg hover:bg-primary/10 transition-colors"
+          >
+            📞 Emergency Contacts
+          </button>
+        </div>
+      </section>
+
+      {/* THE PROBLEM Section */}
+      <section className="py-20 px-4 max-w-7xl mx-auto">
+        <h2 className="text-4xl font-bold text-center mb-16">THE PROBLEM</h2>
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
+          {/* Left Column - Graphics */}
+          <div className="relative">
+            <div className="bg-gradient-to-br from-red-100 to-orange-100 rounded-3xl p-8 relative overflow-hidden">
+              <div className="absolute top-4 left-4 w-20 h-20 bg-red-500 rounded-full opacity-20"></div>
+              <div className="absolute bottom-4 right-4 w-16 h-16 bg-orange-500 rounded-full opacity-20"></div>
+              <div className="relative z-10">
+                <div className="text-8xl mb-4 text-red-600">⚠️</div>
+                <div className="w-full h-48 bg-gradient-to-r from-red-400 to-orange-400 rounded-lg opacity-50"></div>
+                <div className="mt-4 text-center text-red-600 font-semibold">
+                  Emergency Response Delays
+                </div>
+              </div>
+            </div>
+          </div>
+          
+          {/* Right Column - Problem Description */}
+          <div className="space-y-6">
+            <div className="bg-white/95 backdrop-blur-lg rounded-2xl p-8 shadow-lg">
+              <p className="text-lg text-gray-700 leading-relaxed">
+                Traditional disaster reporting in barangays relies on slow, manual communication methods that create dangerous delays during emergencies. Residents struggle to quickly report incidents, while responders face challenges in coordinating effective responses due to fragmented information.
+              </p>
+            </div>
+            <div className="bg-white/95 backdrop-blur-lg rounded-2xl p-8 shadow-lg">
+              <p className="text-lg text-gray-700 leading-relaxed">
+                The lack of real-time communication and centralized reporting systems leaves communities vulnerable when every second counts. This gap in emergency response infrastructure can mean the difference between life and death during critical situations.
+              </p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* THE MEANING OF B-READY Section */}
+      <section className="py-20 px-4 max-w-7xl mx-auto">
+        <h2 className="text-4xl font-bold text-center mb-16">THE MEANING OF B-READY</h2>
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
+          {/* Left Column - Meaning Description */}
+          <div className="space-y-6">
+            <div className="bg-white/95 backdrop-blur-lg rounded-2xl p-8 shadow-lg">
+              <p className="text-lg text-gray-700 leading-relaxed">
+                B-READY stands for Barangay Disaster Reporting & Response System, representing our commitment to empowering communities with immediate emergency response capabilities. The "B" symbolizes both Barangay and the collective strength of community members working together.
+              </p>
+            </div>
+            <div className="bg-white/95 backdrop-blur-lg rounded-2xl p-8 shadow-lg">
+              <p className="text-lg text-gray-700 leading-relaxed">
+                "READY" reflects our mission to ensure every barangay is prepared, informed, and equipped to handle disasters efficiently. Together, B-READY embodies the spirit of community resilience and technological empowerment.
+              </p>
+            </div>
+          </div>
+          
+          {/* Right Column - Graphics */}
+          <div className="relative">
+            <div className="bg-gradient-to-br from-blue-100 to-green-100 rounded-3xl p-8 relative overflow-hidden">
+              <div className="absolute top-4 left-4 w-24 h-24 bg-blue-500 rounded-full opacity-20"></div>
+              <div className="absolute bottom-4 right-4 w-20 h-20 bg-green-500 rounded-full opacity-20"></div>
+              <div className="relative z-10 text-center">
+                <div className="text-8xl mb-4 text-blue-600">🛡️</div>
+                <div className="text-4xl font-bold text-green-600 mb-2">B-READY</div>
+                <div className="text-sm text-gray-600 uppercase tracking-wider">
+                  Community Protection
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* PURPOSE & DESCRIPTION Section */}
+      <section className="py-20 px-4 max-w-7xl mx-auto">
+        <h2 className="text-4xl font-bold text-center mb-16">PURPOSE & DESCRIPTION</h2>
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
+          {/* Left Column - Purpose & Description */}
+          <div className="space-y-6">
+            <div className="bg-white/95 backdrop-blur-lg rounded-2xl p-8 shadow-lg">
+              <h3 className="text-2xl font-bold text-primary mb-4">Our Purpose</h3>
+              <p className="text-lg text-gray-700 leading-relaxed">
+                To revolutionize disaster response at the barangay level by providing real-time reporting tools that connect residents directly with emergency responders, ensuring faster, more coordinated responses during critical situations.
+              </p>
+            </div>
+            <div className="bg-white/95 backdrop-blur-lg rounded-2xl p-8 shadow-lg">
+              <h3 className="text-2xl font-bold text-primary mb-4">System Description</h3>
+              <p className="text-lg text-gray-700 leading-relaxed">
+                B-READY is a comprehensive web-based platform featuring instant incident reporting, real-time location tracking, community coordination tools, and emergency resource management. Our system bridges the communication gap between residents and responders for more effective disaster management.
+              </p>
+            </div>
+          </div>
+          
+          {/* Right Column - Graphics */}
+          <div className="relative">
+            <div className="bg-gradient-to-br from-purple-100 to-pink-100 rounded-3xl p-8 relative overflow-hidden">
+              <div className="absolute top-4 left-4 w-20 h-20 bg-purple-500 rounded-full opacity-20"></div>
+              <div className="absolute bottom-4 right-4 w-16 h-16 bg-pink-500 rounded-full opacity-20"></div>
+              <div className="relative z-10">
+                <div className="text-8xl mb-4 text-purple-600">📱</div>
+                <div className="grid grid-cols-3 gap-2 mb-4">
+                  <div className="w-8 h-8 bg-pink-400 rounded opacity-60"></div>
+                  <div className="w-8 h-8 bg-purple-400 rounded opacity-60"></div>
+                  <div className="w-8 h-8 bg-pink-400 rounded opacity-60"></div>
+                  <div className="w-8 h-8 bg-purple-400 rounded opacity-60"></div>
+                  <div className="w-8 h-8 bg-pink-400 rounded opacity-60"></div>
+                  <div className="w-8 h-8 bg-purple-400 rounded opacity-60"></div>
+                </div>
+                <div className="text-center text-purple-600 font-semibold">
+                  Technology for Safety
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
       </section>
 
       {/* CTA Section */}
