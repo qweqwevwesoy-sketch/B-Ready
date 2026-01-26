@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import type { SafetyTip, EmergencyKitItem, Station } from '@/types';
 import { SafetyTipsAdmin } from '@/components/SafetyTipsAdmin';
+import { EmergencyContacts } from '@/components/EmergencyContacts';
 
 // Default offline safety tips data
 const DEFAULT_SAFETY_TIPS: SafetyTip[] = [
@@ -283,34 +284,8 @@ export default function SafetyTipsContent() {
         </div>
       </div>
 
-      {/* Emergency Stations Section for Residents */}
-      {user?.role === 'resident' && (
-        <div className="bg-blue-50 rounded-xl p-8 mt-8">
-          <h2 className="text-2xl font-bold mb-6">Emergency Response Stations</h2>
-          {stationsLoading ? (
-            <div className="text-center py-4">Loading stations...</div>
-          ) : stations.length === 0 ? (
-            <div className="text-center py-4 text-gray-500">No emergency stations available</div>
-          ) : (
-            <div className="space-y-4">
-              {stations.map((station) => (
-                <div key={station.id} className="bg-white p-4 rounded-lg shadow-sm border">
-                  <div className="flex justify-between items-center">
-                    <div>
-                      <strong className="text-lg">{station.name}</strong>
-                      <p className="text-sm text-gray-600 mt-1">{station.address}</p>
-                      {station.contact && (
-                        <p className="text-sm text-blue-600 mt-1">📞 {station.contact}</p>
-                      )}
-                    </div>
-                    <div className="text-xs text-gray-500">Emergency Response Station</div>
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
-      )}
+      {/* Emergency Contacts Section */}
+      <EmergencyContacts variant="safety-tips" />
 
 
       {/* Admin Controls */}

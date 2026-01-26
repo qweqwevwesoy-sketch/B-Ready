@@ -109,6 +109,9 @@ export interface Station {
   currentLoad: number;
   status: 'operational' | 'overloaded' | 'closed';
   contact: string;
+  phone?: string;
+  email?: string;
+  website?: string;
   description?: string;
   created_at: string;
   updated_at: string;

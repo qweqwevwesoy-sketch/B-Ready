@@ -298,7 +298,7 @@ export function EmergencyContacts({ userLocation, variant = 'display' }: Emergen
   return (
     <div className="bg-white rounded-lg p-6 shadow-lg">
       <div className="flex justify-between items-center mb-4">
-        <h3 className="text-lg font-semibold">Emergency Stations</h3>
+        <h3 className="text-lg font-semibold">Emergency Contacts</h3>
         {user?.role === 'admin' && (
           <button
             onClick={handleEditStations}
@@ -342,6 +342,21 @@ export function EmergencyContacts({ userLocation, variant = 'display' }: Emergen
                         {getStationStatusText(station.status)}
                       </span>
                     </div>
+                    {station.phone && (
+                      <div className="text-sm text-blue-600 mt-1">
+                        <span className="font-medium">Phone:</span> {station.phone}
+                      </div>
+                    )}
+                    {station.email && (
+                      <div className="text-sm text-blue-600 mt-1">
+                        <span className="font-medium">Email:</span> {station.email}
+                      </div>
+                    )}
+                    {station.website && (
+                      <div className="text-sm text-blue-600 mt-1">
+                        <span className="font-medium">Website:</span> {station.website}
+                      </div>
+                    )}
                   </div>
                 </div>
                 <div className="flex flex-col items-end gap-2">
