@@ -18,6 +18,7 @@ export function useSocket() {
       // Check for environment variable first (for global deployments)
       const envSocketUrl = process.env.NEXT_PUBLIC_SOCKET_URL;
       if (envSocketUrl) {
+        console.log('🌐 Using WebSocket URL from environment:', envSocketUrl);
         return envSocketUrl;
       }
 
@@ -30,6 +31,7 @@ export function useSocket() {
 
       // If we're running on localhost, use localhost
       if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
+        console.log('🏠 Using localhost WebSocket URL');
         return 'http://localhost:3001';
       }
 
@@ -41,16 +43,23 @@ export function useSocket() {
         if (storedWsUrl) {
           // Ensure we use WSS for HTTPS pages
           if (window.location.protocol === 'https:') {
-            return storedWsUrl.replace(/^http:/, 'https:');
+            const secureUrl = storedWsUrl.replace(/^http:/, 'https:');
+            console.log('🔒 Using secure WebSocket URL for ngrok:', secureUrl);
+            return secureUrl;
           }
+          console.log('🔗 Using stored WebSocket URL for ngrok:', storedWsUrl);
           return storedWsUrl;
         }
         // Fallback: assume WebSocket is on the same ngrok domain but port 3001
-        return `https://${window.location.hostname}:3001`;
+        const fallbackUrl = `https://${window.location.hostname}:3001`;
+        console.log('🔄 Using fallback WebSocket URL for ngrok:', fallbackUrl);
+        return fallbackUrl;
       }
 
-      // Otherwise, use the same hostname but port 3001
-      return `http://${window.location.hostname}:3001`;
+      // For other network deployments, try to use the same hostname but port 3001
+      const networkUrl = `http://${window.location.hostname}:3001`;
+      console.log('🌐 Using network WebSocket URL:', networkUrl);
+      return networkUrl;
     } catch (error) {
       console.error('Error determining WebSocket URL:', error);
       return null;

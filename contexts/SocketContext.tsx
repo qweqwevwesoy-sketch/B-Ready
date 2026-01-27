@@ -43,38 +43,44 @@ export function SocketProvider({ children }: { children: React.ReactNode }) {
 
     const handleInitialReports = (reportsData: Report[]) => {
       console.log('📋 Received initial reports:', reportsData.length);
-      setReports(reportsData);
+      if (isMountedRef.current) {
+        setReports(reportsData);
+      }
     };
 
     const handleNewReport = (report: Report) => {
       console.log('📨 New report received:', report);
-      setReports((prev) => {
-        const existingIndex = prev.findIndex((r) => r.id === report.id);
-        if (existingIndex === -1) {
-          return [report, ...prev];
-        }
-        const updated = [...prev];
-        updated[existingIndex] = report;
-        return updated;
-      });
+      if (isMountedRef.current) {
+        setReports((prev) => {
+          const existingIndex = prev.findIndex((r) => r.id === report.id);
+          if (existingIndex === -1) {
+            return [report, ...prev];
+          }
+          const updated = [...prev];
+          updated[existingIndex] = report;
+          return updated;
+        });
+      }
     };
 
     const handleReportUpdated = (report: Report) => {
       console.log('🔄 Report updated:', report.id);
-      setReports((prev) => {
-        const index = prev.findIndex((r) => r.id === report.id);
-        if (index !== -1) {
-          const updated = [...prev];
-          updated[index] = report;
-          return updated;
-        }
-        return [report, ...prev];
-      });
+      if (isMountedRef.current) {
+        setReports((prev) => {
+          const index = prev.findIndex((r) => r.id === report.id);
+          if (index !== -1) {
+            const updated = [...prev];
+            updated[index] = report;
+            return updated;
+          }
+          return [report, ...prev];
+        });
+      }
     };
 
     const handleReportSubmitted = (data: { success: boolean; report?: Report; error?: string }) => {
       console.log('📤 Report submission response:', data);
-      if (data.success && data.report) {
+      if (isMountedRef.current && data.success && data.report) {
         setReports((prev) => {
           const index = prev.findIndex((r) => r.id === data.report!.id);
           if (index !== -1) {
@@ -89,20 +95,24 @@ export function SocketProvider({ children }: { children: React.ReactNode }) {
 
     const handleChatHistory = (data: { reportId: string; messages: Array<{ id: string; text: string; userName: string; userRole: string; timestamp: string; reportId: string }> }) => {
       console.log('📚 Received chat history for report:', data.reportId, data.messages.length, 'messages');
-      setChatMessages((prev) => ({
-        ...prev,
-        [data.reportId]: data.messages
-      }));
+      if (isMountedRef.current) {
+        setChatMessages((prev) => ({
+          ...prev,
+          [data.reportId]: data.messages
+        }));
+      }
     };
 
     const handleNewChatMessage = (message: { id: string; reportId: string; text: string; userName: string; userRole: string; timestamp: string }) => {
-      setChatMessages((prev) => {
-        const reportMessages = prev[message.reportId] || [];
-        return {
-          ...prev,
-          [message.reportId]: [...reportMessages, message]
-        };
-      });
+      if (isMountedRef.current) {
+        setChatMessages((prev) => {
+          const reportMessages = prev[message.reportId] || [];
+          return {
+            ...prev,
+            [message.reportId]: [...reportMessages, message]
+          };
+        });
+      }
     };
 
     socket.on('initial_reports', handleInitialReports);
@@ -112,10 +122,15 @@ export function SocketProvider({ children }: { children: React.ReactNode }) {
     socket.on('chat_history', handleChatHistory);
     socket.on('new_chat_message', handleNewChatMessage);
 
-    // Request initial reports
-    socketEvents.getReports(socket);
+    // Request initial reports with error handling
+    try {
+      socketEvents.getReports(socket);
+    } catch (error) {
+      console.error('Error requesting initial reports:', error);
+    }
 
     return () => {
+      isMountedRef.current = false;
       socket.off('initial_reports', handleInitialReports);
       socket.off('new_report', handleNewReport);
       socket.off('report_updated', handleReportUpdated);

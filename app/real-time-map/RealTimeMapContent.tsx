@@ -8,7 +8,7 @@ import { Header } from '@/components/Header';
 import { getCurrentLocation } from '@/lib/utils';
 import { Report } from '@/types';
 
-// Import Leaflet CSS for proper map rendering
+// Import Leaflet CSS for proper map rendering - ensure it loads correctly
 import 'leaflet/dist/leaflet.css';
 
 // Import Leaflet types
@@ -437,7 +437,7 @@ export default function RealTimeMapContent() {
           return;
         }
 
-        // Fix for Leaflet default icon issue
+        // Fix for Leaflet default icon issue - ensure icons are properly loaded
         delete (L.Icon.Default.prototype as { _getIconUrl?: string })._getIconUrl;
         L.Icon.Default.mergeOptions({
           iconRetinaUrl: 'https://unpkg.com/leaflet@1.7.1/dist/images/marker-icon-2x.png',
@@ -445,7 +445,7 @@ export default function RealTimeMapContent() {
           shadowUrl: 'https://unpkg.com/leaflet@1.7.1/dist/images/marker-shadow.png',
         });
 
-        // Initialize map centered on Philippines
+        // Initialize map centered on Philippines with better error handling
         const map = L.map(mapContainerRef.current, {
           zoomControl: true,
           scrollWheelZoom: true,
@@ -456,13 +456,15 @@ export default function RealTimeMapContent() {
           preferCanvas: true, // Use canvas for better performance
           fadeAnimation: false, // Disable animations for faster loading
           zoomAnimation: false,
-          markerZoomAnimation: false
+          markerZoomAnimation: false,
+          worldCopyJump: true, // Allow panning across date line
+          crs: L.CRS.EPSG3857 // Use standard Web Mercator projection
         }).setView([14.5995, 120.9842], 8);
 
         mapRef.current = map;
         setMapReady(true);
 
-        // Add tile layer with optimized settings
+        // Add tile layer with optimized settings and better error handling
         const tileLayer = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
           attribution: '© OpenStreetMap contributors',
           maxZoom: 19,
@@ -471,6 +473,8 @@ export default function RealTimeMapContent() {
           updateWhenIdle: true,
           updateWhenZooming: true,
           keepBuffer: 1, // Reduced buffer for faster loading
+          errorTileUrl: '', // Don't show broken tile images
+          noWrap: false, // Allow wrapping around the world
         });
 
         tileLayer.addTo(map);

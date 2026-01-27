@@ -78,40 +78,40 @@ export function EmergencyContacts({ userLocation, variant = 'display' }: Emergen
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    fetchStations();
+    fetchEmergencyContacts();
   }, []);
 
-  const fetchStations = async () => {
+  const fetchEmergencyContacts = async () => {
     try {
       setLoading(true);
-      const response = await fetch('/api/stations');
+      const response = await fetch('/api/emergency-contacts');
       if (response.ok) {
         const data = await response.json();
-        setStations(data.stations || []);
+        setStations(data.contacts || []);
         
         // Cache data locally for offline access
         try {
-          localStorage.setItem('bready_stations', JSON.stringify(data.stations || []));
+          localStorage.setItem('bready_emergency_contacts', JSON.stringify(data.contacts || []));
         } catch (storageError) {
-          console.warn('Failed to cache stations locally:', storageError);
+          console.warn('Failed to cache emergency contacts locally:', storageError);
         }
       } else {
-        throw new Error('Failed to fetch stations');
+        throw new Error('Failed to fetch emergency contacts');
       }
     } catch (error) {
-      console.error('Error fetching stations from API:', error);
+      console.error('Error fetching emergency contacts from API:', error);
 
       // Try to load from local cache first
       try {
-        const cachedStations = localStorage.getItem('bready_stations');
+        const cachedContacts = localStorage.getItem('bready_emergency_contacts');
 
-        if (cachedStations) {
-          setStations(JSON.parse(cachedStations));
-          console.log('✅ Loaded stations from local cache');
+        if (cachedContacts) {
+          setStations(JSON.parse(cachedContacts));
+          console.log('✅ Loaded emergency contacts from local cache');
         } else {
           // No cached data, use defaults
           setStations(DEFAULT_STATIONS);
-          console.log('ℹ️ Using default stations (no cache available)');
+          console.log('ℹ️ Using default emergency contacts (no cache available)');
         }
       } catch (cacheError) {
         console.error('Error loading from cache:', cacheError);
@@ -205,7 +205,7 @@ export function EmergencyContacts({ userLocation, variant = 'display' }: Emergen
                       <span className="text-sm text-gray-500 capitalize">{getStationTypeLabel(station.type)}</span>
                     </div>
                     <div className="text-sm text-gray-600 mb-1">
-                      📞 {station.contact || station.phone || 'No contact available'}
+                      📞 {station.phone || station.contact || 'No contact available'}
                     </div>
                     <div className="text-sm text-gray-500 mb-2">📍 {station.address}</div>
                     <div className="flex gap-4 text-sm text-gray-600 mb-2">
@@ -256,7 +256,7 @@ export function EmergencyContacts({ userLocation, variant = 'display' }: Emergen
                       </span>
                     </div>
                     <div className="text-sm text-gray-600 mb-1">
-                      <span className="font-medium">Contact:</span> {station.contact || station.phone || 'No contact available'}
+                      <span className="font-medium">Contact:</span> {station.phone || station.contact || 'No contact available'}
                     </div>
                     <div className="text-sm text-gray-500 mb-2">
                       <span className="font-medium">Address:</span> {station.address}

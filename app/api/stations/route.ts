@@ -30,6 +30,7 @@ export async function GET() {
       'SELECT * FROM emergency_stations ORDER BY name'
     );
 
+    console.log('✅ Successfully fetched stations from database:', rows.length);
     return NextResponse.json({
       success: true,
       stations: rows as Station[]
@@ -47,6 +48,8 @@ export async function GET() {
         id: doc.id,
         ...doc.data()
       })) as Station[];
+
+      console.log('✅ Successfully fetched stations from Firebase:', stations.length);
 
       // If Firebase also fails or returns empty, return default stations
       if (stations.length === 0) {
@@ -112,6 +115,7 @@ export async function GET() {
       console.error('❌ Firebase error fetching stations:', firebaseError);
 
       // Return default stations as last resort
+      console.log('📋 Using default stations as final fallback');
       const defaultStations = [
         {
           id: 'station_1',
