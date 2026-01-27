@@ -412,12 +412,6 @@ export default function RealTimeMapContent() {
       return;
     }
 
-    // Early return if map container ref is null
-    if (!mapContainerRef.current) {
-      console.log('Map container ref is null');
-      return;
-    }
-
     console.log('Initializing map...');
 
     // Set map as loading
@@ -426,14 +420,23 @@ export default function RealTimeMapContent() {
     // Use a timeout to ensure DOM is ready
     const initMap = async () => {
       try {
+        // Wait for the container to be available
+        await new Promise(resolve => {
+          const checkContainer = () => {
+            if (mapContainerRef.current) {
+              resolve(true);
+            } else {
+              setTimeout(checkContainer, 50);
+            }
+          };
+          checkContainer();
+        });
+
         console.log('Map container exists:', mapContainerRef.current);
         console.log('Container dimensions:', mapContainerRef.current?.getBoundingClientRect());
 
-        // Wait a bit to ensure container is fully mounted
-        await new Promise(resolve => setTimeout(resolve, 100));
-
         if (!mapContainerRef.current) {
-          console.log('Map container ref became null after timeout');
+          console.log('Map container ref is still null');
           return;
         }
 
