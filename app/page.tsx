@@ -92,13 +92,13 @@ export default function LandingPage() {
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
           {/* Left Column - Graphics */}
           <div className="relative">
-            <div className="bg-gradient-to-br from-red-100 to-orange-100 rounded-3xl p-8 relative overflow-hidden">
-              <div className="absolute top-4 left-4 w-20 h-20 bg-red-500 rounded-full opacity-20"></div>
-              <div className="absolute bottom-4 right-4 w-16 h-16 bg-orange-500 rounded-full opacity-20"></div>
+            <div className="bg-gradient-to-br from-blue-100 to-blue-200 rounded-3xl p-8 relative overflow-hidden">
+              <div className="absolute top-4 left-4 w-20 h-20 bg-blue-500 rounded-full opacity-20"></div>
+              <div className="absolute bottom-4 right-4 w-16 h-16 bg-blue-600 rounded-full opacity-20"></div>
               <div className="relative z-10">
-                <div className="text-8xl mb-4 text-red-600">⚠️</div>
-                <div className="w-full h-48 bg-gradient-to-r from-red-400 to-orange-400 rounded-lg opacity-50"></div>
-                <div className="mt-4 text-center text-red-600 font-semibold">
+                <div className="text-8xl mb-4 text-blue-600">⚠️</div>
+                <div className="w-full h-48 bg-gradient-to-r from-blue-400 to-blue-500 rounded-lg opacity-50"></div>
+                <div className="mt-4 text-center text-blue-600 font-semibold">
                   Emergency Response Delays
                 </div>
               </div>
@@ -141,12 +141,12 @@ export default function LandingPage() {
           
           {/* Right Column - Graphics */}
           <div className="relative">
-            <div className="bg-gradient-to-br from-blue-100 to-green-100 rounded-3xl p-8 relative overflow-hidden">
-              <div className="absolute top-4 left-4 w-24 h-24 bg-blue-500 rounded-full opacity-20"></div>
-              <div className="absolute bottom-4 right-4 w-20 h-20 bg-green-500 rounded-full opacity-20"></div>
+            <div className="bg-gradient-to-br from-yellow-100 to-yellow-200 rounded-3xl p-8 relative overflow-hidden">
+              <div className="absolute top-4 left-4 w-24 h-24 bg-yellow-500 rounded-full opacity-20"></div>
+              <div className="absolute bottom-4 right-4 w-20 h-20 bg-yellow-600 rounded-full opacity-20"></div>
               <div className="relative z-10 text-center">
-                <div className="text-8xl mb-4 text-blue-600">🛡️</div>
-                <div className="text-4xl font-bold text-green-600 mb-2">B-READY</div>
+                <div className="text-8xl mb-4 text-yellow-600">🛡️</div>
+                <div className="text-4xl font-bold text-yellow-600 mb-2">B-READY</div>
                 <div className="text-sm text-gray-600 uppercase tracking-wider">
                   Community Protection
                 </div>
@@ -178,20 +178,20 @@ export default function LandingPage() {
           
           {/* Right Column - Graphics */}
           <div className="relative">
-            <div className="bg-gradient-to-br from-purple-100 to-pink-100 rounded-3xl p-8 relative overflow-hidden">
-              <div className="absolute top-4 left-4 w-20 h-20 bg-purple-500 rounded-full opacity-20"></div>
-              <div className="absolute bottom-4 right-4 w-16 h-16 bg-pink-500 rounded-full opacity-20"></div>
+            <div className="bg-gradient-to-br from-blue-100 to-blue-200 rounded-3xl p-8 relative overflow-hidden">
+              <div className="absolute top-4 left-4 w-20 h-20 bg-blue-500 rounded-full opacity-20"></div>
+              <div className="absolute bottom-4 right-4 w-16 h-16 bg-blue-600 rounded-full opacity-20"></div>
               <div className="relative z-10">
-                <div className="text-8xl mb-4 text-purple-600">📱</div>
+                <div className="text-8xl mb-4 text-blue-600">📱</div>
                 <div className="grid grid-cols-3 gap-2 mb-4">
-                  <div className="w-8 h-8 bg-pink-400 rounded opacity-60"></div>
-                  <div className="w-8 h-8 bg-purple-400 rounded opacity-60"></div>
-                  <div className="w-8 h-8 bg-pink-400 rounded opacity-60"></div>
-                  <div className="w-8 h-8 bg-purple-400 rounded opacity-60"></div>
-                  <div className="w-8 h-8 bg-pink-400 rounded opacity-60"></div>
-                  <div className="w-8 h-8 bg-purple-400 rounded opacity-60"></div>
+                  <div className="w-8 h-8 bg-blue-400 rounded opacity-60"></div>
+                  <div className="w-8 h-8 bg-blue-500 rounded opacity-60"></div>
+                  <div className="w-8 h-8 bg-blue-400 rounded opacity-60"></div>
+                  <div className="w-8 h-8 bg-blue-500 rounded opacity-60"></div>
+                  <div className="w-8 h-8 bg-blue-400 rounded opacity-60"></div>
+                  <div className="w-8 h-8 bg-blue-500 rounded opacity-60"></div>
                 </div>
-                <div className="text-center text-purple-600 font-semibold">
+                <div className="text-center text-blue-600 font-semibold">
                   Technology for Safety
                 </div>
               </div>

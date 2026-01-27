@@ -157,7 +157,7 @@ export function EmergencyContacts({ userLocation, variant = 'display' }: Emergen
       case 'operational': return 'Operational';
       case 'overloaded': return 'Overloaded';
       case 'closed': return 'Closed';
-      default: return 'Unknown';
+      default: return '';
     }
   };
 

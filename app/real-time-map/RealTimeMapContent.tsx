@@ -6,6 +6,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useSocketContext } from '@/contexts/SocketContext';
 import { Header } from '@/components/Header';
 import { getCurrentLocation } from '@/lib/utils';
+import { Report } from '@/types';
 
 // Import Leaflet CSS for proper map rendering
 import 'leaflet/dist/leaflet.css';
@@ -19,6 +20,34 @@ declare global {
     editStation?: (id: string) => void;
   }
 }
+
+// Map loading states
+type MapLoadingState = 'initializing' | 'loading' | 'ready' | 'error' | 'retrying';
+
+// Map configuration
+const MAP_CONFIG = {
+  defaultCenter: [14.5995, 120.9842], // Philippines center
+  defaultZoom: 8,
+  maxZoom: 19,
+  minZoom: 3,
+  tileProviders: [
+    {
+      url: 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
+      attribution: '© OpenStreetMap contributors',
+      name: 'OpenStreetMap'
+    },
+    {
+      url: 'https://{s}.tile.openstreetmap.fr/osmfr/{z}/{x}/{y}.png',
+      attribution: '© OpenStreetMap France | © OpenStreetMap',
+      name: 'OpenStreetMap France'
+    },
+    {
+      url: 'https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png',
+      attribution: '© OpenTopoMap | © OpenStreetMap',
+      name: 'OpenTopoMap'
+    }
+  ]
+};
 
 interface Station {
   id: string;
@@ -101,9 +130,9 @@ export default function RealTimeMapContent() {
   const searchTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   // Filter all active reports (not just today's)
-  const activeReports = reports?.filter(report => {
+  const activeReports = reports?.filter((report: Report) => {
     if (report.status !== 'current') return false;
-    if (!report.location) return false;
+    if (!report.location || !report.location.lat || !report.location.lng) return false;
     return true;
   }) || [];
 
@@ -132,10 +161,10 @@ export default function RealTimeMapContent() {
       if (data.features && data.features.length > 0) {
       const results: SearchResult[] = data.features.map((feature: PhotonFeature, index: number) => ({
           place_id: feature.properties.osm_id || `${feature.geometry.coordinates[0]}-${feature.geometry.coordinates[1]}-${index}`,
-          display_name: feature.properties.name || feature.properties.city || feature.properties.state,
+          display_name: feature.properties.name || feature.properties.city || feature.properties.state || 'Unknown Location',
           lat: feature.geometry.coordinates[1].toString(),
           lon: feature.geometry.coordinates[0].toString(),
-        })).filter(result => result.display_name); // Filter out empty names
+        })).filter(result => result.display_name && result.display_name !== 'Unknown Location'); // Filter out empty names
 
         setSearchResults(results);
         setShowResults(true);
@@ -591,7 +620,7 @@ export default function RealTimeMapContent() {
     reportMarkersRef.current = [];
 
         // Add new report markers (red pins, 1.4x bigger = ~22px)
-    activeReports.forEach((report: any) => {
+    activeReports.forEach((report: Report) => {
       if (!report.location) return;
 
       const reportIcon = L.divIcon({
