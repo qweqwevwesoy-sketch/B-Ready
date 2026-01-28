@@ -105,17 +105,28 @@ export default function StatusUpdatePage() {
 
   // Filter function
   const filterReports = (report: any, query: string, isDateSearch: boolean, dateRange: { start: Date | null; end: Date | null }) => {
-    if (isDateSearch) {
-      const reportDate = new Date(report.timestamp);
-      if (dateRange.start && dateRange.end) {
-        return reportDate >= dateRange.start && reportDate <= dateRange.end;
-      } else if (dateRange.start) {
-        return reportDate >= dateRange.start;
-      } else if (dateRange.end) {
-        return reportDate <= dateRange.end;
+    try {
+      // Early return for empty search
+      if (!isDateSearch && !query.trim()) {
+        return true;
       }
-      return true;
-    } else if (query.trim()) {
+
+      // Handle date search
+      if (isDateSearch) {
+        const reportDate = new Date(report.timestamp);
+        const { start, end } = dateRange;
+        
+        if (start && end) {
+          return reportDate >= start && reportDate <= end;
+        } else if (start) {
+          return reportDate >= start;
+        } else if (end) {
+          return reportDate <= end;
+        }
+        return true;
+      }
+
+      // Handle text search
       const searchLower = query.toLowerCase();
       return (
         (report.type && report.type.toLowerCase().includes(searchLower)) ||
@@ -124,8 +135,10 @@ export default function StatusUpdatePage() {
         (report.address && report.address.toLowerCase().includes(searchLower)) ||
         (report.description && report.description.toLowerCase().includes(searchLower))
       );
+    } catch (error) {
+      console.error('Error filtering report:', error, report);
+      return false; // Return false if there's an error to exclude the problematic report
     }
-    return true;
   };
 
   return (
