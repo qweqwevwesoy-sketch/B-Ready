@@ -3,7 +3,7 @@
 import React, { createContext, useContext, useEffect, useState, useCallback, useRef } from 'react';
 import { useAuth } from './AuthContext';
 import { useOptimizedSocket, optimizedSocketEvents, useSocketPerformance } from '@/lib/socket-client-optimized';
-import type { Report, User } from '@/types';
+import type { Report, User, ChatMessage, ReportStatus } from '@/types';
 
 interface OptimizedSocketContextType {
   // Connection state
@@ -18,7 +18,7 @@ interface OptimizedSocketContextType {
   error: string | null;
   
   // Chat functionality
-  chatMessages: any[];
+  chatMessages: ChatMessage[];
   chatLoading: boolean;
   currentChatReportId: string | null;
   
@@ -107,9 +107,18 @@ export const OptimizedSocketProvider: React.FC<{ children: React.ReactNode }> = 
 
     const handleReportsUpdate = (data: any) => {
       try {
+        console.log('📡 Received initial_reports event:', data);
         if (data && Array.isArray(data.reports)) {
+          console.log('📊 Setting reports from server:', data.reports.length);
           setReports(data.reports);
           recordMessage();
+        } else if (Array.isArray(data)) {
+          // Handle case where data is directly an array
+          console.log('📊 Setting reports (direct array):', data.length);
+          setReports(data);
+          recordMessage();
+        } else {
+          console.warn('⚠️ Unexpected reports data format:', typeof data, data);
         }
       } catch (error) {
         console.error('Error handling reports update:', error);
@@ -183,7 +192,7 @@ export const OptimizedSocketProvider: React.FC<{ children: React.ReactNode }> = 
     };
 
     // Subscribe to events
-    const unsubscribeReports = on('reports_update', handleReportsUpdate);
+    const unsubscribeReports = on('initial_reports', handleReportsUpdate);
     const unsubscribeNewReport = on('new_report', handleNewReport);
     const unsubscribeReportUpdate = on('report_updated', handleReportUpdate);
     const unsubscribeChatMessage = on('report_chat_message', handleChatMessage);
@@ -225,7 +234,7 @@ export const OptimizedSocketProvider: React.FC<{ children: React.ReactNode }> = 
       emit('submit_report', {
         ...reportData,
         userId: user?.uid,
-        userName: user?.displayName || user?.email || 'Anonymous',
+        userName: user?.firstName + ' ' + user?.lastName || user?.email || 'Anonymous',
         userRole: user?.role || 'resident',
       });
       
@@ -235,7 +244,7 @@ export const OptimizedSocketProvider: React.FC<{ children: React.ReactNode }> = 
         id: `temp_${Date.now()}`,
         status: 'current',
         timestamp: new Date().toISOString(),
-        userName: user?.displayName || user?.email || 'Anonymous',
+        userName: user?.firstName + ' ' + user?.lastName || user?.email || 'Anonymous',
       } as Report;
       
       setReports(prev => [tempReport, ...prev]);
@@ -281,7 +290,7 @@ export const OptimizedSocketProvider: React.FC<{ children: React.ReactNode }> = 
       const messageData = {
         reportId: currentChatReportId,
         text,
-        userName: user?.displayName || user?.email || 'Anonymous',
+        userName: user?.firstName + ' ' + user?.lastName || user?.email || 'Anonymous',
         userRole: user?.role || 'resident',
         imageData,
         timestamp: new Date().toISOString(),
@@ -317,7 +326,7 @@ export const OptimizedSocketProvider: React.FC<{ children: React.ReactNode }> = 
       // Optimistic update
       setReports(prev => prev.map(report => 
         report.id === reportId 
-          ? { ...report, status, notes: notes || report.notes }
+          ? { ...report, status: status as ReportStatus, notes: notes || report.notes }
           : report
       ));
       
