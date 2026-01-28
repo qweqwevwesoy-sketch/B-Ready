@@ -1,11 +1,12 @@
 'use client';
 
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
 import { useSocketContext } from '@/contexts/SocketContext';
 import { Header } from '@/components/Header';
 import { ReportCard } from '@/components/ReportCard';
+import { ColumnSearch } from '@/components/ColumnSearch';
 import { EnhancedNotificationSystem } from '@/components/EnhancedNotificationSystem';
 import { notificationManager } from '@/components/NotificationManager';
 
@@ -56,6 +57,19 @@ export default function StatusUpdatePage() {
     router.push(`/dashboard?chat=${reportId}`);
   };
 
+  // Search states for each column
+  const [pendingSearchQuery, setPendingSearchQuery] = useState('');
+  const [pendingIsDateSearch, setPendingIsDateSearch] = useState(false);
+  const [pendingDateRange, setPendingDateRange] = useState<{ start: Date | null; end: Date | null }>({ start: null, end: null });
+
+  const [currentSearchQuery, setCurrentSearchQuery] = useState('');
+  const [currentIsDateSearch, setCurrentIsDateSearch] = useState(false);
+  const [currentDateRange, setCurrentDateRange] = useState<{ start: Date | null; end: Date | null }>({ start: null, end: null });
+
+  const [approvedSearchQuery, setApprovedSearchQuery] = useState('');
+  const [approvedIsDateSearch, setApprovedIsDateSearch] = useState(false);
+  const [approvedDateRange, setApprovedDateRange] = useState<{ start: Date | null; end: Date | null }>({ start: null, end: null });
+
   if (authLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -73,9 +87,46 @@ export default function StatusUpdatePage() {
 
   if (!user || user.role !== 'admin') return null;
 
+  // Filtered reports based on search
   const pendingReports = reports.filter((r) => r.status === 'pending');
+  const filteredPendingReports = pendingSearchQuery || pendingIsDateSearch 
+    ? pendingReports.filter(report => filterReports(report, pendingSearchQuery, pendingIsDateSearch, pendingDateRange))
+    : pendingReports;
+
   const currentReports = reports.filter((r) => r.status === 'current');
+  const filteredCurrentReports = currentSearchQuery || currentIsDateSearch
+    ? currentReports.filter(report => filterReports(report, currentSearchQuery, currentIsDateSearch, currentDateRange))
+    : currentReports;
+
   const approvedReports = reports.filter((r) => r.status === 'approved');
+  const filteredApprovedReports = approvedSearchQuery || approvedIsDateSearch
+    ? approvedReports.filter(report => filterReports(report, approvedSearchQuery, approvedIsDateSearch, approvedDateRange))
+    : approvedReports;
+
+  // Filter function
+  const filterReports = (report: any, query: string, isDateSearch: boolean, dateRange: { start: Date | null; end: Date | null }) => {
+    if (isDateSearch) {
+      const reportDate = new Date(report.timestamp);
+      if (dateRange.start && dateRange.end) {
+        return reportDate >= dateRange.start && reportDate <= dateRange.end;
+      } else if (dateRange.start) {
+        return reportDate >= dateRange.start;
+      } else if (dateRange.end) {
+        return reportDate <= dateRange.end;
+      }
+      return true;
+    } else if (query.trim()) {
+      const searchLower = query.toLowerCase();
+      return (
+        (report.type && report.type.toLowerCase().includes(searchLower)) ||
+        (report.category && report.category.toLowerCase().includes(searchLower)) ||
+        (report.userName && report.userName.toLowerCase().includes(searchLower)) ||
+        (report.address && report.address.toLowerCase().includes(searchLower)) ||
+        (report.description && report.description.toLowerCase().includes(searchLower))
+      );
+    }
+    return true;
+  };
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-200">
@@ -91,11 +142,26 @@ export default function StatusUpdatePage() {
             <div className="bg-gray-50 rounded-xl overflow-hidden border border-gray-200 flex flex-col h-[70vh]">
               <div className="bg-gradient-to-r from-custom-yellow-500 to-custom-yellow-600 text-white p-4 text-center font-semibold">
                 ⏳ Pending Reports
-                <div className="text-sm opacity-90 mt-1">{pendingReports.length} reports</div>
+                <div className="text-sm opacity-90 mt-1">
+                  {filteredPendingReports.length} of {pendingReports.length} reports
+                </div>
               </div>
+              <ColumnSearch
+                placeholder="Search pending reports..."
+                onSearch={(query, isDateSearch, dateRange) => {
+                  setPendingSearchQuery(query);
+                  setPendingIsDateSearch(isDateSearch);
+                  if (dateRange) setPendingDateRange(dateRange);
+                }}
+                onClear={() => {
+                  setPendingSearchQuery('');
+                  setPendingIsDateSearch(false);
+                  setPendingDateRange({ start: null, end: null });
+                }}
+              />
               <div className="flex-1 overflow-y-auto p-4 space-y-4">
-                {pendingReports.length > 0 ? (
-                  pendingReports.map((report) => (
+                {filteredPendingReports.length > 0 ? (
+                  filteredPendingReports.map((report) => (
                     <div key={report.id} className="bg-white rounded-lg p-4 shadow-md">
                       <ReportCard
                         report={report}
@@ -148,11 +214,26 @@ export default function StatusUpdatePage() {
             <div className="bg-gray-50 rounded-xl overflow-hidden border border-gray-200 flex flex-col h-[70vh]">
               <div className="bg-gradient-to-r from-custom-yellow-500 to-custom-yellow-600 text-white p-4 text-center font-semibold">
                 🔵 Current Reports
-                <div className="text-sm opacity-90 mt-1">{currentReports.length} reports</div>
+                <div className="text-sm opacity-90 mt-1">
+                  {filteredCurrentReports.length} of {currentReports.length} reports
+                </div>
               </div>
+              <ColumnSearch
+                placeholder="Search current reports..."
+                onSearch={(query, isDateSearch, dateRange) => {
+                  setCurrentSearchQuery(query);
+                  setCurrentIsDateSearch(isDateSearch);
+                  if (dateRange) setCurrentDateRange(dateRange);
+                }}
+                onClear={() => {
+                  setCurrentSearchQuery('');
+                  setCurrentIsDateSearch(false);
+                  setCurrentDateRange({ start: null, end: null });
+                }}
+              />
               <div className="flex-1 overflow-y-auto p-4 space-y-4">
-                {currentReports.length > 0 ? (
-                  currentReports.map((report) => (
+                {filteredCurrentReports.length > 0 ? (
+                  filteredCurrentReports.map((report) => (
                     <div key={report.id} className="bg-white rounded-lg p-4 shadow-md">
                       <ReportCard
                         report={report}
@@ -205,11 +286,26 @@ export default function StatusUpdatePage() {
             <div className="bg-gray-50 rounded-xl overflow-hidden border border-gray-200 flex flex-col h-[70vh]">
               <div className="bg-gradient-to-r from-custom-yellow-500 to-custom-yellow-600 text-white p-4 text-center font-semibold">
                 ✅ Approved Reports
-                <div className="text-sm opacity-90 mt-1">{approvedReports.length} reports</div>
+                <div className="text-sm opacity-90 mt-1">
+                  {filteredApprovedReports.length} of {approvedReports.length} reports
+                </div>
               </div>
+              <ColumnSearch
+                placeholder="Search approved reports..."
+                onSearch={(query, isDateSearch, dateRange) => {
+                  setApprovedSearchQuery(query);
+                  setApprovedIsDateSearch(isDateSearch);
+                  if (dateRange) setApprovedDateRange(dateRange);
+                }}
+                onClear={() => {
+                  setApprovedSearchQuery('');
+                  setApprovedIsDateSearch(false);
+                  setApprovedDateRange({ start: null, end: null });
+                }}
+              />
               <div className="flex-1 overflow-y-auto p-4 space-y-4">
-                {approvedReports.length > 0 ? (
-                  approvedReports.map((report) => (
+                {filteredApprovedReports.length > 0 ? (
+                  filteredApprovedReports.map((report) => (
                     <div key={report.id} className="bg-white rounded-lg p-4 shadow-md">
                       <ReportCard
                         report={report}

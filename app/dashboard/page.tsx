@@ -7,6 +7,7 @@ import { useSocketContext } from '@/contexts/SocketContext';
 import { Header } from '@/components/Header';
 import { FAB } from '@/components/FAB';
 import { ReportCard } from '@/components/ReportCard';
+import { ColumnSearch } from '@/components/ColumnSearch';
 import { EnhancedNotificationSystem } from '@/components/EnhancedNotificationSystem';
 import { ChatBox } from '@/components/ChatBox';
 import { notificationManager } from '@/components/NotificationManager';
@@ -260,6 +261,63 @@ function DashboardContent({ searchParams }: { searchParams: URLSearchParams }) {
     }
   };
 
+  // Search states for each column
+  const [approvedSearchQuery, setApprovedSearchQuery] = useState('');
+  const [approvedIsDateSearch, setApprovedIsDateSearch] = useState(false);
+  const [approvedDateRange, setApprovedDateRange] = useState<{ start: Date | null; end: Date | null }>({ start: null, end: null });
+
+  const [currentSearchQuery, setCurrentSearchQuery] = useState('');
+  const [currentIsDateSearch, setCurrentIsDateSearch] = useState(false);
+  const [currentDateRange, setCurrentDateRange] = useState<{ start: Date | null; end: Date | null }>({ start: null, end: null });
+
+  const [thirdColumnSearchQuery, setThirdColumnSearchQuery] = useState('');
+  const [thirdColumnIsDateSearch, setThirdColumnIsDateSearch] = useState(false);
+  const [thirdColumnDateRange, setThirdColumnDateRange] = useState<{ start: Date | null; end: Date | null }>({ start: null, end: null });
+
+  // Filtered reports based on search
+  const approvedReports = reports.filter((r) => r.status === 'approved');
+  const filteredApprovedReports = approvedSearchQuery || approvedIsDateSearch 
+    ? approvedReports.filter(report => filterReports(report, approvedSearchQuery, approvedIsDateSearch, approvedDateRange))
+    : approvedReports;
+
+  const currentReports = reports.filter((r) => r.status === 'current');
+  const filteredCurrentReports = currentSearchQuery || currentIsDateSearch
+    ? currentReports.filter(report => filterReports(report, currentSearchQuery, currentIsDateSearch, currentDateRange))
+    : currentReports;
+
+  const thirdColumnReports =
+    user.role === 'admin'
+      ? reports.filter((r) => r.status === 'pending')
+      : reports.filter((r) => r.userId === user.uid);
+  const filteredThirdColumnReports = thirdColumnSearchQuery || thirdColumnIsDateSearch
+    ? thirdColumnReports.filter(report => filterReports(report, thirdColumnSearchQuery, thirdColumnIsDateSearch, thirdColumnDateRange))
+    : thirdColumnReports;
+
+  // Filter function
+  const filterReports = (report: Report, query: string, isDateSearch: boolean, dateRange: { start: Date | null; end: Date | null }) => {
+    if (isDateSearch) {
+      const reportDate = new Date(report.timestamp);
+      if (dateRange.start && dateRange.end) {
+        return reportDate >= dateRange.start && reportDate <= dateRange.end;
+      } else if (dateRange.start) {
+        return reportDate >= dateRange.start;
+      } else if (dateRange.end) {
+        return reportDate <= dateRange.end;
+      }
+      return true;
+    } else if (query.trim()) {
+      const searchLower = query.toLowerCase();
+      return (
+        (report.type && report.type.toLowerCase().includes(searchLower)) ||
+        (report.category && report.category.toLowerCase().includes(searchLower)) ||
+        (report.userName && report.userName.toLowerCase().includes(searchLower)) ||
+        (report.address && report.address.toLowerCase().includes(searchLower)) ||
+        (report.description && report.description.toLowerCase().includes(searchLower))
+      );
+    }
+    return true;
+  };
+
   const handleApprove = (reportId: string) => {
     updateReport(reportId, 'approved', 'Report approved by admin');
   };
@@ -284,13 +342,6 @@ function DashboardContent({ searchParams }: { searchParams: URLSearchParams }) {
   }
 
   if (!user) return null;
-
-  const approvedReports = reports.filter((r) => r.status === 'approved');
-  const currentReports = reports.filter((r) => r.status === 'current');
-  const thirdColumnReports =
-    user.role === 'admin'
-      ? reports.filter((r) => r.status === 'pending')
-      : reports.filter((r) => r.userId === user.uid);
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-200">
@@ -365,11 +416,26 @@ function DashboardContent({ searchParams }: { searchParams: URLSearchParams }) {
             <div className="bg-gray-50 rounded-xl overflow-hidden border border-gray-200 flex flex-col h-[70vh]">
               <div className="bg-gradient-to-r from-custom-yellow-500 to-custom-yellow-600 text-white p-4 text-center font-semibold">
                 ✅ Approved Reports
-                <div className="text-sm opacity-90 mt-1">{approvedReports.length} reports</div>
+                <div className="text-sm opacity-90 mt-1">
+                  {filteredApprovedReports.length} of {approvedReports.length} reports
+                </div>
               </div>
+              <ColumnSearch
+                placeholder="Search approved reports..."
+                onSearch={(query, isDateSearch, dateRange) => {
+                  setApprovedSearchQuery(query);
+                  setApprovedIsDateSearch(isDateSearch);
+                  if (dateRange) setApprovedDateRange(dateRange);
+                }}
+                onClear={() => {
+                  setApprovedSearchQuery('');
+                  setApprovedIsDateSearch(false);
+                  setApprovedDateRange({ start: null, end: null });
+                }}
+              />
               <div className="flex-1 overflow-y-auto p-4 space-y-4">
-                {approvedReports.length > 0 ? (
-                  approvedReports.map((report) => (
+                {filteredApprovedReports.length > 0 ? (
+                  filteredApprovedReports.map((report) => (
                     <ReportCard
                       key={report.id}
                       report={report}
@@ -390,11 +456,26 @@ function DashboardContent({ searchParams }: { searchParams: URLSearchParams }) {
             <div className="bg-gray-50 rounded-xl overflow-hidden border border-gray-200 flex flex-col h-[70vh]">
               <div className="bg-gradient-to-r from-custom-yellow-500 to-custom-yellow-600 text-white p-4 text-center font-semibold">
                 🔵 Active Reports
-                <div className="text-sm opacity-90 mt-1">{currentReports.length} reports</div>
+                <div className="text-sm opacity-90 mt-1">
+                  {filteredCurrentReports.length} of {currentReports.length} reports
+                </div>
               </div>
+              <ColumnSearch
+                placeholder="Search active reports..."
+                onSearch={(query, isDateSearch, dateRange) => {
+                  setCurrentSearchQuery(query);
+                  setCurrentIsDateSearch(isDateSearch);
+                  if (dateRange) setCurrentDateRange(dateRange);
+                }}
+                onClear={() => {
+                  setCurrentSearchQuery('');
+                  setCurrentIsDateSearch(false);
+                  setCurrentDateRange({ start: null, end: null });
+                }}
+              />
               <div className="flex-1 overflow-y-auto p-4 space-y-4">
-                {currentReports.length > 0 ? (
-                  currentReports.map((report) => (
+                {filteredCurrentReports.length > 0 ? (
+                  filteredCurrentReports.map((report) => (
                     <ReportCard
                       key={report.id}
                       report={report}
@@ -415,11 +496,26 @@ function DashboardContent({ searchParams }: { searchParams: URLSearchParams }) {
             <div className="bg-gray-50 rounded-xl overflow-hidden border border-gray-200 flex flex-col h-[70vh]">
               <div className="bg-gradient-to-r from-custom-yellow-500 to-custom-yellow-600 text-white p-4 text-center font-semibold">
                 {user.role === 'admin' ? '⏳ Pending Review' : '📋 My Reports'}
-                <div className="text-sm opacity-90 mt-1">{thirdColumnReports.length} reports</div>
+                <div className="text-sm opacity-90 mt-1">
+                  {filteredThirdColumnReports.length} of {thirdColumnReports.length} reports
+                </div>
               </div>
+              <ColumnSearch
+                placeholder={user.role === 'admin' ? "Search pending reports..." : "Search my reports..."}
+                onSearch={(query, isDateSearch, dateRange) => {
+                  setThirdColumnSearchQuery(query);
+                  setThirdColumnIsDateSearch(isDateSearch);
+                  if (dateRange) setThirdColumnDateRange(dateRange);
+                }}
+                onClear={() => {
+                  setThirdColumnSearchQuery('');
+                  setThirdColumnIsDateSearch(false);
+                  setThirdColumnDateRange({ start: null, end: null });
+                }}
+              />
               <div className="flex-1 overflow-y-auto p-4 space-y-4">
-                {thirdColumnReports.length > 0 ? (
-                  thirdColumnReports.map((report) => (
+                {filteredThirdColumnReports.length > 0 ? (
+                  filteredThirdColumnReports.map((report) => (
                     <ReportCard
                       key={report.id}
                       report={report}
