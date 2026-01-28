@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { Header } from '@/components/Header';
 import { FAB } from '@/components/FAB';
 import { ChatBox } from '@/components/ChatBox';
+import { BlurredBackground } from '@/components/BlurredBackground';
 import { categories } from '@/lib/categories';
 import type { Category } from '@/types';
 
@@ -29,7 +30,7 @@ export default function LandingPage() {
   }, []);
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-200">
+    <BlurredBackground>
       <Header />
 
       {/* Hero Section */}
@@ -46,7 +47,6 @@ export default function LandingPage() {
           background: 'linear-gradient(to bottom, transparent 60%, rgba(59, 130, 246, 0.8))',
           zIndex: 0
         }} />
-
         <div className="text-center text-white z-10 max-w-4xl px-4">
           <img
             src="/BLogo.png"
@@ -129,7 +129,7 @@ export default function LandingPage() {
             </div>
             <div className="bg-white/95 backdrop-blur-lg rounded-2xl p-8 shadow-lg">
               <p className="text-lg text-gray-700 leading-relaxed">
-                "READY" reflects our mission to ensure every barangay is prepared, informed, and equipped to handle disasters efficiently. Together, B-READY embodies the spirit of community resilience and technological empowerment.
+                "B-READY" reflects our mission to ensure every barangay is prepared, informed, and equipped to handle disasters efficiently. Together, B-READY embodies the spirit of community resilience and technological empowerment.
               </p>
             </div>
           </div>
@@ -232,26 +232,9 @@ export default function LandingPage() {
 
       {/* CTA Section */}
       <section className="py-20 px-4 bg-gradient-to-r from-primary to-primary-dark text-white text-center relative overflow-hidden">
-        <div className="absolute inset-0" style={{
-          backgroundImage: 'url("/background.jpg")',
-          backgroundSize: 'cover',
-          backgroundPosition: 'center',
-          filter: 'blur(4px) brightness(0.7)',
-          opacity: 0.3,
-          zIndex: 0
-        }} />
-        <div className="absolute inset-0" style={{
-          background: 'linear-gradient(to bottom, transparent 60%, rgba(59, 130, 246, 0.8))',
-          zIndex: 0
-        }} />
-        <div className="absolute inset-0" style={{
-          backgroundImage: 'radial-gradient(circle, rgba(255, 255, 255, 0.1) 1px, transparent 1px)',
-          backgroundSize: '50px 50px',
-          zIndex: 1
-        }} />
         <div className="relative z-20 max-w-4xl mx-auto">
           <h2 className="text-4xl font-bold mb-4">Ready to Make Your Barangay Safer?</h2>
-              <p className="text-xl mb-8 opacity-90">
+          <p className="text-xl mb-8 opacity-90">
             Join thousands of residents using B-READY for emergency reporting and response.
           </p>
           <button
@@ -321,6 +304,6 @@ export default function LandingPage() {
         </div>
       )}
 
-    </div>
+    </BlurredBackground>
   );
 }
