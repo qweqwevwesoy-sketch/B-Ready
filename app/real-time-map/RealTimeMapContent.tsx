@@ -3,13 +3,14 @@
 import { useEffect, useRef, useState, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
-import { useSocketContext } from '@/contexts/SocketContext';
+import { useOptimizedSocketContext } from '@/contexts/OptimizedSocketContext';
 import { Header } from '@/components/Header';
 import { getCurrentLocation } from '@/lib/utils';
 import { Report, Location } from '@/types';
 import { OfflineTileLayer } from '@/components/OfflineMapTileLayer';
 import { locationManager } from '@/lib/location-manager';
 import { routingService } from '@/lib/routing-service';
+import { DebugMonitor } from '@/components/DebugMonitor';
 
 // Import Leaflet CSS for proper map rendering - ensure it loads correctly
 import 'leaflet/dist/leaflet.css';
@@ -105,7 +106,7 @@ interface PhotonResponse {
 export default function RealTimeMapContent() {
   const router = useRouter();
   const { user, loading: authLoading } = useAuth();
-  const { reports } = useSocketContext();
+  const { reports, connected, connectionState, queueLength, hasPendingMessages, refreshReports } = useOptimizedSocketContext();
   const [userLocation, setUserLocation] = useState<{ lat: number; lng: number } | null>(null);
   const [stations, setStations] = useState<Station[]>([]);
   const [stationsLoading, setStationsLoading] = useState(true);
@@ -123,18 +124,19 @@ export default function RealTimeMapContent() {
   const [mapError, setMapError] = useState<string | null>(null); // Track map errors
   const [mapInitialized, setMapInitialized] = useState(false); // Track if map has been initialized
   const stationIdCounter = useRef(0);
-  const mapRef = useRef<any>(null);
+  const mapRef = useRef<L.Map | null>(null);
   const mapContainerRef = useRef<HTMLDivElement>(null);
   const mapInitializedRef = useRef(false);
-  const userMarkerRef = useRef<any>(null);
-  const reportMarkersRef = useRef<any[]>([]);
-  const stationMarkersRef = useRef<any[]>([]);
+  const userMarkerRef = useRef<L.Marker | null>(null);
+  const reportMarkersRef = useRef<L.Marker[]>([]);
+  const stationMarkersRef = useRef<L.Marker[]>([]);
   const locationTrackingIntervalRef = useRef<NodeJS.Timeout | null>(null);
   const searchTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
-  // Filter all active reports (not just today's)
+  // Filter all active reports (current + approved emergencies)
   const activeReports = reports?.filter((report: Report) => {
-    if (report.status !== 'current') return false;
+    // Include both current and approved reports for emergency response
+    if (report.status !== 'current' && report.status !== 'approved') return false;
     if (!report.location || !report.location.lat || !report.location.lng) return false;
     return true;
   }) || [];
@@ -815,6 +817,20 @@ export default function RealTimeMapContent() {
     }
   }, [activeReports, user?.role, userLocation]);
 
+  // Auto-refresh logic for better reliability
+  useEffect(() => {
+    if (!connected && connectionState !== 'connecting' && connectionState !== 'reconnecting') {
+      console.log('📡 Connection lost, attempting auto-refresh in 5 seconds...');
+      
+      const retryTimer = setTimeout(() => {
+        console.log('🔄 Attempting to refresh reports after connection loss...');
+        refreshReports();
+      }, 5000);
+
+      return () => clearTimeout(retryTimer);
+    }
+  }, [connected, connectionState, refreshReports]);
+
   // Update station markers when stations change or map becomes available
   useEffect(() => {
     if (!mapReady || !mapRef.current || stations.length === 0) return;
@@ -1039,6 +1055,57 @@ export default function RealTimeMapContent() {
               <div className="flex items-center gap-2">
                 <div className="w-4 h-4 bg-blue-500 rounded-full"></div>
                 <span className="text-sm">Emergency Station</span>
+              </div>
+            </div>
+
+            {/* Connection Status */}
+            <div className="mt-4 pt-4 border-t border-gray-200">
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-sm font-medium">Connection Status:</span>
+                <div className="flex items-center gap-2">
+                  <div className={`w-2 h-2 rounded-full ${
+                    connected ? 'bg-green-500' : 
+                    connectionState === 'connecting' || connectionState === 'reconnecting' ? 'bg-yellow-500 animate-pulse' :
+                    'bg-red-500'
+                  }`}></div>
+                  <span className="text-xs text-gray-600 capitalize">
+                    {connected ? 'Connected' : 
+                     connectionState === 'connecting' || connectionState === 'reconnecting' ? 'Connecting...' :
+                     'Disconnected'}
+                  </span>
+                  {queueLength > 0 && (
+                    <span className="text-xs text-orange-600 bg-orange-100 px-2 py-1 rounded">
+                      {queueLength} pending
+                    </span>
+                  )}
+                </div>
+              </div>
+
+              {/* Force Refresh Controls */}
+              <div className="flex gap-2">
+                <button
+                  onClick={() => {
+                    console.log('🔄 Force refreshing reports...');
+                    refreshReports();
+                  }}
+                  className="px-3 py-1 bg-purple-500 text-white text-xs rounded hover:bg-purple-600 flex items-center gap-1"
+                >
+                  🔄 Force Refresh
+                </button>
+                <button
+                  onClick={() => {
+                    console.log('📡 Connection stats:', {
+                      connected,
+                      connectionState,
+                      queueLength,
+                      hasPendingMessages
+                    });
+                    alert(`Connection Status: ${connectionState}\nConnected: ${connected}\nQueue Length: ${queueLength}\nPending Messages: ${hasPendingMessages}`);
+                  }}
+                  className="px-3 py-1 bg-gray-500 text-white text-xs rounded hover:bg-gray-600 flex items-center gap-1"
+                >
+                  📊 Connection Stats
+                </button>
               </div>
             </div>
 
@@ -1361,6 +1428,9 @@ export default function RealTimeMapContent() {
           </div>
         </div>
       </main>
+
+      {/* Debug Monitor */}
+      <DebugMonitor />
     </div>
   );
 }

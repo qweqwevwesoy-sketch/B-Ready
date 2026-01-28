@@ -16,8 +16,8 @@ module.exports = {
         warning: '#f39c12',
         info: '#3498db',
         'custom-yellow': {
-          500: '#edcd7d',
-          600: '#fab039',
+          500: '#f9db91',
+          600: '#ffbd52',
         },
       },
       fontFamily: {
