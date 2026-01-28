@@ -311,7 +311,7 @@ function DashboardContent({ searchParams }: { searchParams: URLSearchParams }) {
               el.scrollIntoView({ behavior: 'smooth', block: 'start' });
             }, 3000);
           }
-        }} className="bg-white/95 backdrop-blur-lg rounded-2xl p-8 shadow-xl">
+        }} className="bg-white/80 backdrop-blur-lg rounded-2xl p-8 shadow-xl">
           <div className="flex justify-between items-center mb-6 flex-wrap gap-4">
             <div>
               <h1 className="text-3xl font-bold mb-2">
