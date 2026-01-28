@@ -18,6 +18,9 @@ const DEFAULT_STATIONS: Station[] = [
     currentLoad: 3,
     status: 'operational',
     contact: '+63 2 8527 7000',
+    phone: '+63 2 8527 7000',
+    email: 'manila.fire@bfp.gov.ph',
+    website: 'https://manila.gov.ph/fire-station',
     description: 'Main fire station for Manila City',
     created_at: new Date().toISOString(),
     updated_at: new Date().toISOString()
@@ -32,6 +35,9 @@ const DEFAULT_STATIONS: Station[] = [
     currentLoad: 8,
     status: 'operational',
     contact: '+63 2 8527 0000',
+    phone: '+63 2 8527 0000',
+    email: 'manila.police@pnnp.gov.ph',
+    website: 'https://manila.gov.ph/police-station',
     description: 'Central police station for Manila',
     created_at: new Date().toISOString(),
     updated_at: new Date().toISOString()
@@ -46,6 +52,9 @@ const DEFAULT_STATIONS: Station[] = [
     currentLoad: 245,
     status: 'operational',
     contact: '+63 2 8554 8400',
+    phone: '+63 2 8554 8400',
+    email: 'info@pgh.gov.ph',
+    website: 'https://pgh.gov.ph',
     description: 'National university hospital',
     created_at: new Date().toISOString(),
     updated_at: new Date().toISOString()
@@ -60,6 +69,9 @@ const DEFAULT_STATIONS: Station[] = [
     currentLoad: 15,
     status: 'operational',
     contact: '+63 2 8527 1234',
+    phone: '+63 2 8527 1234',
+    email: 'sanantonio@manila.gov.ph',
+    website: 'https://manila.gov.ph/barangay/san-antonio',
     description: 'Local barangay hall for community assistance',
     created_at: new Date().toISOString(),
     updated_at: new Date().toISOString()
@@ -84,34 +96,34 @@ export function EmergencyContacts({ userLocation, variant = 'display' }: Emergen
   const fetchEmergencyContacts = async () => {
     try {
       setLoading(true);
-      const response = await fetch('/api/emergency-contacts');
+      const response = await fetch('/api/stations');
       if (response.ok) {
         const data = await response.json();
-        setStations(data.contacts || []);
+        setStations(data.stations || []);
         
         // Cache data locally for offline access
         try {
-          localStorage.setItem('bready_emergency_contacts', JSON.stringify(data.contacts || []));
+          localStorage.setItem('bready_stations', JSON.stringify(data.stations || []));
         } catch (storageError) {
-          console.warn('Failed to cache emergency contacts locally:', storageError);
+          console.warn('Failed to cache stations locally:', storageError);
         }
       } else {
-        throw new Error('Failed to fetch emergency contacts');
+        throw new Error('Failed to fetch stations');
       }
     } catch (error) {
-      console.error('Error fetching emergency contacts from API:', error);
+      console.error('Error fetching stations from API:', error);
 
       // Try to load from local cache first
       try {
-        const cachedContacts = localStorage.getItem('bready_emergency_contacts');
+        const cachedStations = localStorage.getItem('bready_stations');
 
-        if (cachedContacts) {
-          setStations(JSON.parse(cachedContacts));
-          console.log('✅ Loaded emergency contacts from local cache');
+        if (cachedStations) {
+          setStations(JSON.parse(cachedStations));
+          console.log('✅ Loaded stations from local cache');
         } else {
           // No cached data, use defaults
           setStations(DEFAULT_STATIONS);
-          console.log('ℹ️ Using default emergency contacts (no cache available)');
+          console.log('ℹ️ Using default stations (no cache available)');
         }
       } catch (cacheError) {
         console.error('Error loading from cache:', cacheError);
@@ -323,27 +335,44 @@ export function EmergencyContacts({ userLocation, variant = 'display' }: Emergen
                   </div>
                   <div>
                     <div className="font-bold text-lg">{station.name}</div>
-                    <div className="text-sm text-gray-600">{getStationTypeLabel(station.type)}</div>
-                    <div className="text-sm text-gray-600 mt-1">📍 {station.address}</div>
-                    <div className="flex gap-4 text-sm text-gray-600 mt-2">
-                      <span className={`px-2 py-1 rounded text-white text-xs ${getStationStatusColor(station.status)}`}>
-                        {getStationStatusText(station.status)}
-                      </span>
+                    <div className="text-sm text-blue-600 capitalize bg-blue-100 px-2 py-1 rounded mt-1 mb-2">
+                      {getStationTypeLabel(station.type)}
                     </div>
+                    <div className="text-sm text-gray-600 mb-2">
+                      📞 <a href={`tel:${station.phone || station.contact}`} className="text-blue-600 hover:text-blue-800 underline">
+                        {station.phone || station.contact || 'No contact available'}
+                      </a>
+                    </div>
+                    <div className="text-sm text-gray-500 mb-2">📍 {station.address}</div>
                     {station.email && (
-                      <div className="text-sm text-blue-600 mt-1">
-                        <span className="font-medium">Email:</span> {station.email}
+                      <div className="text-sm text-blue-600 mt-1 mb-1">
+                        ✉️ <a href={`mailto:${station.email}`} className="hover:text-blue-800 underline">
+                          {station.email}
+                        </a>
                       </div>
                     )}
                     {station.website && (
-                      <div className="text-sm text-blue-600 mt-1">
-                        <span className="font-medium">Website:</span> {station.website}
+                      <div className="text-sm text-blue-600 mt-1 mb-1">
+                        🌐 <a href={station.website} target="_blank" rel="noopener noreferrer" className="hover:text-blue-800 underline">
+                          {station.website}
+                        </a>
+                      </div>
+                    )}
+                    {station.description && (
+                      <div className="text-sm text-gray-600 mt-2">
+                        {station.description}
                       </div>
                     )}
                   </div>
                 </div>
-                    <div className="flex flex-col items-end gap-2">
-                    </div>
+                <div className="flex flex-col items-end gap-2">
+                  <button
+                    onClick={() => handleCallStation(station.phone || station.contact)}
+                    className="px-3 py-1 bg-green-500 text-white rounded-lg hover:bg-green-600 text-sm"
+                  >
+                    📞 Call
+                  </button>
+                </div>
               </div>
             </div>
           ))}
