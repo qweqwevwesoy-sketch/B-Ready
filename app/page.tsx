@@ -92,13 +92,13 @@ export default function LandingPage() {
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
           {/* Left Column - Graphics */}
           <div className="relative">
-            <div className="bg-gradient-to-br from-blue-100 to-blue-200 rounded-3xl p-8 relative overflow-hidden">
-              <div className="absolute top-4 left-4 w-20 h-20 bg-blue-500 rounded-full opacity-20"></div>
-              <div className="absolute bottom-4 right-4 w-16 h-16 bg-blue-600 rounded-full opacity-20"></div>
+            <div className="bg-gradient-to-br from-yellow-100 to-yellow-200 rounded-3xl p-8 relative overflow-hidden">
+              <div className="absolute top-4 left-4 w-24 h-24 bg-yellow-500 rounded-full opacity-20"></div>
+              <div className="absolute bottom-4 right-4 w-20 h-20 bg-yellow-600 rounded-full opacity-20"></div>
               <div className="relative z-10">
-                <div className="text-8xl mb-4 text-blue-600">⚠️</div>
-                <div className="w-full h-48 bg-gradient-to-r from-blue-400 to-blue-500 rounded-lg opacity-50"></div>
-                <div className="mt-4 text-center text-blue-600 font-semibold">
+                <div className="text-8xl mb-4 text-yellow-600">⚠️</div>
+                <div className="w-full h-48 bg-gradient-to-r from-yellow-400 to-yellow-500 rounded-lg opacity-50"></div>
+                <div className="mt-4 text-center text-yellow-600 font-semibold">
                   Emergency Response Delays
                 </div>
               </div>
@@ -141,12 +141,12 @@ export default function LandingPage() {
           
           {/* Right Column - Graphics */}
           <div className="relative">
-            <div className="bg-gradient-to-br from-yellow-100 to-yellow-200 rounded-3xl p-8 relative overflow-hidden">
-              <div className="absolute top-4 left-4 w-24 h-24 bg-yellow-500 rounded-full opacity-20"></div>
-              <div className="absolute bottom-4 right-4 w-20 h-20 bg-yellow-600 rounded-full opacity-20"></div>
+            <div className="bg-gradient-to-br from-blue-100 to-blue-200 rounded-3xl p-8 relative overflow-hidden">
+              <div className="absolute top-4 left-4 w-20 h-20 bg-blue-500 rounded-full opacity-20"></div>
+              <div className="absolute bottom-4 right-4 w-16 h-16 bg-blue-600 rounded-full opacity-20"></div>
               <div className="relative z-10 text-center">
-                <div className="text-8xl mb-4 text-yellow-600">🛡️</div>
-                <div className="text-4xl font-bold text-yellow-600 mb-2">B-READY</div>
+                <div className="text-8xl mb-4 text-blue-600">🛡️</div>
+                <div className="text-4xl font-bold text-blue-600 mb-2">B-READY</div>
                 <div className="text-sm text-gray-600 uppercase tracking-wider">
                   Community Protection
                 </div>
@@ -283,7 +283,7 @@ export default function LandingPage() {
           zIndex: 1
         }} />
         <div className="relative z-20 max-w-4xl mx-auto">
-          <h2 className="text-4xl font-bold mb-4">Ready to Make Your Barangay Safer?</h2>
+          <h2 className="text-4xl font-bold mb-4">READY TO MAKE YOUR BARANGAY SAFER?</h2>
           <p className="text-xl mb-8 opacity-90">
             Join thousands of residents using B-READY for emergency reporting and response.
           </p>

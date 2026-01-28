@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import "./globals.css";
 import { AuthProvider } from "@/contexts/AuthContext";
-import { SocketProvider } from "@/contexts/SocketContext";
+import { OptimizedSocketProvider } from "@/contexts/OptimizedSocketContext";
 import { ModalManagerProvider } from "@/contexts/ModalManager";
 import { NotificationContainer } from "@/components/NotificationManager";
 import { ServiceWorker } from "@/components/ServiceWorker";
@@ -47,14 +47,14 @@ export default function RootLayout({
           <body className={inter.className} suppressHydrationWarning>
             <SiteBackground />
             <AuthProvider>
-              <SocketProvider>
+              <OptimizedSocketProvider>
                 <ModalManagerProvider>
                   {children}
                   <NotificationContainer />
                   <ServiceWorker />
                   <WebSocketConfig />
                 </ModalManagerProvider>
-              </SocketProvider>
+              </OptimizedSocketProvider>
             </AuthProvider>
           </body>
     </html>
