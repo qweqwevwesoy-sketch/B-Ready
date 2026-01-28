@@ -59,6 +59,21 @@ function DashboardContent({ searchParams }: { searchParams: URLSearchParams }) {
       // You could add toast notifications here
     }
   }, [socketError]);
+
+  // Debug: Log reports and their statuses
+  useEffect(() => {
+    console.log('📊 Dashboard received reports:', reports.length);
+    console.log('📊 Reports data:', reports);
+    
+    if (reports.length > 0) {
+      const statusCounts = reports.reduce((acc, report) => {
+        acc[report.status] = (acc[report.status] || 0) + 1;
+        return acc;
+      }, {} as Record<string, number>);
+      
+      console.log('📊 Report status distribution:', statusCounts);
+    }
+  }, [reports]);
   const [selectedCategory, setSelectedCategory] = useState<Category | null>(null);
   const [showChatbox, setShowChatbox] = useState(false);
   const [currentReportChat, setCurrentReportChat] = useState<string | null>(null);
@@ -319,6 +334,12 @@ function DashboardContent({ searchParams }: { searchParams: URLSearchParams }) {
     thirdColumnSearchTerm,
     thirdColumnFilters
   );
+
+  // Debug: Show all reports if none are showing in any column
+  const showAllReports = reports.length > 0 && 
+    filteredApprovedReports.length === 0 && 
+    filteredCurrentReports.length === 0 && 
+    filteredThirdColumnReports.length === 0;
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-200">

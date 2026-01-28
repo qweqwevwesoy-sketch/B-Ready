@@ -252,8 +252,17 @@ io.on('connection', (socket) => {
       message: 'Authentication successful'
     });
 
-    // Send existing reports
-    socket.emit('initial_reports', Array.from(reports.values()));
+    // Send existing reports with debugging
+    const reportsArray = Array.from(reports.values());
+    console.log('📤 Sending initial reports to client:', reportsArray.length);
+    if (reportsArray.length > 0) {
+      const statusCounts = reportsArray.reduce((acc, report) => {
+        acc[report.status] = (acc[report.status] || 0) + 1;
+        return acc;
+      }, {});
+      console.log('📤 Report status distribution being sent:', statusCounts);
+    }
+    socket.emit('initial_reports', reportsArray);
   });
 
   // Submit report
