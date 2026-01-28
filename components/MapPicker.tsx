@@ -5,9 +5,9 @@ import { reverseGeocode, getCurrentLocation } from '@/lib/utils';
 import { useModalManager } from '@/contexts/ModalManager';
 
 // Import Leaflet only on client side
-let L: any;
+import * as L from 'leaflet';
+
 if (typeof window !== 'undefined') {
-  L = require('leaflet');
   // Fix for Leaflet default icon issue
   delete (L.Icon.Default.prototype as { _getIconUrl?: string })._getIconUrl;
   L.Icon.Default.mergeOptions({
@@ -154,7 +154,7 @@ export function MapPicker({ onSelect, onClose }: MapPickerProps) {
 
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
       attribution: '© OpenStreetMap contributors',
-      maxZoom: 19,
+      maxZoom: 22,
     }).addTo(map);
 
     // Create marker

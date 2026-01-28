@@ -30,7 +30,7 @@ type MapLoadingState = 'initializing' | 'loading' | 'ready' | 'error' | 'retryin
 const MAP_CONFIG = {
   defaultCenter: [14.5995, 120.9842], // Philippines center
   defaultZoom: 8,
-  maxZoom: 19,
+  maxZoom: 22,
   minZoom: 3,
   tileProviders: [
     {
@@ -481,8 +481,8 @@ export default function RealTimeMapContent() {
         // Add tile layer with optimized settings and better error handling
         const tileLayer = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
           attribution: '© OpenStreetMap contributors',
-          maxZoom: 19,
-          maxNativeZoom: 19,
+          maxZoom: 22,
+          maxNativeZoom: 22,
           detectRetina: true,
           updateWhenIdle: true,
           updateWhenZooming: true,

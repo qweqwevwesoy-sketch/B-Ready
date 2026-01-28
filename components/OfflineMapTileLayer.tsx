@@ -216,7 +216,7 @@ export function OfflineMapTileLayer({
       ...options,
       cacheEnabled: options.cacheEnabled ?? true,
       cacheRadius: options.cacheRadius ?? 5,
-      maxZoom: 19,
+      maxZoom: 22,
       minZoom: 3,
       detectRetina: true,
       updateWhenIdle: true,
