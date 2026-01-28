@@ -1,13 +1,15 @@
 // server/server.js - WITH FIREBASE PERSISTENCE
-require('dotenv').config();
-const express = require('express');
-const https = require('https');
-const http = require('http');
-const socketIo = require('socket.io');
-const cors = require('cors');
-const admin = require('firebase-admin');
-const fs = require('fs');
-const path = require('path');
+import dotenv from 'dotenv';
+import express from 'express';
+import https from 'https';
+import http from 'http';
+import socketIo from 'socket.io';
+import cors from 'cors';
+import admin from 'firebase-admin';
+import fs from 'fs';
+import path from 'path';
+
+dotenv.config();
 
 // Check if we're using local backend (offline mode)
 const useLocalBackend = process.env.USE_LOCAL_BACKEND === 'true';
@@ -17,31 +19,56 @@ let db = null;
 // Initialize Firebase Admin only if not in offline mode
 if (!useLocalBackend) {
   try {
-    // Try to initialize Firebase Admin
-    const serviceAccount = {
-      type: "service_account",
-      project_id: process.env.FIREBASE_PROJECT_ID,
-      private_key_id: process.env.FIREBASE_PRIVATE_KEY_ID,
-      private_key: process.env.FIREBASE_PRIVATE_KEY?.replace(/\\n/g, '\n'),
-      client_email: process.env.FIREBASE_CLIENT_EMAIL,
-      client_id: process.env.FIREBASE_CLIENT_ID,
-      auth_uri: "https://accounts.google.com/o/oauth2/auth",
-      token_uri: "https://oauth2.googleapis.com/token",
-      auth_provider_x509_cert_url: "https://www.googleapis.com/oauth2/v1/certs",
-      client_x509_cert_url: process.env.FIREBASE_CLIENT_X509_CERT_URL
-    };
+    // Check if all required Firebase Admin environment variables are set
+    const requiredEnvVars = [
+      'FIREBASE_PROJECT_ID',
+      'FIREBASE_PRIVATE_KEY_ID', 
+      'FIREBASE_PRIVATE_KEY',
+      'FIREBASE_CLIENT_EMAIL',
+      'FIREBASE_CLIENT_ID',
+      'FIREBASE_CLIENT_X509_CERT_URL'
+    ];
 
-    admin.initializeApp({
-      credential: admin.credential.cert(serviceAccount),
-      projectId: process.env.FIREBASE_PROJECT_ID
-    });
+    const missingVars = requiredEnvVars.filter(varName => !process.env[varName]);
+    
+    if (missingVars.length > 0) {
+      console.warn('⚠️ Missing Firebase Admin environment variables:', missingVars);
+      console.log('📱 Server will run without Firebase persistence (offline mode)');
+      console.log('📝 To enable Firebase persistence, set these environment variables:');
+      missingVars.forEach(varName => console.log(`   - ${varName}`));
+      useLocalBackend = true; // Force offline mode
+    } else {
+      // Try to initialize Firebase Admin
+      const serviceAccount = {
+        type: "service_account",
+        project_id: process.env.FIREBASE_PROJECT_ID,
+        private_key_id: process.env.FIREBASE_PRIVATE_KEY_ID,
+        private_key: process.env.FIREBASE_PRIVATE_KEY?.replace(/\\n/g, '\n'),
+        client_email: process.env.FIREBASE_CLIENT_EMAIL,
+        client_id: process.env.FIREBASE_CLIENT_ID,
+        auth_uri: "https://accounts.google.com/o/oauth2/auth",
+        token_uri: "https://oauth2.googleapis.com/token",
+        auth_provider_x509_cert_url: "https://www.googleapis.com/oauth2/v1/certs",
+        client_x509_cert_url: process.env.FIREBASE_CLIENT_X509_CERT_URL
+      };
 
-    db = admin.firestore();
-    console.log('✅ Firebase Admin initialized successfully');
+      admin.initializeApp({
+        credential: admin.credential.cert(serviceAccount),
+        projectId: process.env.FIREBASE_PROJECT_ID
+      });
+
+      db = admin.firestore();
+      console.log('✅ Firebase Admin initialized successfully');
+      console.log(`📊 Connected to Firestore project: ${process.env.FIREBASE_PROJECT_ID}`);
+    }
   } catch (firebaseError) {
-    console.warn('⚠️ Firebase Admin initialization failed, running in offline mode:', firebaseError.message);
-    console.log('📱 Server will run without Firebase persistence');
+    console.error('❌ Firebase Admin initialization failed:', firebaseError.message);
+    console.log('📱 Server will run without Firebase persistence (offline mode)');
+    console.log('🔧 Check your Firebase service account configuration');
+    useLocalBackend = true; // Force offline mode
   }
+} else {
+  console.log('📱 Offline mode enabled - skipping Firebase initialization');
 }
 
 const app = express();

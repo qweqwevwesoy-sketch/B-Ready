@@ -51,6 +51,14 @@ function DashboardContent({ searchParams }: { searchParams: URLSearchParams }) {
   } = useOptimizedSocketContext();
   const isWebSocketAvailable = connected;
   const connectionError = socketError;
+  
+  // Enhanced error handling and logging
+  useEffect(() => {
+    if (socketError) {
+      console.error('Socket error in dashboard:', socketError);
+      // You could add toast notifications here
+    }
+  }, [socketError]);
   const [selectedCategory, setSelectedCategory] = useState<Category | null>(null);
   const [showChatbox, setShowChatbox] = useState(false);
   const [currentReportChat, setCurrentReportChat] = useState<string | null>(null);
