@@ -89,7 +89,7 @@ export default function StatusUpdatePage() {
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
             {/* Pending Reports */}
             <div className="bg-gray-50 rounded-xl overflow-hidden border border-gray-200 flex flex-col h-[70vh]">
-              <div className="bg-gradient-to-r from-yellow-500 to-yellow-600 text-white p-4 text-center font-semibold">
+              <div className="bg-gradient-to-r from-custom-yellow-500 to-custom-yellow-600 text-white p-4 text-center font-semibold">
                 ⏳ Pending Reports
                 <div className="text-sm opacity-90 mt-1">{pendingReports.length} reports</div>
               </div>
@@ -146,7 +146,7 @@ export default function StatusUpdatePage() {
 
             {/* Current Reports */}
             <div className="bg-gray-50 rounded-xl overflow-hidden border border-gray-200 flex flex-col h-[70vh]">
-              <div className="bg-gradient-to-r from-blue-500 to-blue-600 text-white p-4 text-center font-semibold">
+              <div className="bg-gradient-to-r from-custom-yellow-500 to-custom-yellow-600 text-white p-4 text-center font-semibold">
                 🔵 Current Reports
                 <div className="text-sm opacity-90 mt-1">{currentReports.length} reports</div>
               </div>
@@ -203,7 +203,7 @@ export default function StatusUpdatePage() {
 
             {/* Approved Reports */}
             <div className="bg-gray-50 rounded-xl overflow-hidden border border-gray-200 flex flex-col h-[70vh]">
-              <div className="bg-gradient-to-r from-green-500 to-green-600 text-white p-4 text-center font-semibold">
+              <div className="bg-gradient-to-r from-custom-yellow-500 to-custom-yellow-600 text-white p-4 text-center font-semibold">
                 ✅ Approved Reports
                 <div className="text-sm opacity-90 mt-1">{approvedReports.length} reports</div>
               </div>

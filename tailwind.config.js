@@ -15,6 +15,10 @@ module.exports = {
         danger: '#e74c3c',
         warning: '#f39c12',
         info: '#3498db',
+        'custom-yellow': {
+          500: '#FFB800',
+          600: '#FF9F00',
+        },
       },
       fontFamily: {
         sans: ['Inter', 'system-ui', 'sans-serif'],

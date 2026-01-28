@@ -450,20 +450,29 @@ export default function RealTimeMapContent() {
           shadowUrl: 'https://unpkg.com/leaflet@1.7.1/dist/images/marker-shadow.png',
         });
 
-        // Initialize map centered on Philippines with better error handling
+        // Initialize map centered on Philippines with smooth scrolling and optimized settings
         const map = L.map(mapContainerRef.current, {
           zoomControl: true,
-          scrollWheelZoom: true,
-          doubleClickZoom: true,
+          scrollWheelZoom: 'center', // More controlled zooming
+          wheelDebounceTime: 40, // Prevent rapid zoom changes
+          wheelPxPerZoomLevel: 60, // Smoother zoom increments
+          doubleClickZoom: 'center', // Consistent zoom behavior
           dragging: true,
-          touchZoom: true,
+          touchZoom: 'center', // Better touch zoom control
           bounceAtZoomLimits: true,
           preferCanvas: true, // Use canvas for better performance
-          fadeAnimation: false, // Disable animations for faster loading
-          zoomAnimation: false,
-          markerZoomAnimation: false,
+          fadeAnimation: true, // Enable smooth animations
+          zoomAnimation: true, // Enable zoom animations
+          zoomAnimationThreshold: 4, // Control when animations trigger
+          markerZoomAnimation: true, // Smooth marker scaling
+          inertia: true, // Smooth panning
+          inertiaDeceleration: 3000, // Panning smoothness
+          inertiaMaxSpeed: 1500, // Maximum panning speed
           worldCopyJump: true, // Allow panning across date line
-          crs: L.CRS.EPSG3857 // Use standard Web Mercator projection
+          crs: L.CRS.EPSG3857, // Use standard Web Mercator projection
+          trackResize: true, // Responsive behavior
+          zoomSnap: 0.5, // Smoother zoom levels
+          zoomDelta: 0.5 // Smoother zoom increments
         }).setView([14.5995, 120.9842], 8);
 
         mapRef.current = map;
@@ -498,6 +507,30 @@ export default function RealTimeMapContent() {
         // Handle map loading completion
         map.whenReady(() => {
           console.log('Map loaded successfully');
+          
+          // Add zoom level indicator
+          const zoomIndicator = L.control({ position: 'bottomleft' });
+          zoomIndicator.onAdd = function() {
+            const div = L.DomUtil.create('div', 'zoom-indicator');
+            div.style.backgroundColor = 'rgba(255, 255, 255, 0.8)';
+            div.style.padding = '4px 8px';
+            div.style.borderRadius = '4px';
+            div.style.fontSize = '12px';
+            div.style.fontWeight = 'bold';
+            div.style.color = '#333';
+            div.style.boxShadow = '0 2px 4px rgba(0,0,0,0.1)';
+            div.style.pointerEvents = 'none'; // Let clicks pass through
+            
+            function updateZoom() {
+              div.innerHTML = `Zoom: ${map.getZoom()}`;
+            }
+            
+            map.on('zoomend', updateZoom);
+            updateZoom();
+            
+            return div;
+          };
+          zoomIndicator.addTo(map);
         });
 
         // Try to get current location in background without blocking
