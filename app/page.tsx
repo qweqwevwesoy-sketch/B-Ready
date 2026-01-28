@@ -168,17 +168,8 @@ export default function LandingPage() {
                 To revolutionize disaster response at the barangay level by providing real-time reporting tools that connect residents directly with emergency responders, ensuring faster, more coordinated responses during critical situations.
               </p>
             </div>
-            <div className="bg-white/95 backdrop-blur-lg rounded-2xl p-8 shadow-lg">
-              <h3 className="text-2xl font-bold text-primary mb-4">System Description</h3>
-              <p className="text-lg text-gray-700 leading-relaxed">
-                B-READY is a comprehensive web-based platform featuring instant incident reporting, real-time location tracking, community coordination tools, and emergency resource management. Our system bridges the communication gap between residents and responders for more effective disaster management.
-              </p>
-            </div>
-          </div>
-          
-          {/* Right Column - Graphics */}
-          <div className="relative">
-            <div className="bg-gradient-to-br from-blue-100 to-blue-200 rounded-3xl p-8 relative overflow-hidden">
+
+              <div className="bg-gradient-to-br from-blue-100 to-blue-200 rounded-3xl p-8 relative overflow-hidden">
               <div className="absolute top-4 left-4 w-20 h-20 bg-blue-500 rounded-full opacity-20"></div>
               <div className="absolute bottom-4 right-4 w-16 h-16 bg-blue-600 rounded-full opacity-20"></div>
               <div className="relative z-10">
@@ -196,6 +187,43 @@ export default function LandingPage() {
                 </div>
               </div>
             </div>
+
+            {/* <div className="bg-white/95 backdrop-blur-lg rounded-2xl p-8 shadow-lg">
+              <h3 className="text-2xl font-bold text-primary mb-4">System Description</h3>
+              <p className="text-lg text-gray-700 leading-relaxed">
+                B-READY is a comprehensive web-based platform featuring instant incident reporting, real-time location tracking, community coordination tools, and emergency resource management. Our system bridges the communication gap between residents and responders for more effective disaster management.
+              </p>
+            </div> */}
+          </div>
+          
+          {/* Right Column - Graphics */}
+          <div className="relative">
+
+              <div className="bg-white/95 backdrop-blur-lg rounded-2xl p-8 shadow-lg">
+              <h3 className="text-2xl font-bold text-primary mb-4">System Description</h3>
+              <p className="text-lg text-gray-700 leading-relaxed">
+                B-READY is a comprehensive web-based platform featuring instant incident reporting, real-time location tracking, community coordination tools, and emergency resource management. Our system bridges the communication gap between residents and responders for more effective disaster management.
+              </p>
+            </div>
+
+            {/* <div className="bg-gradient-to-br from-blue-100 to-blue-200 rounded-3xl p-8 relative overflow-hidden">
+              <div className="absolute top-4 left-4 w-20 h-20 bg-blue-500 rounded-full opacity-20"></div>
+              <div className="absolute bottom-4 right-4 w-16 h-16 bg-blue-600 rounded-full opacity-20"></div>
+              <div className="relative z-10">
+                <div className="text-8xl mb-4 text-blue-600">📱</div>
+                <div className="grid grid-cols-3 gap-2 mb-4">
+                  <div className="w-8 h-8 bg-blue-400 rounded opacity-60"></div>
+                  <div className="w-8 h-8 bg-blue-500 rounded opacity-60"></div>
+                  <div className="w-8 h-8 bg-blue-400 rounded opacity-60"></div>
+                  <div className="w-8 h-8 bg-blue-500 rounded opacity-60"></div>
+                  <div className="w-8 h-8 bg-blue-400 rounded opacity-60"></div>
+                  <div className="w-8 h-8 bg-blue-500 rounded opacity-60"></div>
+                </div>
+                <div className="text-center text-blue-600 font-semibold">
+                  Technology for Safety
+                </div>
+              </div>
+            </div> */}
           </div>
         </div>
       </section>
