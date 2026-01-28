@@ -6,9 +6,10 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useSocketContext } from '@/contexts/SocketContext';
 import { Header } from '@/components/Header';
 import { getCurrentLocation } from '@/lib/utils';
-import { Report } from '@/types';
+import { Report, Location } from '@/types';
 import { OfflineTileLayer } from '@/components/OfflineMapTileLayer';
 import { locationManager } from '@/lib/location-manager';
+import { routingService } from '@/lib/routing-service';
 
 // Import Leaflet CSS for proper map rendering - ensure it loads correctly
 import 'leaflet/dist/leaflet.css';
@@ -651,6 +652,74 @@ export default function RealTimeMapContent() {
     };
   }, [addingStation, user?.role, newStationName]);
 
+  // Admin response handlers
+  const handleAdminResponse = async (reportId: string, responseAction: 'en_route' | 'on_site') => {
+    if (!user || user.role !== 'admin') return;
+
+    try {
+      const report = activeReports.find(r => r.id === reportId);
+      if (!report || !report.location) return;
+
+      // Get current admin location
+      const adminLocation = userLocation || await getCurrentLocation();
+
+      if (responseAction === 'en_route') {
+        // Calculate route from admin location to incident
+        const route = await routingService.calculateRoute(
+          L.latLng(adminLocation.lat, adminLocation.lng),
+          L.latLng(report.location.lat, report.location.lng)
+        );
+
+        // Calculate ETA
+        const etaSeconds = routingService.calculateETA(route.distance, 15); // 15 m/s average speed
+        const eta = new Date(Date.now() + etaSeconds * 1000).toISOString();
+
+        // Update report with admin response
+        const fetchResponse = await fetch(`/api/reports/${reportId}/admin-response`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            adminResponse: responseAction,
+            adminId: user.uid,
+            adminLocation: adminLocation,
+            routeCoordinates: route.coordinates.map(coord => ({ lat: coord.lat, lng: coord.lng })),
+            estimatedTimeOfArrival: eta
+          }),
+        });
+
+        if (fetchResponse.ok) {
+          console.log('Admin response updated successfully');
+        } else {
+          console.error('Failed to update admin response');
+        }
+      } else if (responseAction === 'on_site') {
+        // Clear route and update status
+        const fetchResponse = await fetch(`/api/reports/${reportId}/admin-response`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            adminResponse: responseAction,
+            adminId: user.uid,
+            routeCoordinates: null,
+            estimatedTimeOfArrival: null
+          }),
+        });
+
+        if (fetchResponse.ok) {
+          console.log('Admin on-site status updated successfully');
+        } else {
+          console.error('Failed to update admin on-site status');
+        }
+      }
+    } catch (error) {
+      console.error('Error handling admin response:', error);
+    }
+  };
+
   // Update report markers when reports change
   useEffect(() => {
     if (!mapRef.current) return;
@@ -661,32 +730,90 @@ export default function RealTimeMapContent() {
     });
     reportMarkersRef.current = [];
 
-        // Add new report markers (red pins, 1.4x bigger = ~22px)
+    // Add new report markers (red pins, 1.4x bigger = ~22px)
     activeReports.forEach((report: Report) => {
       if (!report.location) return;
 
+      // Determine marker color based on admin response status
+      let markerColor = '#ef4444'; // Default red
+      if (report.adminResponse === 'en_route') {
+        markerColor = '#f59e0b'; // Orange for en route
+      } else if (report.adminResponse === 'on_site') {
+        markerColor = '#10b981'; // Green for on site
+      }
+
       const reportIcon = L.divIcon({
-        html: '<div style="background-color: #ef4444; width: 22px; height: 22px; border-radius: 50%; border: 3px solid white; box-shadow: 0 2px 4px rgba(0,0,0,0.3);"></div>',
+        html: `<div style="background-color: ${markerColor}; width: 22px; height: 22px; border-radius: 50%; border: 3px solid white; box-shadow: 0 2px 4px rgba(0,0,0,0.3);"></div>`,
         className: 'report-marker',
         iconSize: [22, 22],
         iconAnchor: [11, 11],
       });
 
       const marker = L.marker([report.location.lat, report.location.lng], { icon: reportIcon })
-        .addTo(mapRef.current!)
-        .bindPopup(`
-          <div class="p-2">
-            <h3 class="font-bold text-lg">${report.type}</h3>
-            <p class="text-sm text-gray-600">${report.address || 'Location not specified'}</p>
-            <p class="text-sm"><strong>Reported by:</strong> ${report.userName}</p>
-            <p class="text-sm"><strong>Status:</strong> ${report.status}</p>
-            <p class="text-sm"><strong>Time:</strong> ${new Date(report.timestamp).toLocaleTimeString()}</p>
-          </div>
-        `);
+        .addTo(mapRef.current!);
+
+      // Create popup content with admin response buttons for admin users
+      const popupContent = `
+        <div class="p-2">
+          <h3 class="font-bold text-lg">${report.type}</h3>
+          <p class="text-sm text-gray-600">${report.address || 'Location not specified'}</p>
+          <p class="text-sm"><strong>Reported by:</strong> ${report.userName}</p>
+          <p class="text-sm"><strong>Status:</strong> ${report.status}</p>
+          <p class="text-sm"><strong>Time:</strong> ${new Date(report.timestamp).toLocaleTimeString()}</p>
+          ${user?.role === 'admin' ? `
+            <div class="mt-3 pt-3 border-t border-gray-200">
+              <div class="text-sm font-semibold mb-2">Admin Response:</div>
+              <div class="flex gap-2">
+                <button class="px-2 py-1 bg-blue-500 text-white text-xs rounded hover:bg-blue-600 admin-en-route-btn" data-report-id="${report.id}">
+                  🚨 En Route
+                </button>
+                <button class="px-2 py-1 bg-green-500 text-white text-xs rounded hover:bg-green-600 admin-on-site-btn" data-report-id="${report.id}">
+                  ✅ On Site
+                </button>
+              </div>
+              ${report.adminResponse !== 'none' ? `
+                <div class="mt-2 text-xs text-gray-600">
+                  <div><strong>Admin:</strong> ${report.adminResponse === 'en_route' ? 'Responding' : 'On Site'}</div>
+                  ${report.estimatedTimeOfArrival ? `<div><strong>ETA:</strong> ${routingService.formatDuration(new Date(report.estimatedTimeOfArrival).getTime() / 1000 - Date.now() / 1000)}</div>` : ''}
+                </div>
+              ` : ''}
+            </div>
+          ` : ''}
+        </div>
+      `;
+
+      marker.bindPopup(popupContent);
 
       reportMarkersRef.current.push(marker);
     });
-  }, [activeReports]);
+
+    // Add event listeners for admin response buttons
+    if (user?.role === 'admin') {
+      // Use event delegation to handle dynamically created buttons
+      const handleAdminButtonClick = (e: Event) => {
+        const target = e.target as HTMLElement;
+        if (target.classList.contains('admin-en-route-btn')) {
+          const reportId = target.getAttribute('data-report-id');
+          if (reportId) {
+            handleAdminResponse(reportId, 'en_route');
+          }
+        } else if (target.classList.contains('admin-on-site-btn')) {
+          const reportId = target.getAttribute('data-report-id');
+          if (reportId) {
+            handleAdminResponse(reportId, 'on_site');
+          }
+        }
+      };
+
+      // Add event listener to the map container
+      mapRef.current!.getContainer().addEventListener('click', handleAdminButtonClick);
+
+      // Cleanup function
+      return () => {
+        mapRef.current!.getContainer().removeEventListener('click', handleAdminButtonClick);
+      };
+    }
+  }, [activeReports, user?.role, userLocation]);
 
   // Update station markers when stations change or map becomes available
   useEffect(() => {

@@ -22,6 +22,7 @@ export interface Location {
 
 export type ReportStatus = 'pending' | 'approved' | 'current' | 'rejected';
 export type ReportSeverity = 'low' | 'medium' | 'high' | 'critical';
+export type AdminResponseStatus = 'none' | 'en_route' | 'on_site';
 
 export interface Report {
   id: string;
@@ -41,6 +42,14 @@ export interface Report {
   icon?: string;
   isTemporary?: boolean;
   notes?: string;
+  
+  // Admin response tracking
+  adminResponse: AdminResponseStatus;
+  adminId: string | null;
+  adminLocation: Location | null;
+  responseTimestamp: string | null;
+  routeCoordinates: Location[] | null;
+  estimatedTimeOfArrival: string | null;
 }
 
 export interface ChatMessage {
