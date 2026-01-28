@@ -804,7 +804,7 @@ export function ChatBox({ reportId, category, onClose, onSendMessage, onSendImag
                       className="w-8 h-8 rounded-full bg-gradient-to-br from-primary to-primary-dark text-white flex items-center justify-center font-bold text-sm sent-avatar-fallback"
                       style={{ display: user?.profilePictureUrl ? 'none' : 'flex' }}
                     >
-                      {user?.firstName.charAt(0)}{user?.lastName.charAt(0)}
+                      {user?.firstName ? user.firstName.charAt(0) : 'U'}{user?.lastName ? user.lastName.charAt(0) : 'U'}
                     </div>
                   </div>
                 )}

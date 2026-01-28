@@ -286,9 +286,9 @@ function DashboardContent({ searchParams }: { searchParams: URLSearchParams }) {
     : currentReports;
 
   const thirdColumnReports =
-    user.role === 'admin'
+    user?.role === 'admin'
       ? reports.filter((r) => r.status === 'pending')
-      : reports.filter((r) => r.userId === user.uid);
+      : reports.filter((r) => r.userId === user?.uid);
   const filteredThirdColumnReports = thirdColumnSearchQuery || thirdColumnIsDateSearch
     ? thirdColumnReports.filter(report => filterReports(report, thirdColumnSearchQuery, thirdColumnIsDateSearch, thirdColumnDateRange))
     : thirdColumnReports;
