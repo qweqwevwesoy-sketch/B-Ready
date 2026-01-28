@@ -54,7 +54,8 @@ export default function RootLayout({
                   <ServiceWorker />
                   <WebSocketConfig />
                 </ModalManagerProvider>
-              </SocketProvider            </AuthProvider>
+              </SocketProvider>
+            </AuthProvider>
           </body>
     </html>
   );
