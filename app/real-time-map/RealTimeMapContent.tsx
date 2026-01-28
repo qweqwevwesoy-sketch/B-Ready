@@ -7,7 +7,6 @@ import { useSocketContext } from '@/contexts/SocketContext';
 import { Header } from '@/components/Header';
 import { getCurrentLocation } from '@/lib/utils';
 import { Report } from '@/types';
-import { CacheManager, CacheStatusIndicator } from '@/components/CacheManager';
 import { OfflineTileLayer } from '@/components/OfflineMapTileLayer';
 import { locationManager } from '@/lib/location-manager';
 
@@ -775,7 +774,6 @@ export default function RealTimeMapContent() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-200">
       <Header />
-      <CacheStatusIndicator />
 
       <main className="max-w-7xl mx-auto px-4 py-8">
         <div className="bg-white/95 backdrop-blur-lg rounded-2xl p-8 shadow-xl mb-8">
@@ -1185,10 +1183,6 @@ export default function RealTimeMapContent() {
           )}
 
 
-          {/* Cache Manager */}
-          <div className="mb-8">
-            <CacheManager />
-          </div>
 
           {/* Statistics */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">

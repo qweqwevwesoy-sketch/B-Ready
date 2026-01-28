@@ -12,7 +12,7 @@ export default function SiteBackground() {
           backgroundPosition: 'center',
           filter: 'blur(4px) brightness(0.7)',
           opacity: 0.3,
-          zIndex: 0
+          zIndex: -1
         }} 
       />
       
@@ -21,7 +21,7 @@ export default function SiteBackground() {
         className="absolute inset-0" 
         style={{
           background: 'linear-gradient(to bottom, transparent 60%, rgba(59, 130, 246, 0.8))',
-          zIndex: 0
+          zIndex: -1
         }} 
       />
       
@@ -31,7 +31,7 @@ export default function SiteBackground() {
         style={{
           backgroundImage: 'radial-gradient(circle, rgba(255, 255, 255, 0.1) 1px, transparent 1px)',
           backgroundSize: '50px 50px',
-          zIndex: 1
+          zIndex: -1
         }} 
       />
     </>
