@@ -1,13 +1,17 @@
 import { Suspense } from 'react';
 import { Header } from '@/components/Header';
-import BlurredBackground from '@/components/BlurredBackground';
 import SafetyTipsContent from './SafetyTipsContent';
 
 export const dynamic = 'force-dynamic';
 
 export default function SafetyTipsPage() {
   return (
-    <BlurredBackground>
+    <div className="min-h-screen" style={{
+      backgroundImage: 'url("/Blurred blue blended background.jpg")',
+      backgroundSize: 'cover',
+      backgroundPosition: 'center',
+      backgroundRepeat: 'no-repeat'
+    }}>
       <Header />
       <main className="max-w-7xl mx-auto px-4 py-8">
         <Suspense fallback={
@@ -18,6 +22,6 @@ export default function SafetyTipsPage() {
           <SafetyTipsContent />
         </Suspense>
       </main>
-    </BlurredBackground>
+    </div>
   );
 }

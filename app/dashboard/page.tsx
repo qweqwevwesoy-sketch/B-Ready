@@ -9,7 +9,6 @@ import { FAB } from '@/components/FAB';
 import { ReportCard } from '@/components/ReportCard';
 import { EnhancedNotificationSystem } from '@/components/EnhancedNotificationSystem';
 import { ChatBox } from '@/components/ChatBox';
-import BlurredBackground from '@/components/BlurredBackground';
 import { notificationManager } from '@/components/NotificationManager';
 import type { Category, Report } from '@/types';
 import { getCurrentLocation, reverseGeocode } from '@/lib/utils';
@@ -271,18 +270,16 @@ function DashboardContent({ searchParams }: { searchParams: URLSearchParams }) {
 
   if (authLoading) {
     return (
-      <BlurredBackground>
-        <div className="flex items-center justify-center min-h-screen">
-          <div className="text-center">
-            <img
-              src="/BLogo.png"
-              alt="B-READY Logo"
-              className="w-16 h-16 mx-auto mb-4 animate-pulse"
-            />
-            <p>Loading...</p>
-          </div>
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <img
+            src="/BLogo.png"
+            alt="B-READY Logo"
+            className="w-16 h-16 mx-auto mb-4 animate-pulse"
+          />
+          <p>Loading...</p>
         </div>
-      </BlurredBackground>
+      </div>
     );
   }
 
@@ -296,7 +293,12 @@ function DashboardContent({ searchParams }: { searchParams: URLSearchParams }) {
       : reports.filter((r) => r.userId === user.uid);
 
   return (
-    <BlurredBackground>
+    <div className="min-h-screen" style={{
+      backgroundImage: 'url("/Blurred blue blended background.jpg")',
+      backgroundSize: 'cover',
+      backgroundPosition: 'center',
+      backgroundRepeat: 'no-repeat'
+    }}>
       <Header />
 
       <main className="max-w-7xl mx-auto px-4 py-8">
@@ -496,7 +498,7 @@ function DashboardContent({ searchParams }: { searchParams: URLSearchParams }) {
           }}
         />
       )}
-    </BlurredBackground>
+    </div>
   );
 }
 

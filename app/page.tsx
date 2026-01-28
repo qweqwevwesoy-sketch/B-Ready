@@ -5,7 +5,6 @@ import { useRouter } from 'next/navigation';
 import { Header } from '@/components/Header';
 import { FAB } from '@/components/FAB';
 import { ChatBox } from '@/components/ChatBox';
-import { BlurredBackground } from '@/components/BlurredBackground';
 import { categories } from '@/lib/categories';
 import type { Category } from '@/types';
 
@@ -30,7 +29,7 @@ export default function LandingPage() {
   }, []);
 
   return (
-    <BlurredBackground>
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-200">
       <Header />
 
       {/* Hero Section */}
@@ -47,6 +46,14 @@ export default function LandingPage() {
           background: 'linear-gradient(to bottom, transparent 60%, rgba(59, 130, 246, 0.8))',
           zIndex: 0
         }} />
+        <div className="absolute inset-0" style={{
+          backgroundImage: 'url("/Blurred blue blended background.jpg")',
+          backgroundSize: 'cover',
+          backgroundPosition: 'center',
+          backgroundRepeat: 'no-repeat',
+          zIndex: 1
+        }} />
+
         <div className="text-center text-white z-10 max-w-4xl px-4">
           <img
             src="/BLogo.png"
@@ -232,6 +239,25 @@ export default function LandingPage() {
 
       {/* CTA Section */}
       <section className="py-20 px-4 bg-gradient-to-r from-primary to-primary-dark text-white text-center relative overflow-hidden">
+        <div className="absolute inset-0" style={{
+          backgroundImage: 'url("/background.jpg")',
+          backgroundSize: 'cover',
+          backgroundPosition: 'center',
+          filter: 'blur(4px) brightness(0.7)',
+          opacity: 0.3,
+          zIndex: 0
+        }} />
+        <div className="absolute inset-0" style={{
+          background: 'linear-gradient(to bottom, transparent 60%, rgba(59, 130, 246, 0.8))',
+          zIndex: 0
+        }} />
+        <div className="absolute inset-0" style={{
+          backgroundImage: 'url("/Blurred blue blended background.jpg")',
+          backgroundSize: 'cover',
+          backgroundPosition: 'center',
+          backgroundRepeat: 'no-repeat',
+          zIndex: 1
+        }} />
         <div className="relative z-20 max-w-4xl mx-auto">
           <h2 className="text-4xl font-bold mb-4">Ready to Make Your Barangay Safer?</h2>
           <p className="text-xl mb-8 opacity-90">
@@ -304,6 +330,6 @@ export default function LandingPage() {
         </div>
       )}
 
-    </BlurredBackground>
+    </div>
   );
 }

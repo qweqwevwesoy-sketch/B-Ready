@@ -770,7 +770,12 @@ export default function RealTimeMapContent() {
   if (!user) return null;
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-200">
+    <div className="min-h-screen" style={{
+      backgroundImage: 'url("/Blurred blue blended background.jpg")',
+      backgroundSize: 'cover',
+      backgroundPosition: 'center',
+      backgroundRepeat: 'no-repeat'
+    }}>
       <Header />
 
       <main className="max-w-7xl mx-auto px-4 py-8">

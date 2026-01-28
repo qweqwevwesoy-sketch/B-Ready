@@ -4,7 +4,6 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
 import { Header } from '@/components/Header';
-import BlurredBackground from '@/components/BlurredBackground';
 import { notificationManager } from '@/components/NotificationManager';
 import Link from 'next/link';
 
@@ -54,7 +53,12 @@ export default function LoginPage() {
   };
 
   return (
-    <BlurredBackground>
+    <div className="min-h-screen" style={{
+      backgroundImage: 'url("/Blurred blue blended background.jpg")',
+      backgroundSize: 'cover',
+      backgroundPosition: 'center',
+      backgroundRepeat: 'no-repeat'
+    }}>
       <Header />
       
       <div className="max-w-md mx-auto px-4 py-12">
@@ -130,6 +134,6 @@ export default function LoginPage() {
           </form>
         </div>
       </div>
-    </BlurredBackground>
+    </div>
   );
 }

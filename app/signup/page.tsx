@@ -109,7 +109,12 @@ export default function SignupPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-200">
+    <div className="min-h-screen" style={{
+      backgroundImage: 'url("/Blurred blue blended background.jpg")',
+      backgroundSize: 'cover',
+      backgroundPosition: 'center',
+      backgroundRepeat: 'no-repeat'
+    }}>
       <Header />
       
       <div className="max-w-2xl mx-auto px-4 py-12">
