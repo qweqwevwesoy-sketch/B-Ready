@@ -1,31 +1,33 @@
 'use client';
 
+import { useEffect } from 'react';
+import { notificationManager } from '@/components/NotificationManager';
 import { useSocketContext } from '@/contexts/SocketContext';
 
 export function WebSocketWarning() {
-  const { socket, connected } = useSocketContext();
+  const { socket } = useSocketContext();
 
-  // Check if we're on Render deployment and WebSocket is not available
-  const showWarning = typeof window !== 'undefined' &&
-                      window.location.hostname.includes('onrender.com') &&
-                      socket === null;
+  useEffect(() => {
+    const checkWebSocketAvailability = () => {
+      const isRenderDeployment = typeof window !== 'undefined' && 
+                                window.location.hostname.includes('onrender.com');
+      
+      if (isRenderDeployment && socket === null) {
+        // Show warning notification for WebSocket unavailability
+        notificationManager.warning(
+          'Real-time features are disabled on this deployment. The app will work in offline mode. For full functionality, use the local development server or a deployment with WebSocket support.',
+          5000
+        );
+      }
+    };
 
-  if (!showWarning) return null;
+    // Check immediately and set up interval to recheck
+    checkWebSocketAvailability();
+    const interval = setInterval(checkWebSocketAvailability, 10000); // Check every 10 seconds
 
-  return (
-    <div className="fixed bottom-4 left-4 right-4 bg-yellow-100 border border-yellow-300 rounded-lg p-4 shadow-lg z-50 max-w-md mx-auto">
-      <div className="flex items-start gap-3">
-        <div className="text-yellow-600 text-xl">⚠️</div>
-        <div className="flex-1">
-          <h3 className="font-bold text-sm mb-1">WebSocket Not Available</h3>
-          <p className="text-xs text-gray-600 mb-2">
-            Real-time features are disabled on this deployment. The app will work in offline mode.
-          </p>
-          <p className="text-xs text-gray-500">
-            For full functionality, use the local development server or a deployment with WebSocket support.
-          </p>
-        </div>
-      </div>
-    </div>
-  );
+    return () => clearInterval(interval);
+  }, [socket]);
+
+  // This component no longer renders any UI - it only manages WebSocket availability notifications
+  return null;
 }
