@@ -6,7 +6,9 @@ import { SocketProvider } from "@/contexts/SocketContext";
 import { ModalManagerProvider } from "@/contexts/ModalManager";
 import { NotificationContainer } from "@/components/NotificationManager";
 import { ServiceWorker } from "@/components/ServiceWorker";
+import { OfflineBanner } from "@/components/OfflineBanner";
 import WebSocketConfig from "@/components/WebSocketConfig";
+import { WebSocketWarning } from "@/components/WebSocketWarning";
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -44,6 +46,7 @@ export default function RootLayout({
         <meta name="apple-mobile-web-app-title" content="B-READY" />
       </head>
           <body className={inter.className} suppressHydrationWarning>
+          <OfflineBanner />
           <AuthProvider>
             <SocketProvider>
               <ModalManagerProvider>
@@ -51,6 +54,7 @@ export default function RootLayout({
                 <NotificationContainer />
                 <ServiceWorker />
                 <WebSocketConfig />
+                <WebSocketWarning />
               </ModalManagerProvider>
             </SocketProvider>
           </AuthProvider>
