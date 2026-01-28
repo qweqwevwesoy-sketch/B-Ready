@@ -6,14 +6,37 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useSocketContext } from '@/contexts/SocketContext';
 import { Header } from '@/components/Header';
 import { ReportCard } from '@/components/ReportCard';
-import { ColumnSearch } from '@/components/ColumnSearch';
 import { EnhancedNotificationSystem } from '@/components/EnhancedNotificationSystem';
+import { ColumnSearch, filterReports, type SearchFilters } from '@/components/ColumnSearch';
 import { notificationManager } from '@/components/NotificationManager';
 
 export default function StatusUpdatePage() {
   const router = useRouter();
   const { user, loading: authLoading } = useAuth();
   const { reports, updateReport, socket, connected } = useSocketContext();
+  
+  // Search state for each column
+  const [pendingSearchTerm, setPendingSearchTerm] = useState('');
+  const [pendingFilters, setPendingFilters] = useState<SearchFilters>({
+    sortBy: 'date-newest',
+    timePeriod: 'all',
+    customDateRange: { start: null, end: null },
+    status: 'all'
+  });
+  const [currentSearchTerm, setCurrentSearchTerm] = useState('');
+  const [currentFilters, setCurrentFilters] = useState<SearchFilters>({
+    sortBy: 'date-newest',
+    timePeriod: 'all',
+    customDateRange: { start: null, end: null },
+    status: 'all'
+  });
+  const [approvedSearchTerm, setApprovedSearchTerm] = useState('');
+  const [approvedFilters, setApprovedFilters] = useState<SearchFilters>({
+    sortBy: 'date-newest',
+    timePeriod: 'all',
+    customDateRange: { start: null, end: null },
+    status: 'all'
+  });
 
   useEffect(() => {
     if (!authLoading && !user) {
@@ -57,19 +80,6 @@ export default function StatusUpdatePage() {
     router.push(`/dashboard?chat=${reportId}`);
   };
 
-  // Search states for each column
-  const [pendingSearchQuery, setPendingSearchQuery] = useState('');
-  const [pendingIsDateSearch, setPendingIsDateSearch] = useState(false);
-  const [pendingDateRange, setPendingDateRange] = useState<{ start: Date | null; end: Date | null }>({ start: null, end: null });
-
-  const [currentSearchQuery, setCurrentSearchQuery] = useState('');
-  const [currentIsDateSearch, setCurrentIsDateSearch] = useState(false);
-  const [currentDateRange, setCurrentDateRange] = useState<{ start: Date | null; end: Date | null }>({ start: null, end: null });
-
-  const [approvedSearchQuery, setApprovedSearchQuery] = useState('');
-  const [approvedIsDateSearch, setApprovedIsDateSearch] = useState(false);
-  const [approvedDateRange, setApprovedDateRange] = useState<{ start: Date | null; end: Date | null }>({ start: null, end: null });
-
   if (authLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -87,59 +97,24 @@ export default function StatusUpdatePage() {
 
   if (!user || user.role !== 'admin') return null;
 
-  // Filtered reports based on search
-  const pendingReports = reports.filter((r) => r.status === 'pending');
-  const filteredPendingReports = pendingSearchQuery || pendingIsDateSearch 
-    ? pendingReports.filter(report => filterReports(report, pendingSearchQuery, pendingIsDateSearch, pendingDateRange))
-    : pendingReports;
-
-  const currentReports = reports.filter((r) => r.status === 'current');
-  const filteredCurrentReports = currentSearchQuery || currentIsDateSearch
-    ? currentReports.filter(report => filterReports(report, currentSearchQuery, currentIsDateSearch, currentDateRange))
-    : currentReports;
-
-  const approvedReports = reports.filter((r) => r.status === 'approved');
-  const filteredApprovedReports = approvedSearchQuery || approvedIsDateSearch
-    ? approvedReports.filter(report => filterReports(report, approvedSearchQuery, approvedIsDateSearch, approvedDateRange))
-    : approvedReports;
-
-  // Filter function
-  const filterReports = (report: any, query: string, isDateSearch: boolean, dateRange: { start: Date | null; end: Date | null }) => {
-    try {
-      // Early return for empty search
-      if (!isDateSearch && !query.trim()) {
-        return true;
-      }
-
-      // Handle date search
-      if (isDateSearch) {
-        const reportDate = new Date(report.timestamp);
-        const { start, end } = dateRange;
-        
-        if (start && end) {
-          return reportDate >= start && reportDate <= end;
-        } else if (start) {
-          return reportDate >= start;
-        } else if (end) {
-          return reportDate <= end;
-        }
-        return true;
-      }
-
-      // Handle text search
-      const searchLower = query.toLowerCase();
-      return (
-        (report.type && report.type.toLowerCase().includes(searchLower)) ||
-        (report.category && report.category.toLowerCase().includes(searchLower)) ||
-        (report.userName && report.userName.toLowerCase().includes(searchLower)) ||
-        (report.address && report.address.toLowerCase().includes(searchLower)) ||
-        (report.description && report.description.toLowerCase().includes(searchLower))
-      );
-    } catch (error) {
-      console.error('Error filtering report:', error, report);
-      return false; // Return false if there's an error to exclude the problematic report
-    }
-  };
+  // Filtered reports for each column
+  const filteredPendingReports = filterReports(
+    reports.filter((r) => r.status === 'pending'),
+    pendingSearchTerm,
+    pendingFilters
+  );
+  
+  const filteredCurrentReports = filterReports(
+    reports.filter((r) => r.status === 'current'),
+    currentSearchTerm,
+    currentFilters
+  );
+  
+  const filteredApprovedReports = filterReports(
+    reports.filter((r) => r.status === 'approved'),
+    approvedSearchTerm,
+    approvedFilters
+  );
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-200">
@@ -155,23 +130,17 @@ export default function StatusUpdatePage() {
             <div className="bg-gray-50 rounded-xl overflow-hidden border border-gray-200 flex flex-col h-[70vh]">
               <div className="bg-gradient-to-r from-custom-yellow-500 to-custom-yellow-600 text-white p-4 text-center font-semibold">
                 ⏳ Pending Reports
-                <div className="text-sm opacity-90 mt-1">
-                  {filteredPendingReports.length} of {pendingReports.length} reports
-                </div>
+                <div className="text-sm opacity-90 mt-1">{filteredPendingReports.length} reports</div>
               </div>
-              <ColumnSearch
-                placeholder="Search pending reports..."
-                onSearch={(query, isDateSearch, dateRange) => {
-                  setPendingSearchQuery(query);
-                  setPendingIsDateSearch(isDateSearch);
-                  if (dateRange) setPendingDateRange(dateRange);
-                }}
-                onClear={() => {
-                  setPendingSearchQuery('');
-                  setPendingIsDateSearch(false);
-                  setPendingDateRange({ start: null, end: null });
-                }}
-              />
+              <div className="p-3 border-b border-gray-200">
+                <ColumnSearch
+                  onSearch={(searchTerm, filters) => {
+                    setPendingSearchTerm(searchTerm);
+                    setPendingFilters(filters);
+                  }}
+                  placeholder="Search pending reports..."
+                />
+              </div>
               <div className="flex-1 overflow-y-auto p-4 space-y-4">
                 {filteredPendingReports.length > 0 ? (
                   filteredPendingReports.map((report) => (
@@ -227,23 +196,17 @@ export default function StatusUpdatePage() {
             <div className="bg-gray-50 rounded-xl overflow-hidden border border-gray-200 flex flex-col h-[70vh]">
               <div className="bg-gradient-to-r from-custom-yellow-500 to-custom-yellow-600 text-white p-4 text-center font-semibold">
                 🔵 Current Reports
-                <div className="text-sm opacity-90 mt-1">
-                  {filteredCurrentReports.length} of {currentReports.length} reports
-                </div>
+                <div className="text-sm opacity-90 mt-1">{filteredCurrentReports.length} reports</div>
               </div>
-              <ColumnSearch
-                placeholder="Search current reports..."
-                onSearch={(query, isDateSearch, dateRange) => {
-                  setCurrentSearchQuery(query);
-                  setCurrentIsDateSearch(isDateSearch);
-                  if (dateRange) setCurrentDateRange(dateRange);
-                }}
-                onClear={() => {
-                  setCurrentSearchQuery('');
-                  setCurrentIsDateSearch(false);
-                  setCurrentDateRange({ start: null, end: null });
-                }}
-              />
+              <div className="p-3 border-b border-gray-200">
+                <ColumnSearch
+                  onSearch={(searchTerm, filters) => {
+                    setCurrentSearchTerm(searchTerm);
+                    setCurrentFilters(filters);
+                  }}
+                  placeholder="Search current reports..."
+                />
+              </div>
               <div className="flex-1 overflow-y-auto p-4 space-y-4">
                 {filteredCurrentReports.length > 0 ? (
                   filteredCurrentReports.map((report) => (
@@ -299,23 +262,17 @@ export default function StatusUpdatePage() {
             <div className="bg-gray-50 rounded-xl overflow-hidden border border-gray-200 flex flex-col h-[70vh]">
               <div className="bg-gradient-to-r from-custom-yellow-500 to-custom-yellow-600 text-white p-4 text-center font-semibold">
                 ✅ Approved Reports
-                <div className="text-sm opacity-90 mt-1">
-                  {filteredApprovedReports.length} of {approvedReports.length} reports
-                </div>
+                <div className="text-sm opacity-90 mt-1">{filteredApprovedReports.length} reports</div>
               </div>
-              <ColumnSearch
-                placeholder="Search approved reports..."
-                onSearch={(query, isDateSearch, dateRange) => {
-                  setApprovedSearchQuery(query);
-                  setApprovedIsDateSearch(isDateSearch);
-                  if (dateRange) setApprovedDateRange(dateRange);
-                }}
-                onClear={() => {
-                  setApprovedSearchQuery('');
-                  setApprovedIsDateSearch(false);
-                  setApprovedDateRange({ start: null, end: null });
-                }}
-              />
+              <div className="p-3 border-b border-gray-200">
+                <ColumnSearch
+                  onSearch={(searchTerm, filters) => {
+                    setApprovedSearchTerm(searchTerm);
+                    setApprovedFilters(filters);
+                  }}
+                  placeholder="Search approved reports..."
+                />
+              </div>
               <div className="flex-1 overflow-y-auto p-4 space-y-4">
                 {filteredApprovedReports.length > 0 ? (
                   filteredApprovedReports.map((report) => (
