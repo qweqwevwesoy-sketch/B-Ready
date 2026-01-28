@@ -3,7 +3,7 @@
 import { useEffect, useState, useCallback, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
-import { useSocketContext } from '@/contexts/SocketContext';
+import { useOptimizedSocketContext } from '@/contexts/OptimizedSocketContext';
 import { Header } from '@/components/Header';
 import { FAB } from '@/components/FAB';
 import { ReportCard } from '@/components/ReportCard';
@@ -36,8 +36,21 @@ function SearchParamsWrapper() {
 function DashboardContent({ searchParams }: { searchParams: URLSearchParams }) {
   const router = useRouter();
   const { user, loading: authLoading } = useAuth();
-  const { socket, connected, connectionError, reports, submitReport, updateReport, joinReportChat, sendChatMessage, chatMessages, setChatMessages } = useSocketContext();
-  const isWebSocketAvailable = socket !== null;
+  const { 
+    connected, 
+    connectionState, 
+    reports, 
+    submitReport, 
+    updateReport, 
+    joinReportChat, 
+    sendMessage, 
+    chatMessages, 
+    currentChatReportId,
+    loading: socketLoading,
+    error: socketError
+  } = useOptimizedSocketContext();
+  const isWebSocketAvailable = connected;
+  const connectionError = socketError;
   const [selectedCategory, setSelectedCategory] = useState<Category | null>(null);
   const [showChatbox, setShowChatbox] = useState(false);
   const [currentReportChat, setCurrentReportChat] = useState<string | null>(null);
@@ -67,34 +80,12 @@ function DashboardContent({ searchParams }: { searchParams: URLSearchParams }) {
 
   // Handle report submission to transfer chat messages from temp ID to real ID
   useEffect(() => {
-    if (socket && connected) {
-      const handleReportSubmitted = (data: { success: boolean; report?: Report; error?: string }) => {
-        if (data.success && data.report && tempReportId && chatMessages[tempReportId]) {
-          // Transfer messages from temp report ID to real report ID
-          setChatMessages(prev => {
-            const updated = { ...prev };
-            updated[data.report!.id] = prev[tempReportId] || [];
-            delete updated[tempReportId];
-            return updated;
-          });
-
-          // Update current chat to use real report ID
-          if (currentReportChat === tempReportId) {
-            setCurrentReportChat(data.report!.id);
-            joinReportChat(data.report!.id);
-          }
-
-          setTempReportId(null);
-        }
-      };
-
-      socket.on('report_submitted', handleReportSubmitted);
-
-      return () => {
-        socket.off('report_submitted', handleReportSubmitted);
-      };
+    if (connected) {
+      // Note: OptimizedSocketContext handles report submission internally
+      // We don't need to manually listen for 'report_submitted' events
+      // The context automatically updates the reports state
     }
-  }, [socket, connected, tempReportId, chatMessages, currentReportChat, joinReportChat, setChatMessages]);
+  }, [connected, tempReportId, chatMessages, currentReportChat, joinReportChat]);
 
   // Unified offline/online functionality - dashboard works in both modes
   useEffect(() => {
@@ -148,15 +139,8 @@ function DashboardContent({ searchParams }: { searchParams: URLSearchParams }) {
     }
   }, [user, authLoading, router]);
 
-  useEffect(() => {
-    if (socket && connected && user) {
-      socket.emit('authenticate', {
-        email: user.email,
-        userId: user.uid,
-        role: user.role,
-      });
-    }
-  }, [socket, connected, user]);
+  // Note: OptimizedSocketContext handles authentication internally
+  // No need for manual socket.emit('authenticate')
 
   // Handle chat query parameter
   useEffect(() => {
@@ -531,7 +515,7 @@ function DashboardContent({ searchParams }: { searchParams: URLSearchParams }) {
                 });
                 console.log('💬 Message stored offline for report:', currentReportChat);
               } else {
-                sendChatMessage(currentReportChat, text, `${user.firstName} ${user.lastName}`, user.role);
+                sendMessage(text);
               }
             }
           }}
@@ -550,7 +534,7 @@ function DashboardContent({ searchParams }: { searchParams: URLSearchParams }) {
                 console.log('📸 Image stored offline for report:', currentReportChat);
               } else {
                 // Send image through socket
-                sendChatMessage(currentReportChat, '[Photo]', `${user.firstName} ${user.lastName}`, user.role, imageData);
+                sendMessage('[Photo]', imageData);
               }
             }
           }}
