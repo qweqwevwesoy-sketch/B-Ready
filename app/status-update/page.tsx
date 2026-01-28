@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
-import { useSocketContext } from '@/contexts/SocketContext';
+import { useOptimizedSocketContext } from '@/contexts/OptimizedSocketContext';
 import { Header } from '@/components/Header';
 import { ReportCard } from '@/components/ReportCard';
 import { EnhancedNotificationSystem } from '@/components/EnhancedNotificationSystem';
@@ -13,7 +13,7 @@ import { notificationManager } from '@/components/NotificationManager';
 export default function StatusUpdatePage() {
   const router = useRouter();
   const { user, loading: authLoading } = useAuth();
-  const { reports, updateReport, socket, connected } = useSocketContext();
+  const { reports, updateReport, connected, connectionState } = useOptimizedSocketContext();
   
   // Search state for each column
   const [pendingSearchTerm, setPendingSearchTerm] = useState('');
@@ -50,18 +50,20 @@ export default function StatusUpdatePage() {
 
   // Authenticate with socket connection (same as Dashboard)
   useEffect(() => {
-    if (socket && connected && user) {
-      socket.emit('authenticate', {
-        email: user.email,
-        userId: user.uid,
-        role: user.role,
-      });
+    if (connected && user) {
+      // Authentication is handled automatically by the optimized socket context
+      console.log('✅ Status update page authenticated with optimized socket');
     }
-  }, [socket, connected, user]);
+  }, [connected, user]);
 
-  const handleStatusChange = (reportId: string, status: string) => {
-    updateReport(reportId, status, `Status changed to ${status}`);
-    notificationManager.success(`Report status updated to ${status}`);
+  const handleStatusChange = async (reportId: string, status: string) => {
+    try {
+      await updateReport(reportId, status, `Status changed to ${status}`);
+      notificationManager.success(`Report status updated to ${status}`);
+    } catch (error) {
+      console.error('Failed to update report status:', error);
+      notificationManager.error('Failed to update report status');
+    }
   };
 
   const handleOpenReportChat = (reportId: string) => {

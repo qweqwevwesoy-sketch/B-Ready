@@ -59,18 +59,18 @@ class SocketConnectionPool {
       }
 
       // For cloud deployments, disable WebSocket
-      if (window.location.hostname.includes('vercel.app') || window.location.hostname.includes('onrender.com')) {
+      if (typeof window !== 'undefined' && (window.location.hostname.includes('vercel.app') || window.location.hostname.includes('onrender.com'))) {
         console.log('🔌 WebSocket disabled for cloud deployment (Vercel/Render)');
         return null;
       }
 
       // For localhost
-      if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
+      if (typeof window !== 'undefined' && (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')) {
         return 'http://localhost:3001';
       }
 
       // For ngrok URLs
-      if (window.location.hostname.includes('ngrok.io')) {
+      if (typeof window !== 'undefined' && window.location.hostname.includes('ngrok.io')) {
         const storedWsUrl = localStorage.getItem('bready_websocket_url');
         if (storedWsUrl) {
           return window.location.protocol === 'https:' 
@@ -80,7 +80,11 @@ class SocketConnectionPool {
         return `https://${window.location.hostname}:3001`;
       }
 
-      return `http://${window.location.hostname}:3001`;
+      if (typeof window !== 'undefined') {
+        return `http://${window.location.hostname}:3001`;
+      }
+
+      return 'http://localhost:3001';
     } catch (error) {
       console.error('Error determining WebSocket URL:', error);
       return null;
@@ -227,7 +231,7 @@ class SocketConnectionPool {
     this.updateConnectionState('disconnected');
   }
 
-  public emit(event: string, data: any) {
+  public emit(event: string, data: unknown) {
     if (this.connectionState === 'connected' && this.socket) {
       try {
         const compressedData = compressMessage(data);
@@ -242,7 +246,7 @@ class SocketConnectionPool {
     }
   }
 
-  public on(event: string, callback: (data: any) => void) {
+  public on(event: string, callback: (data: unknown) => void) {
     if (!this.socket) return () => {};
 
     const handler = (data: string) => {
@@ -315,11 +319,11 @@ export function useOptimizedSocket() {
     pool.disconnect();
   }, [pool]);
 
-  const emit = useCallback((event: string, data: any) => {
+  const emit = useCallback((event: string, data: unknown) => {
     pool.emit(event, data);
   }, [pool]);
 
-  const on = useCallback((event: string, callback: (data: any) => void) => {
+  const on = useCallback((event: string, callback: (data: unknown) => void) => {
     return pool.on(event, callback);
   }, [pool]);
 
@@ -338,27 +342,27 @@ export function useOptimizedSocket() {
 
 // Socket event handlers with compression
 export const optimizedSocketEvents = {
-  authenticate: (socket: any, data: { email: string; userId: string; role: string }) => {
+  authenticate: (socket: Socket, data: { email: string; userId: string; role: string }) => {
     socket.emit('authenticate', data);
   },
 
-  submitReport: (socket: any, report: Partial<Report>) => {
+  submitReport: (socket: Socket, report: Partial<Report>) => {
     socket.emit('submit_report', report);
   },
 
-  getReports: (socket: any) => {
+  getReports: (socket: Socket) => {
     socket.emit('get_reports');
   },
 
-  joinReportChat: (socket: any, reportId: string) => {
+  joinReportChat: (socket: Socket, reportId: string) => {
     socket.emit('join_report_chat', { reportId });
   },
 
-  sendChatMessage: (socket: any, data: { reportId: string; text: string; userName: string; userRole: string; imageData?: string }) => {
+  sendChatMessage: (socket: Socket, data: { reportId: string; text: string; userName: string; userRole: string; imageData?: string }) => {
     socket.emit('report_chat_message', data);
   },
 
-  updateReport: (socket: any, data: { reportId: string; status: string; notes?: string }) => {
+  updateReport: (socket: Socket, data: { reportId: string; status: string; notes?: string }) => {
     socket.emit('update_report', data);
   },
 };
@@ -373,7 +377,7 @@ export function useSocketPerformance() {
   });
 
   const messageCount = useRef(0);
-  const startTime = useRef(Date.now());
+  const startTime = useRef<number>(0);
 
   useEffect(() => {
     const interval = setInterval(() => {
