@@ -366,7 +366,7 @@ io.on('connection', (socket) => {
 
     // Send existing chat messages for this report
     const reportMessages = messages.get(reportId) || [];
-    socket.emit('chat_history', { reportId, messages: reportMessages });
+    socket.emit('report_chat_history', { reportId, messages: reportMessages });
 
     // Join the room for this report
     socket.join(`report_${reportId}`);

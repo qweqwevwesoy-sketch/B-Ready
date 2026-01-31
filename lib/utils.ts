@@ -264,3 +264,34 @@ export function formatDateTime(dateString: string): string {
   const date = new Date(dateString);
   return date.toLocaleString();
 }
+
+// Helper function to get Firebase authentication token
+export async function getFirebaseToken(): Promise<string | null> {
+  try {
+    // Check if we're in a browser environment
+    if (typeof window === 'undefined') {
+      console.warn('⚠️ Cannot get Firebase token: not in browser environment');
+      return null;
+    }
+
+    // Import Firebase Auth dynamically to avoid SSR issues
+    const { getAuth } = await import('firebase/auth');
+    const { app } = await import('@/lib/firebase');
+    
+    const auth = getAuth(app);
+    const currentUser = auth.currentUser;
+
+    if (!currentUser) {
+      console.warn('⚠️ No Firebase user logged in');
+      return null;
+    }
+
+    // Get the ID token with force refresh to ensure it's valid
+    const token = await currentUser.getIdToken(true);
+    console.log('✅ Firebase token retrieved successfully');
+    return token;
+  } catch (error) {
+    console.error('❌ Failed to get Firebase token:', error);
+    return null;
+  }
+}

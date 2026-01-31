@@ -307,7 +307,7 @@ export const OptimizedSocketProvider: React.FC<{ children: React.ReactNode }> = 
     const handleChatHistory = (data: unknown) => {
       try {
         // Handle both direct objects and stringified JSON
-        let historyData: { messages: Array<{
+        let historyData: { reportId: string; messages: Array<{
           id: string;
           text: string;
           userName: string;
@@ -324,8 +324,8 @@ export const OptimizedSocketProvider: React.FC<{ children: React.ReactNode }> = 
             console.warn('📡 Failed to parse chat history data as JSON:', data);
             return;
           }
-        } else if (data && typeof data === 'object' && 'messages' in data) {
-          historyData = data as { messages: Array<{
+        } else if (data && typeof data === 'object' && 'messages' in data && 'reportId' in data) {
+          historyData = data as { reportId: string; messages: Array<{
             id: string;
             text: string;
             userName: string;
@@ -340,7 +340,7 @@ export const OptimizedSocketProvider: React.FC<{ children: React.ReactNode }> = 
         }
 
         if (historyData && Array.isArray(historyData.messages)) {
-          console.log('📡 Received chat history:', historyData.messages.length, 'messages');
+          console.log('📡 Received chat history for report:', historyData.reportId, 'with', historyData.messages.length, 'messages');
           setChatMessages(historyData.messages);
           setChatLoading(false);
           recordMessage();

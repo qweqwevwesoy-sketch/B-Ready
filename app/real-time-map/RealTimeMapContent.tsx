@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
 import { useOptimizedSocketContext } from '@/contexts/OptimizedSocketContext';
 import { Header } from '@/components/Header';
-import { getCurrentLocation } from '@/lib/utils';
+import { getCurrentLocation, getFirebaseToken } from '@/lib/utils';
 import { Report, Location } from '@/types';
 import { OfflineTileLayer } from '@/components/OfflineMapTileLayer';
 import { locationManager } from '@/lib/location-manager';
@@ -665,6 +665,15 @@ export default function RealTimeMapContent() {
       // Get current admin location
       const adminLocation = userLocation || await getCurrentLocation();
 
+      // Get Firebase authentication token
+      const firebaseToken = await getFirebaseToken();
+      
+      if (!firebaseToken) {
+        console.error('❌ Failed to get Firebase authentication token');
+        alert('Authentication failed. Please refresh the page and try again.');
+        return;
+      }
+
       if (responseAction === 'en_route') {
         // Calculate route from admin location to incident
         const route = await routingService.calculateRoute(
@@ -681,6 +690,7 @@ export default function RealTimeMapContent() {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
+            'Authorization': `Bearer ${firebaseToken}`
           },
           body: JSON.stringify({
             adminResponse: responseAction,
@@ -692,9 +702,10 @@ export default function RealTimeMapContent() {
         });
 
         if (fetchResponse.ok) {
-          console.log('Admin response updated successfully');
+          console.log('✅ Admin response updated successfully');
         } else {
-          console.error('Failed to update admin response');
+          console.error('❌ Failed to update admin response:', fetchResponse.status, fetchResponse.statusText);
+          alert(`Failed to update admin response: ${fetchResponse.status} ${fetchResponse.statusText}`);
         }
       } else if (responseAction === 'on_site') {
         // Clear route and update status
@@ -702,6 +713,7 @@ export default function RealTimeMapContent() {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
+            'Authorization': `Bearer ${firebaseToken}`
           },
           body: JSON.stringify({
             adminResponse: responseAction,
@@ -712,13 +724,15 @@ export default function RealTimeMapContent() {
         });
 
         if (fetchResponse.ok) {
-          console.log('Admin on-site status updated successfully');
+          console.log('✅ Admin on-site status updated successfully');
         } else {
-          console.error('Failed to update admin on-site status');
+          console.error('❌ Failed to update admin on-site status:', fetchResponse.status, fetchResponse.statusText);
+          alert(`Failed to update admin on-site status: ${fetchResponse.status} ${fetchResponse.statusText}`);
         }
       }
     } catch (error) {
-      console.error('Error handling admin response:', error);
+      console.error('❌ Error handling admin response:', error);
+      alert('An error occurred while updating admin response. Please try again.');
     }
   };
 
