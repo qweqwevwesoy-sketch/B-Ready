@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useRef, useMemo } from 'react';
-import { useSocketContext } from '@/contexts/SocketContext';
+import { useOptimizedSocketContext } from '@/contexts/OptimizedSocketContext';
 import { useAuth } from '@/contexts/AuthContext';
 import { useOfflineStatus, storeOfflineMessage, getOfflineMessagesForReport, storeOfflineReport } from '@/lib/offline-manager';
 import { notificationManager } from '@/components/NotificationManager';
@@ -33,7 +33,7 @@ const getInitialMessage = (category: Category | null | undefined, isAnonymous: b
 });
 
 export function ChatBox({ reportId, category, onClose, onSendMessage, onSendImage, isAnonymous = false }: ChatBoxProps) {
-  const { chatMessages, reports } = useSocketContext();
+  const { chatMessages, reports } = useOptimizedSocketContext();
   const { user } = useAuth();
   const [message, setMessage] = useState('');
   const [cameraActive, setCameraActive] = useState(false);
@@ -56,7 +56,7 @@ export function ChatBox({ reportId, category, onClose, onSendMessage, onSendImag
 
     if (reportId && chatMessages[reportId]) {
       // Convert stored messages to display format
-      onlineMessages = chatMessages[reportId].map(msg => {
+      onlineMessages = chatMessages[reportId].map((msg: { text: string; userName: string; userRole: string; timestamp: string; imageData?: string }) => {
         const isCurrentUser = user && msg.userName === `${user.firstName} ${user.lastName}`;
 
         return {

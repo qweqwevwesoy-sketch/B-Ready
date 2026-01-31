@@ -2,17 +2,17 @@
 
 import { useEffect } from 'react';
 import { notificationManager } from '@/components/NotificationManager';
-import { useSocketContext } from '@/contexts/SocketContext';
+import { useOptimizedSocketContext } from '@/contexts/OptimizedSocketContext';
 
 export function WebSocketWarning() {
-  const { socket } = useSocketContext();
+  const { connected, connectionState } = useOptimizedSocketContext();
 
   useEffect(() => {
     const checkWebSocketAvailability = () => {
       const isRenderDeployment = typeof window !== 'undefined' && 
                                 window.location.hostname.includes('onrender.com');
       
-      if (isRenderDeployment && socket === null) {
+      if (isRenderDeployment && !connected && connectionState !== 'connecting') {
         // Show warning notification for WebSocket unavailability
         notificationManager.warning(
           'Real-time features are disabled on this deployment. The app will work in offline mode. For full functionality, use the local development server or a deployment with WebSocket support.',
@@ -26,7 +26,7 @@ export function WebSocketWarning() {
     const interval = setInterval(checkWebSocketAvailability, 10000); // Check every 10 seconds
 
     return () => clearInterval(interval);
-  }, [socket]);
+  }, [connected, connectionState]);
 
   // This component no longer renders any UI - it only manages WebSocket availability notifications
   return null;

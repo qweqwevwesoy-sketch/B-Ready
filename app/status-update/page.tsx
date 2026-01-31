@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
+import { useOptimizedSocketContext } from '@/contexts/OptimizedSocketContext';
 import { Header } from '@/components/Header';
 import { ReportCard } from '@/components/ReportCard';
 import { EnhancedNotificationSystem } from '@/components/EnhancedNotificationSystem';
@@ -12,31 +13,13 @@ import { notificationManager } from '@/components/NotificationManager';
 export default function StatusUpdatePage() {
   const router = useRouter();
   const { user, loading: authLoading } = useAuth();
-  
-  // Socket context state - initialize with default values
-  const [reports, setReports] = useState<any[]>([]);
-  const [updateReport, setUpdateReport] = useState<((reportId: string, status: string, notes?: string) => void) | null>(null);
-  const [socket, setSocket] = useState<any>(null);
-  const [connected, setConnected] = useState(false);
-  const [connectionError, setConnectionError] = useState<string | null>(null);
-
-  // Load SocketContext dynamically to avoid SSR issues
-  useEffect(() => {
-    async function loadSocketContext() {
-      try {
-        const { useSocketContext } = await import('@/contexts/SocketContext');
-        const context = useSocketContext();
-        setReports(context.reports || []);
-        setUpdateReport(() => context.updateReport);
-        setSocket(context.socket);
-        setConnected(context.connected);
-        setConnectionError(context.connectionError);
-      } catch (error) {
-        console.warn('SocketContext not available during SSR:', error);
-      }
-    }
-    loadSocketContext();
-  }, []);
+  const {
+    connected,
+    reports,
+    updateReport,
+    loading: socketLoading,
+    error: socketError
+  } = useOptimizedSocketContext();
   
   // Search state for each column
   const [pendingSearchTerm, setPendingSearchTerm] = useState('');
@@ -71,22 +54,7 @@ export default function StatusUpdatePage() {
     }
   }, [user, authLoading, router]);
 
-  // Authenticate with socket connection (same as Dashboard)
-  useEffect(() => {
-    if (socket && connected && user) {
-      try {
-        socket.emit('authenticate', {
-          email: user.email,
-          userId: user.uid,
-          role: user.role,
-        });
-      } catch (error) {
-        console.error('Error authenticating socket:', error);
-      }
-    } else if (connectionError) {
-      console.warn('Socket connection error in status update page:', connectionError);
-    }
-  }, [socket, connected, user, connectionError]);
+  // Note: Authentication is now handled automatically by OptimizedSocketContext
 
   const handleStatusChange = (reportId: string, status: string) => {
     updateReport(reportId, status, `Status changed to ${status}`);

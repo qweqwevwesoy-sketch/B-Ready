@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
-import { useSocketContext } from '@/contexts/SocketContext';
+import { useOptimizedSocketContext } from '@/contexts/OptimizedSocketContext';
 import { notificationManager } from './NotificationManager';
 import dynamic from 'next/dynamic';
 
@@ -33,7 +33,7 @@ interface DisasterWarning {
 
 export function EnhancedNotificationSystem() {
   const { user } = useAuth();
-  const { reports } = useSocketContext();
+  const { reports } = useOptimizedSocketContext();
   const [alerts, setAlerts] = useState<Alert[]>([]);
   const [disasterWarnings, setDisasterWarnings] = useState<DisasterWarning[]>([]);
   const [showAlertForm, setShowAlertForm] = useState(false);
@@ -79,14 +79,14 @@ export function EnhancedNotificationSystem() {
       const newWarnings: DisasterWarning[] = [];
       
       // Group reports by type and location
-      const reportGroups = currentReports.reduce((acc, report) => {
+      const reportGroups = currentReports.reduce((acc: Record<string, typeof currentReports>, report) => {
         const key = `${report.type}-${report.address}`;
         if (!acc[key]) {
           acc[key] = [];
         }
         acc[key].push(report);
         return acc;
-      }, {} as Record<string, typeof currentReports>);
+      }, {});
 
       Object.entries(reportGroups).forEach(([key, groupReports]) => {
         const type = groupReports[0].type;
