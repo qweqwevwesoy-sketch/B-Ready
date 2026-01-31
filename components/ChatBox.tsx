@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, useRef, useMemo } from 'react';
+import { useRouter } from 'next/navigation';
 import { useOptimizedSocketContext } from '@/contexts/OptimizedSocketContext';
 import { useAuth } from '@/contexts/AuthContext';
 import { useOfflineStatus, storeOfflineMessage, getOfflineMessagesForReport, storeOfflineReport } from '@/lib/offline-manager';
@@ -66,7 +67,7 @@ export function ChatBox({ reportId, category, onClose, onSendMessage, onSendImag
           text: msg.text,
           sender: isCurrentUser ? 'You' : msg.userName || 'User',
           time: new Date(msg.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-          type: (isCurrentUser ? 'sent' : 'received') as const,
+          type: (isCurrentUser ? 'sent' : 'received') as 'sent' | 'received',
           imageData: msg.imageData,
           userName: msg.userName || 'User',
           userRole: msg.userRole || 'user',
@@ -1042,9 +1043,9 @@ export function ChatBox({ reportId, category, onClose, onSendMessage, onSendImag
                   <button
                     onClick={() => {
                       const mapUrl = `/real-time-map?lat=${currentReport.location!.lat}&lng=${currentReport.location!.lng}&zoom=15`;
-                      window.open(mapUrl, '_blank');
+                      router.push(mapUrl);
                     }}
-                    className="mt-2 px-3 py-1 bg-green-500 text-white rounded-lg hover:bg-green-600 text-xs font-semibold"
+                    className="mt-2 px-3 py-1 bg-yellow-500 text-white rounded-lg hover:bg-yellow-600 text-xs font-semibold"
                   >
                     🗺️ View in Map
                   </button>
