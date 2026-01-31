@@ -18,7 +18,7 @@ module.exports = {
         'custom-yellow': {
           500: '#ffbd52',
           600: '#f7c472',
-          100: rgba(255, 229, 163, 0.6),
+          100: 'rgba(255, 229, 163, 0.6)',
         },
       },
       backgroundImage: {
