@@ -153,7 +153,7 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
                   className={`w-full text-left p-4 rounded-lg transition-all flex items-center gap-3 ${
                     pathname === item.path
                       ? 'bg-custom-yellow-100 text-white border-l-4 border-custom-yellow-600'
-                      : 'hover:bg-custom-yellow-50 hover:text-gray-800 text-white'
+                      : 'hover:bg-white/10 text-white'
                   }`}
                 >
                   <span className="text-xl">{item.icon}</span>
