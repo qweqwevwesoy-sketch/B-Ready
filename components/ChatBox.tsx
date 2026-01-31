@@ -217,10 +217,12 @@ export function ChatBox({ reportId, category, onClose, onSendMessage, onSendImag
 
       // Check if we're on HTTPS (required for camera access in most browsers)
       // Allow HTTP for localhost development
-      const isSecureContext = location.protocol === 'https:' ||
-                             location.hostname === 'localhost' ||
-                             location.hostname === '127.0.0.1' ||
-                             location.hostname.startsWith('192.168.');
+      const isSecureContext = typeof window !== 'undefined' && (
+        location.protocol === 'https:' ||
+        location.hostname === 'localhost' ||
+        location.hostname === '127.0.0.1' ||
+        location.hostname.startsWith('192.168.')
+      );
 
       if (!isSecureContext) {
         console.warn('⚠️ Not in secure context, trying file upload fallback');

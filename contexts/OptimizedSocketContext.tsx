@@ -3,7 +3,10 @@
 import React, { createContext, useContext, useEffect, useState, useCallback, useRef } from 'react';
 import { useAuth } from './AuthContext';
 import { useOptimizedSocket, optimizedSocketEvents, useSocketPerformance } from '@/lib/socket-client-optimized';
-import type { Report, User } from '@/types';
+import type { Report, User, ReportStatus, UserRole } from '@/types';
+
+// Check if we're on the client side
+const isClient = typeof window !== 'undefined';
 
 interface OptimizedSocketContextType {
   // Connection state
@@ -43,7 +46,7 @@ interface OptimizedSocketContextType {
   joinReportChat: (reportId: string) => void;
   leaveReportChat: () => void;
   sendMessage: (text: string, imageData?: string) => Promise<void>;
-  updateReport: (reportId: string, status: string, notes?: string) => Promise<void>;
+  updateReport: (reportId: string, status: ReportStatus, notes?: string) => Promise<void>;
   refreshReports: () => void;
   clearError: () => void;
 }
@@ -229,12 +232,52 @@ export const OptimizedSocketProvider: React.FC<{ children: React.ReactNode }> = 
     };
 
     // Subscribe to events
-    const unsubscribeReports = on('reports_update', handleReportsUpdate);
-    const unsubscribeNewReport = on('new_report', handleNewReport);
-    const unsubscribeReportUpdate = on('report_updated', handleReportUpdate);
-    const unsubscribeChatMessage = on('report_chat_message', handleChatMessage);
-    const unsubscribeChatHistory = on('report_chat_history', handleChatHistory);
-    const unsubscribeError = on('error', handleConnectionError);
+    const unsubscribeReports = on('reports_update', (data: unknown) => {
+      if (data && typeof data === 'object' && 'reports' in data) {
+        handleReportsUpdate(data as { reports: Report[] });
+      }
+    });
+    const unsubscribeNewReport = on('new_report', (data: unknown) => {
+      if (data && typeof data === 'object' && 'report' in data) {
+        handleNewReport(data as { report: Report });
+      }
+    });
+    const unsubscribeReportUpdate = on('report_updated', (data: unknown) => {
+      if (data && typeof data === 'object' && 'report' in data) {
+        handleReportUpdate(data as { report: Report });
+      }
+    });
+    const unsubscribeChatMessage = on('report_chat_message', (data: unknown) => {
+      if (data && typeof data === 'object' && 'message' in data && 'reportId' in data) {
+        handleChatMessage(data as { message: {
+          id: string;
+          text: string;
+          userName: string;
+          userRole: string;
+          timestamp: string;
+          reportId: string;
+          imageData?: string;
+        }; reportId: string });
+      }
+    });
+    const unsubscribeChatHistory = on('report_chat_history', (data: unknown) => {
+      if (data && typeof data === 'object' && 'messages' in data) {
+        handleChatHistory(data as { messages: Array<{
+          id: string;
+          text: string;
+          userName: string;
+          userRole: string;
+          timestamp: string;
+          reportId: string;
+          imageData?: string;
+        }> });
+      }
+    });
+    const unsubscribeError = on('error', (data: unknown) => {
+      if (data && typeof data === 'object' && 'message' in data) {
+        handleConnectionError(data as { message?: string });
+      }
+    });
     const unsubscribeReconnect = on('reconnect', handleReconnect);
 
     // Request initial reports
@@ -271,7 +314,7 @@ export const OptimizedSocketProvider: React.FC<{ children: React.ReactNode }> = 
       emit('submit_report', {
         ...reportData,
         userId: user?.uid,
-        userName: user?.displayName || user?.email || 'Anonymous',
+        userName: user ? `${user.firstName} ${user.lastName}` : (user && typeof user === 'object' && 'email' in user ? (user as { email?: string }).email : null) || 'Anonymous',
         userRole: user?.role || 'resident',
       });
       
@@ -279,9 +322,18 @@ export const OptimizedSocketProvider: React.FC<{ children: React.ReactNode }> = 
       const tempReport = {
         ...reportData,
         id: `temp_${Date.now()}`,
-        status: 'current',
+        status: 'current' as ReportStatus,
         timestamp: new Date().toISOString(),
-        userName: user?.displayName || user?.email || 'Anonymous',
+        userName: user ? `${user.firstName} ${user.lastName}` : user?.email || 'Anonymous',
+        userId: user?.uid || '',
+        userRole: user?.role || 'resident',
+        severity: reportData.severity || 'medium',
+        adminResponse: 'none',
+        adminId: null,
+        adminLocation: null,
+        responseTimestamp: null,
+        routeCoordinates: null,
+        estimatedTimeOfArrival: null,
       } as Report;
       
       setReports(prev => [tempReport, ...prev]);
@@ -325,9 +377,10 @@ export const OptimizedSocketProvider: React.FC<{ children: React.ReactNode }> = 
 
     try {
       const messageData = {
+        id: `msg_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
         reportId: currentChatReportId,
         text,
-        userName: user?.displayName || user?.email || 'Anonymous',
+        userName: user ? `${user.firstName} ${user.lastName}` : 'Anonymous',
         userRole: user?.role || 'resident',
         imageData,
         timestamp: new Date().toISOString(),
@@ -343,7 +396,7 @@ export const OptimizedSocketProvider: React.FC<{ children: React.ReactNode }> = 
     }
   }, [isConnected, currentChatReportId, emit, user]);
 
-  const updateReport = useCallback(async (reportId: string, status: string, notes?: string) => {
+  const updateReport = useCallback(async (reportId: string, status: ReportStatus, notes?: string) => {
     if (!isConnected) {
       setError('Cannot update report: not connected to server');
       return;

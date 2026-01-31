@@ -5,9 +5,9 @@ import { AuthProvider } from "@/contexts/AuthContext";
 import { ModalManagerProvider } from "@/contexts/ModalManager";
 import { NotificationContainer } from "@/components/NotificationManager";
 import { ServiceWorker } from "@/components/ServiceWorker";
-import WebSocketConfig from "@/components/WebSocketConfig";
 import SiteBackground from "@/components/SiteBackground";
 import SocketProviderWrapper from "@/components/SocketProviderWrapper";
+import WebSocketConfigWrapper from "@/components/WebSocketConfigWrapper";
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -52,7 +52,7 @@ export default function RootLayout({
                   {children}
                   <NotificationContainer />
                   <ServiceWorker />
-                  <WebSocketConfig />
+                  <WebSocketConfigWrapper />
                 </ModalManagerProvider>
               </SocketProviderWrapper>
             </AuthProvider>

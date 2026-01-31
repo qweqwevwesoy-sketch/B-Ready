@@ -36,7 +36,7 @@ class SocketConnectionPool {
   private maxReconnectAttempts = 10;
   private reconnectDelay = 1000;
   private reconnectTimer: NodeJS.Timeout | null = null;
-  private messageQueue: Array<{ event: string; data: any }> = [];
+  private messageQueue: Array<{ event: string; data: unknown }> = [];
   private isProcessingQueue = false;
 
   static getInstance(): SocketConnectionPool {
@@ -55,32 +55,51 @@ class SocketConnectionPool {
       // Check for environment variable first
       const envSocketUrl = process.env.NEXT_PUBLIC_SOCKET_URL;
       if (envSocketUrl) {
+        console.log('🌐 Using WebSocket URL from environment:', envSocketUrl);
         return envSocketUrl;
       }
 
-      // For cloud deployments, disable WebSocket
-      if (window.location.hostname.includes('vercel.app') || window.location.hostname.includes('onrender.com')) {
-        console.log('🔌 WebSocket disabled for cloud deployment (Vercel/Render)');
-        return null;
+      // For cloud deployments, use the server deployment URL with correct port
+      if (window.location.hostname.includes('onrender.com')) {
+        // Use the server deployment URL for WebSocket connections with port 10000
+        const renderUrl = 'https://b-ready.onrender.com:10000';
+        console.log('🌐 Using Render WebSocket URL:', renderUrl);
+        return renderUrl;
+      }
+
+      // For Vercel deployments, use the server deployment URL
+      if (window.location.hostname.includes('vercel.app')) {
+        const vercelUrl = 'https://b-ready.onrender.com:10000';
+        console.log('🌐 Using Vercel WebSocket URL:', vercelUrl);
+        return vercelUrl;
       }
 
       // For localhost
       if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
-        return 'http://localhost:3001';
+        const localUrl = 'http://localhost:3001';
+        console.log('🏠 Using localhost WebSocket URL:', localUrl);
+        return localUrl;
       }
 
       // For ngrok URLs
       if (window.location.hostname.includes('ngrok.io')) {
         const storedWsUrl = localStorage.getItem('bready_websocket_url');
         if (storedWsUrl) {
-          return window.location.protocol === 'https:' 
+          const secureUrl = window.location.protocol === 'https:' 
             ? storedWsUrl.replace(/^http:/, 'https:')
             : storedWsUrl;
+          console.log('🔒 Using stored WebSocket URL for ngrok:', secureUrl);
+          return secureUrl;
         }
-        return `https://${window.location.hostname}:3001`;
+        const ngrokUrl = `https://${window.location.hostname}:3001`;
+        console.log('🔄 Using fallback WebSocket URL for ngrok:', ngrokUrl);
+        return ngrokUrl;
       }
 
-      return `http://${window.location.hostname}:3001`;
+      // For other domains, try to connect to the server deployment with port
+      const fallbackUrl = 'https://b-ready.onrender.com:10000';
+      console.log('🌐 Using fallback WebSocket URL:', fallbackUrl);
+      return fallbackUrl;
     } catch (error) {
       console.error('Error determining WebSocket URL:', error);
       return null;
@@ -120,6 +139,11 @@ class SocketConnectionPool {
 
     this.socket.on('connect', () => {
       console.log('✅ Connected to WebSocket server');
+      console.log('📡 Connection details:', {
+        id: this.socket?.id,
+        connected: this.socket?.connected,
+        transport: this.socket?.io?.engine?.transport?.name
+      });
       this.updateConnectionState('connected');
       this.reconnectAttempts = 0;
       this.processMessageQueue();
@@ -127,23 +151,55 @@ class SocketConnectionPool {
 
     this.socket.on('disconnect', (reason: string) => {
       console.log('❌ Disconnected from WebSocket server:', reason);
+      console.log('📡 Disconnection details:', {
+        id: this.socket?.id,
+        connected: this.socket?.connected,
+        reason
+      });
       this.updateConnectionState('disconnected');
     });
 
     this.socket.on('connect_error', (error: Error) => {
       console.error('Connection error:', error);
+      console.error('📡 Connection error details:', {
+        message: error.message,
+        stack: error.stack,
+        url: this.determineSocketUrl()
+      });
       this.updateConnectionState('error');
       this.scheduleReconnect();
     });
 
     this.socket.on('reconnect_attempt', (attempt: number) => {
       console.log(`🔄 Reconnection attempt ${attempt}/${this.maxReconnectAttempts}`);
+      console.log('📡 Reconnection attempt details:', {
+        attempt,
+        maxAttempts: this.maxReconnectAttempts,
+        delay: Math.min(this.reconnectDelay * Math.pow(2, attempt), 30000)
+      });
       this.updateConnectionState('reconnecting');
     });
 
     this.socket.on('reconnect_failed', () => {
       console.error('❌ Failed to reconnect after all attempts');
+      console.error('📡 Reconnection failure details:', {
+        attempts: this.reconnectAttempts,
+        maxAttempts: this.maxReconnectAttempts
+      });
       this.updateConnectionState('error');
+    });
+
+    // Add debug events for troubleshooting
+    this.socket.on('error', (error) => {
+      console.error('📡 Socket error event:', error);
+    });
+
+    this.socket.on('ping', () => {
+      console.log('📡 Socket ping received');
+    });
+
+    this.socket.on('pong', (latency: number) => {
+      console.log(`📡 Socket pong received, latency: ${latency}ms`);
     });
   }
 
@@ -227,7 +283,7 @@ class SocketConnectionPool {
     this.updateConnectionState('disconnected');
   }
 
-  public emit(event: string, data: any) {
+  public emit(event: string, data: unknown) {
     if (this.connectionState === 'connected' && this.socket) {
       try {
         const compressedData = compressMessage(data);
@@ -242,7 +298,7 @@ class SocketConnectionPool {
     }
   }
 
-  public on(event: string, callback: (data: any) => void) {
+  public on(event: string, callback: (data: unknown) => void) {
     if (!this.socket) return () => {};
 
     const handler = (data: string) => {
@@ -315,11 +371,11 @@ export function useOptimizedSocket() {
     pool.disconnect();
   }, [pool]);
 
-  const emit = useCallback((event: string, data: any) => {
+  const emit = useCallback((event: string, data: unknown) => {
     pool.emit(event, data);
   }, [pool]);
 
-  const on = useCallback((event: string, callback: (data: any) => void) => {
+  const on = useCallback((event: string, callback: (data: unknown) => void) => {
     return pool.on(event, callback);
   }, [pool]);
 
@@ -338,27 +394,27 @@ export function useOptimizedSocket() {
 
 // Socket event handlers with compression
 export const optimizedSocketEvents = {
-  authenticate: (socket: any, data: { email: string; userId: string; role: string }) => {
+  authenticate: (socket: Socket, data: { email: string; userId: string; role: string }) => {
     socket.emit('authenticate', data);
   },
 
-  submitReport: (socket: any, report: Partial<Report>) => {
+  submitReport: (socket: Socket, report: Partial<Report>) => {
     socket.emit('submit_report', report);
   },
 
-  getReports: (socket: any) => {
+  getReports: (socket: Socket) => {
     socket.emit('get_reports');
   },
 
-  joinReportChat: (socket: any, reportId: string) => {
+  joinReportChat: (socket: Socket, reportId: string) => {
     socket.emit('join_report_chat', { reportId });
   },
 
-  sendChatMessage: (socket: any, data: { reportId: string; text: string; userName: string; userRole: string; imageData?: string }) => {
+  sendChatMessage: (socket: Socket, data: { reportId: string; text: string; userName: string; userRole: string; imageData?: string }) => {
     socket.emit('report_chat_message', data);
   },
 
-  updateReport: (socket: any, data: { reportId: string; status: string; notes?: string }) => {
+  updateReport: (socket: Socket, data: { reportId: string; status: string; notes?: string }) => {
     socket.emit('update_report', data);
   },
 };
@@ -373,7 +429,7 @@ export function useSocketPerformance() {
   });
 
   const messageCount = useRef(0);
-  const startTime = useRef(Date.now());
+  const startTime = useRef(0);
 
   useEffect(() => {
     const interval = setInterval(() => {

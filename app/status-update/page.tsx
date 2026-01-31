@@ -9,6 +9,7 @@ import { ReportCard } from '@/components/ReportCard';
 import { EnhancedNotificationSystem } from '@/components/EnhancedNotificationSystem';
 import { ColumnSearch, filterReports, type SearchFilters } from '@/components/ColumnSearch';
 import { notificationManager } from '@/components/NotificationManager';
+import type { ReportStatus } from '@/types';
 
 export default function StatusUpdatePage() {
   const router = useRouter();
@@ -57,7 +58,7 @@ export default function StatusUpdatePage() {
   // Note: Authentication is now handled automatically by OptimizedSocketContext
 
   const handleStatusChange = (reportId: string, status: string) => {
-    updateReport(reportId, status, `Status changed to ${status}`);
+    updateReport(reportId, status as ReportStatus, `Status changed to ${status}`);
     notificationManager.success(`Report status updated to ${status}`);
   };
 

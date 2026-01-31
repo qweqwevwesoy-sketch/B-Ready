@@ -62,11 +62,15 @@ const io = socketIo(server, {
       "https://192.168.0.111:3000",
       "https://192.168.50.250:3000",
       "https://localhost:3000",
-      "https://120.72.20.15:3000"
+      "https://120.72.20.15:3000",
+      "https://b-ready-sketch.onrender.com",
+      "https://b-ready-sketch.onrender.com:10000",
+      "https://b-ready.onrender.com",
+      "https://b-ready.onrender.com:10000"
     ],
     methods: ["GET", "POST"],
     credentials: true,
-    allowedHeaders: ["Content-Type"]
+    allowedHeaders: ["Content-Type", "Authorization"]
   }
 });
 
