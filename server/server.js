@@ -222,8 +222,54 @@ async function initializeServer() {
 io.on('connection', (socket) => {
   console.log('✅ New client connected:', socket.id);
 
-  // Authentication
-  socket.on('authenticate', (userData) => {
+  // Helper function to decompress messages
+  const decompressMessage = (data) => {
+    try {
+      if (typeof data === 'string') {
+        return JSON.parse(data);
+      }
+      return data;
+    } catch (error) {
+      console.warn('⚠️ Failed to decompress message:', error.message);
+      return data;
+    }
+  };
+
+  // Handle all events with decompression
+  socket.onAny((eventName, data) => {
+    const decompressedData = decompressMessage(data);
+    console.log(`📡 Received event "${eventName}":`, decompressedData);
+    handleSocketEvent(socket, eventName, decompressedData);
+  });
+
+  // Helper function to handle socket events
+  function handleSocketEvent(socket, eventName, data) {
+    switch (eventName) {
+      case 'authenticate':
+        handleAuthentication(socket, data);
+        break;
+      case 'submit_report':
+        handleReportSubmission(socket, data);
+        break;
+      case 'get_reports':
+        handleGetReports(socket);
+        break;
+      case 'join_report_chat':
+        handleJoinReportChat(socket, data);
+        break;
+      case 'report_chat_message':
+        handleReportChatMessage(socket, data);
+        break;
+      case 'update_report':
+        handleReportUpdate(socket, data);
+        break;
+      default:
+        console.log(`📡 Received unknown event "${eventName}":`, data);
+    }
+  }
+
+  // Authentication handler
+  function handleAuthentication(socket, userData) {
     console.log('User authenticated:', userData.email);
     socket.userId = userData.userId || socket.id;
     socket.userData = userData;
@@ -238,10 +284,10 @@ io.on('connection', (socket) => {
     const reportsArray = Array.from(reports.values());
     console.log(`📡 Sending ${reportsArray.length} reports to client ${socket.id}`);
     socket.emit('reports_update', { reports: reportsArray });
-  });
+  }
 
-  // Submit report
-  socket.on('submit_report', async (reportData) => {
+  // Submit report handler
+  function handleReportSubmission(socket, reportData) {
     console.log('📝 New report:', reportData.type);
 
     const reportId = reportData.id || `report_${Date.now()}`;
@@ -256,7 +302,7 @@ io.on('connection', (socket) => {
 
     // Save to Firebase only if not in offline mode
     if (!useLocalBackend && db) {
-      await saveReportToFirebase(fullReport);
+      saveReportToFirebase(fullReport);
     }
 
     // Notify everyone
@@ -267,10 +313,10 @@ io.on('connection', (socket) => {
       success: true,
       report: fullReport
     });
-  });
+  }
 
-  // Update report status
-  socket.on('update_report', async (updateData) => {
+  // Update report status handler
+  function handleReportUpdate(socket, updateData) {
     console.log('🔄 Updating report:', updateData.reportId, 'to status:', updateData.status);
 
     const { reportId, status, notes } = updateData;
@@ -288,7 +334,7 @@ io.on('connection', (socket) => {
 
       // Save to Firebase only if not in offline mode
       if (!useLocalBackend && db) {
-        await saveReportToFirebase(updatedReport);
+        saveReportToFirebase(updatedReport);
       }
 
       // Notify all clients
@@ -302,10 +348,10 @@ io.on('connection', (socket) => {
         error: 'Report not found'
       });
     }
-  });
+  }
 
-  // Join report chat
-  socket.on('join_report_chat', (data) => {
+  // Join report chat handler
+  function handleJoinReportChat(socket, data) {
     const { reportId } = data;
     console.log('👥 User joined chat for report:', reportId);
 
@@ -315,10 +361,10 @@ io.on('connection', (socket) => {
 
     // Join the room for this report
     socket.join(`report_${reportId}`);
-  });
+  }
 
-  // Chat message
-  socket.on('report_chat_message', async (messageData) => {
+  // Chat message handler
+  function handleReportChatMessage(socket, messageData) {
     console.log('💬 New chat message for report:', messageData.reportId);
 
     const { reportId } = messageData;
@@ -336,12 +382,18 @@ io.on('connection', (socket) => {
 
     // Save to Firebase only if not in offline mode
     if (!useLocalBackend && db) {
-      await saveMessageToFirebase(message);
+      saveMessageToFirebase(message);
     }
 
     // Broadcast the complete message (with id and timestamp) to all users in this report's room
     io.to(`report_${reportId}`).emit('new_chat_message', message);
-  });
+  }
+
+  // Get reports handler
+  function handleGetReports(socket) {
+    const reportsArray = Array.from(reports.values());
+    socket.emit('reports_update', { reports: reportsArray });
+  }
 
   // Disconnect
   socket.on('disconnect', () => {
