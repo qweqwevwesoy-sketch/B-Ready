@@ -1,40 +1,10 @@
 import { NextRequest } from 'next/server';
+import { firebaseAdminManager } from './firebase-admin-setup';
 
 /**
  * Server-side authentication utilities for API routes
  * These functions should only be used in server-side code
  */
-
-// Initialize Firebase Admin SDK
-let adminAuth: any = null;
-let adminDb: any = null;
-
-const initializeAdminSDK = () => {
-  try {
-    // This will only work if Firebase Admin SDK is properly initialized
-    if (typeof window === 'undefined') {
-      // Server-side only
-      const admin = require('firebase-admin');
-      
-      if (!admin.apps.length) {
-        admin.initializeApp({
-          credential: admin.credential.applicationDefault(),
-        });
-      }
-      
-      adminAuth = admin.auth();
-      adminDb = admin.firestore();
-      console.log('✅ Firebase Admin SDK initialized for server auth');
-    }
-  } catch (error) {
-    console.warn('⚠️ Firebase Admin SDK not available:', error);
-  }
-};
-
-// Initialize on import (server-side only)
-if (typeof window === 'undefined') {
-  initializeAdminSDK();
-}
 
 /**
  * Verify Firebase ID token from request headers
@@ -53,12 +23,9 @@ export const verifyFirebaseToken = async (request: NextRequest): Promise<{ uid: 
     const token = authHeader.substring(7);
     console.log('🔑 Verifying Firebase token...');
 
-    if (!adminAuth) {
-      console.error('❌ Firebase Admin SDK not initialized');
-      return null;
-    }
-
-    const decodedToken = await adminAuth.verifyIdToken(token);
+    // Use Firebase Admin Manager
+    const auth = firebaseAdminManager.getAuthInstance();
+    const decodedToken = await auth.verifyIdToken(token);
     console.log('✅ Firebase token verified successfully for user:', decodedToken.uid);
     return decodedToken;
   } catch (error) {
@@ -74,12 +41,9 @@ export const verifyFirebaseToken = async (request: NextRequest): Promise<{ uid: 
  */
 export const checkAdmin = async (uid: string): Promise<boolean> => {
   try {
-    if (!adminAuth) {
-      console.error('❌ Firebase Admin SDK not initialized for admin check');
-      return false;
-    }
-
-    const user: any = await adminAuth.getUser(uid);
+    // Use Firebase Admin Manager
+    const auth = firebaseAdminManager.getAuthInstance();
+    const user = await auth.getUser(uid);
     const isAdmin = user.customClaims?.admin === true;
     console.log(`👤 Admin check for user ${uid}: ${isAdmin ? '✅ ADMIN' : '❌ NOT ADMIN'}`);
     return isAdmin;

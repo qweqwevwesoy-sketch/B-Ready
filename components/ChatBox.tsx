@@ -1038,14 +1038,31 @@ export function ChatBox({ reportId, category, onClose, onSendMessage, onSendImag
                     {currentReport.location.lat.toFixed(6)}, {currentReport.location.lng.toFixed(6)}
                   </div>
                 )}
+                {currentReport?.location && (
+                  <button
+                    onClick={() => {
+                      const mapUrl = `/real-time-map?lat=${currentReport.location!.lat}&lng=${currentReport.location!.lng}&zoom=15`;
+                      window.open(mapUrl, '_blank');
+                    }}
+                    className="mt-2 px-3 py-1 bg-green-500 text-white rounded-lg hover:bg-green-600 text-xs font-semibold"
+                  >
+                    🗺️ View in Map
+                  </button>
+                )}
               </div>
 
               {/* Contact Info */}
               <div className="bg-gray-50 rounded-lg p-2">
                 <div className="text-xs font-semibold text-gray-600">Contact</div>
-                <div className="text-sm">📞 {currentReport?.userPhone || (reportId?.startsWith('temp_') ? (user?.phone || 'Not provided') : 'Not provided')}</div>
+                <div className="text-sm">
+                  📞 <a href={`tel:${currentReport?.userPhone || user?.phone || ''}`} className="text-blue-600 hover:text-blue-800 underline">
+                    {currentReport?.userPhone || (reportId?.startsWith('temp_') ? (user?.phone || 'Not provided') : 'Not provided')}
+                  </a>
+                </div>
                 <div className="text-xs text-gray-600 mt-1">
-                  {currentReport?.userName ? `${currentReport.userName}@example.com` : (reportId?.startsWith('temp_') ? (user ? `${user.firstName} ${user.lastName}@example.com` : 'Not provided') : 'Not provided')}
+                  ✉️ <a href={`mailto:${user?.email || ''}`} className="text-blue-600 hover:text-blue-800 underline">
+                    {user?.email || 'Not provided'}
+                  </a>
                 </div>
               </div>
 
