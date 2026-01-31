@@ -274,12 +274,16 @@ export async function getFirebaseToken(): Promise<string | null> {
       return null;
     }
 
+    console.log('🔍 Attempting to get Firebase token...');
+
     // Import Firebase Auth dynamically to avoid SSR issues
     const { getAuth } = await import('firebase/auth');
     const { app } = await import('@/lib/firebase');
     
     const auth = getAuth(app);
     const currentUser = auth.currentUser;
+
+    console.log('👤 Current user:', currentUser ? currentUser.uid : 'null');
 
     if (!currentUser) {
       console.warn('⚠️ No Firebase user logged in');
@@ -288,10 +292,19 @@ export async function getFirebaseToken(): Promise<string | null> {
 
     // Get the ID token with force refresh to ensure it's valid
     const token = await currentUser.getIdToken(true);
+    
     console.log('✅ Firebase token retrieved successfully');
+    console.log('🔑 Token length:', token ? token.length : 0);
+    console.log('🔑 Token preview:', token ? token.substring(0, 50) + '...' : 'null');
+    
     return token;
   } catch (error) {
     console.error('❌ Failed to get Firebase token:', error);
+    console.error('❌ Token error details:', {
+      errorType: error instanceof Error ? error.constructor.name : 'Unknown',
+      errorMessage: error instanceof Error ? error.message : 'Unknown error',
+      errorStack: error instanceof Error ? error.stack : 'No stack trace'
+    });
     return null;
   }
 }

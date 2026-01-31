@@ -255,8 +255,11 @@ export default function LandingPage() {
         {/* View Safety Tips Buttons - Moved from Hero and CTA */}
         <div className="flex gap-4 justify-center flex-wrap mt-12">
           <button
-            onClick={() => router.push('/safety-tips')}
-            className="px-8 py-4 bg-transparent border-2 border-primary text-primary rounded-xl font-semibold text-lg hover:bg-primary/10 transition-colors"
+            onClick={() => {
+              console.log('Safety tips button clicked');
+              router.push('/safety-tips');
+            }}
+            className="px-8 py-4 bg-transparent border-2 border-primary text-primary rounded-xl font-semibold text-lg hover:bg-primary/10 transition-colors cursor-pointer"
           >
             🛡️ View Safety Tips
           </button>

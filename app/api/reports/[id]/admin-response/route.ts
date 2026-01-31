@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getFirestore, doc, updateDoc, getDoc } from 'firebase/firestore';
 import { getAuth } from 'firebase/auth';
 import { app } from '@/lib/firebase';
-import { isAdmin } from '@/lib/firebase-admin-utils';
+import { authenticateAdminRequest } from '@/lib/server-auth';
 
 const db = getFirestore(app);
 const auth = getAuth(app);
@@ -21,33 +21,17 @@ export async function POST(
       );
     }
 
-    const token = authHeader.substring(7);
+    // Use the new authentication helper
+    const authResult = await authenticateAdminRequest(request);
     
-    // For server-side API routes, we need to use Firebase Admin SDK
-    // Since we're in a Next.js API route, we can use the admin utils
-    let decodedToken: { uid: string; [key: string]: any };
-    try {
-      // Use Firebase Admin SDK to verify token (this should work in server-side context)
-      const admin = await import('firebase-admin');
-      if (!admin.apps.length) {
-        admin.initializeApp();
-      }
-      decodedToken = await admin.auth().verifyIdToken(token);
-    } catch (error) {
+    if (!authResult.success) {
       return NextResponse.json(
-        { success: false, error: 'Unauthorized: Invalid token' },
-        { status: 401 }
+        { success: false, error: authResult.error || 'Authentication failed' },
+        { status: authResult.error?.includes('Unauthorized') ? 401 : 403 }
       );
     }
 
-    // Check if the user is an admin using the admin utils
-    const isUserAdmin = await isAdmin(decodedToken.uid);
-    if (!isUserAdmin) {
-      return NextResponse.json(
-        { success: false, error: 'Forbidden: Admin access required' },
-        { status: 403 }
-      );
-    }
+    const decodedToken = authResult.decodedToken!;
 
     const reportId = params.id;
     const reportRef = doc(db, 'reports', reportId);

@@ -665,14 +665,20 @@ export default function RealTimeMapContent() {
       // Get current admin location
       const adminLocation = userLocation || await getCurrentLocation();
 
-      // Get Firebase authentication token
-      const firebaseToken = await getFirebaseToken();
-      
-      if (!firebaseToken) {
-        console.error('❌ Failed to get Firebase authentication token');
-        alert('Authentication failed. Please refresh the page and try again.');
-        return;
-      }
+    // Get Firebase authentication token
+    console.log('🔍 Starting admin response with report ID:', reportId);
+    console.log('🔍 Response action:', responseAction);
+    console.log('🔍 Admin user:', user);
+    
+    const firebaseToken = await getFirebaseToken();
+    
+    console.log('🔑 Firebase token result:', firebaseToken ? 'SUCCESS' : 'FAILED');
+    
+    if (!firebaseToken) {
+      console.error('❌ Failed to get Firebase authentication token');
+      alert('Authentication failed. Please refresh the page and try again.');
+      return;
+    }
 
       if (responseAction === 'en_route') {
         // Calculate route from admin location to incident

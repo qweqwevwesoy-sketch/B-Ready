@@ -365,14 +365,6 @@ export function EmergencyContacts({ userLocation, variant = 'display' }: Emergen
                     )}
                   </div>
                 </div>
-                <div className="flex flex-col items-end gap-2">
-                  <button
-                    onClick={() => handleCallStation(station.phone || station.contact)}
-                    className="px-3 py-1 bg-green-500 text-white rounded-lg hover:bg-green-600 text-sm"
-                  >
-                    📞 Call
-                  </button>
-                </div>
               </div>
             </div>
           ))}

@@ -328,14 +328,7 @@ function DashboardContent({ searchParams }: { searchParams: URLSearchParams }) {
       <main className="max-w-7xl mx-auto px-4 py-8">
 
         {/* Reports Section */}
-        <div ref={(el) => {
-          if (el && user?.role === 'resident') {
-            // Auto-scroll to reports section for residents after 3 seconds
-            setTimeout(() => {
-              el.scrollIntoView({ behavior: 'smooth', block: 'start' });
-            }, 3000);
-          }
-        }} className="bg-white/95 backdrop-blur-lg rounded-2xl p-8 shadow-xl">
+        <div className="bg-white/95 backdrop-blur-lg rounded-2xl p-8 shadow-xl">
           <div className="flex justify-between items-center mb-6 flex-wrap gap-4">
             <div>
               <h1 className="text-3xl font-bold mb-2">
