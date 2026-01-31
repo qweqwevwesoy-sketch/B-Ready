@@ -226,7 +226,10 @@ io.on('connection', (socket) => {
   const decompressMessage = (data) => {
     try {
       if (typeof data === 'string') {
-        return JSON.parse(data);
+        // Only try to parse if it looks like JSON
+        if (data.trim().startsWith('{') || data.trim().startsWith('[')) {
+          return JSON.parse(data);
+        }
       }
       return data;
     } catch (error) {
@@ -237,9 +240,15 @@ io.on('connection', (socket) => {
 
   // Handle all events with decompression
   socket.onAny((eventName, data) => {
-    const decompressedData = decompressMessage(data);
-    console.log(`📡 Received event "${eventName}":`, decompressedData);
-    handleSocketEvent(socket, eventName, decompressedData);
+    // Don't decompress server-to-client events (like reports_update)
+    if (eventName === 'reports_update' || eventName === 'auth_success' || eventName === 'report_submitted') {
+      console.log(`📡 Received server event "${eventName}":`, data);
+      handleSocketEvent(socket, eventName, data);
+    } else {
+      const decompressedData = decompressMessage(data);
+      console.log(`📡 Received event "${eventName}":`, decompressedData);
+      handleSocketEvent(socket, eventName, decompressedData);
+    }
   });
 
   // Helper function to handle socket events

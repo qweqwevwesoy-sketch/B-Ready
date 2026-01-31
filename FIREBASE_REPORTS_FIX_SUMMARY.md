@@ -121,8 +121,9 @@ Expected output:
 
 ### Message Compression/Decompression
 - **Client**: Compresses messages with `JSON.stringify()` before sending
-- **Server**: Decompresses messages with `JSON.parse()` on all events
-- **Fix**: Added `decompressMessage()` function to handle compressed data
+- **Server**: Decompresses messages with `JSON.parse()` on client-to-server events only
+- **Fix**: Added smart decompression logic to avoid parsing server-to-client events as JSON
+- **Critical Fix**: Server events like `reports_update` are sent as plain objects, not compressed JSON
 
 ### Data Flow Architecture
 ```
