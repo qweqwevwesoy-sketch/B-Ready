@@ -208,6 +208,11 @@ async function initializeServer() {
     await loadReportsFromFirebase();
     await loadMessagesFromFirebase();
     await loadStationsFromFirebase();
+    
+    // Broadcast loaded reports to all connected clients
+    const reportsArray = Array.from(reports.values());
+    console.log(`📡 Broadcasting ${reportsArray.length} reports to all connected clients`);
+    io.emit('reports_update', { reports: reportsArray });
   } else {
     console.log('📱 Offline mode: Skipping Firebase data loading');
   }
@@ -229,8 +234,10 @@ io.on('connection', (socket) => {
       message: 'Authentication successful'
     });
 
-    // Send existing reports
-    socket.emit('initial_reports', Array.from(reports.values()));
+    // Send existing reports to newly authenticated client
+    const reportsArray = Array.from(reports.values());
+    console.log(`📡 Sending ${reportsArray.length} reports to client ${socket.id}`);
+    socket.emit('reports_update', { reports: reportsArray });
   });
 
   // Submit report

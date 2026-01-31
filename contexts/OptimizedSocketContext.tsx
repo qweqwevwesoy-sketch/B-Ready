@@ -141,8 +141,11 @@ export const OptimizedSocketProvider: React.FC<{ children: React.ReactNode }> = 
     const handleReportsUpdate = (data: { reports: Report[] }) => {
       try {
         if (data && Array.isArray(data.reports)) {
+          console.log('📡 Received reports update:', data.reports.length, 'reports');
           setReports(data.reports);
           recordMessage();
+        } else {
+          console.warn('📡 Invalid reports data received:', data);
         }
       } catch (error) {
         console.error('Error handling reports update:', error);
@@ -314,7 +317,7 @@ export const OptimizedSocketProvider: React.FC<{ children: React.ReactNode }> = 
       emit('submit_report', {
         ...reportData,
         userId: user?.uid,
-        userName: user ? `${user.firstName} ${user.lastName}` : (user && typeof user === 'object' && 'email' in user ? (user as { email?: string }).email : null) || 'Anonymous',
+        userName: user ? `${user.firstName} ${user.lastName}` : 'Anonymous',
         userRole: user?.role || 'resident',
       });
       
@@ -324,7 +327,7 @@ export const OptimizedSocketProvider: React.FC<{ children: React.ReactNode }> = 
         id: `temp_${Date.now()}`,
         status: 'current' as ReportStatus,
         timestamp: new Date().toISOString(),
-        userName: user ? `${user.firstName} ${user.lastName}` : user?.email || 'Anonymous',
+        userName: user ? `${user.firstName} ${user.lastName}` : 'Anonymous',
         userId: user?.uid || '',
         userRole: user?.role || 'resident',
         severity: reportData.severity || 'medium',

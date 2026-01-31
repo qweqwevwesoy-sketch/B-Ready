@@ -77,6 +77,40 @@ function DashboardContent({ searchParams }: { searchParams: URLSearchParams }) {
   });
   const isOffline = useOfflineStatus();
 
+  // Filtered reports for each column
+  const filteredApprovedReports = filterReports(
+    reports.filter((r) => r.status === 'approved'),
+    approvedSearchTerm,
+    approvedFilters
+  );
+  
+  const filteredCurrentReports = filterReports(
+    reports.filter((r) => r.status === 'current'),
+    currentSearchTerm,
+    currentFilters
+  );
+  
+  const filteredThirdColumnReports = filterReports(
+    user.role === 'admin'
+      ? reports.filter((r) => r.status === 'pending')
+      : reports.filter((r) => r.userId === user.uid),
+    thirdColumnSearchTerm,
+    thirdColumnFilters
+  );
+
+  // Debug logging to verify reports are being received
+  useEffect(() => {
+    console.log('📡 Dashboard reports state:', {
+      totalReports: reports.length,
+      approvedReports: filteredApprovedReports.length,
+      currentReports: filteredCurrentReports.length,
+      thirdColumnReports: filteredThirdColumnReports.length,
+      connected,
+      socketLoading,
+      socketError
+    });
+  }, [reports, filteredApprovedReports, filteredCurrentReports, filteredThirdColumnReports, connected, socketLoading, socketError]);
+
   // Unified offline/online functionality - dashboard works in both modes
   useEffect(() => {
     // Always try to sync when coming back online
@@ -279,27 +313,6 @@ function DashboardContent({ searchParams }: { searchParams: URLSearchParams }) {
   }
 
   if (!user) return null;
-
-  // Filtered reports for each column
-  const filteredApprovedReports = filterReports(
-    reports.filter((r) => r.status === 'approved'),
-    approvedSearchTerm,
-    approvedFilters
-  );
-  
-  const filteredCurrentReports = filterReports(
-    reports.filter((r) => r.status === 'current'),
-    currentSearchTerm,
-    currentFilters
-  );
-  
-  const filteredThirdColumnReports = filterReports(
-    user.role === 'admin'
-      ? reports.filter((r) => r.status === 'pending')
-      : reports.filter((r) => r.userId === user.uid),
-    thirdColumnSearchTerm,
-    thirdColumnFilters
-  );
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-200">
