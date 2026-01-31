@@ -69,8 +69,10 @@ export function ReportCard({
             {getStatusBadge()}
           </div>
           <p className="text-gray-600 text-sm mb-2">{report.address || 'Location not specified'}</p>
-          <p className="text-gray-500 text-xs mb-3">{report.userName || 'Resident'}</p>
-          {report.userPhone && (
+          <p className="text-gray-500 text-xs mb-3">
+            {report.isAnonymous ? 'Anonymous' : (report.userName || 'Resident')}
+          </p>
+          {!report.isAnonymous && report.userPhone && (
             <p className="text-gray-500 text-xs mb-3">📞 {report.userPhone}</p>
           )}
           

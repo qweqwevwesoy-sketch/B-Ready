@@ -343,8 +343,59 @@ export default function ProfilePage() {
             </p>
           </div>
 
-          <div className="mt-8 pt-8 border-t border-gray-200">
+            <div className="mt-8 pt-8 border-t border-gray-200">
             <h3 className="text-xl font-bold mb-4">Account Security</h3>
+            
+            <div className="bg-gray-50 p-6 rounded-xl mb-6">
+              <div className="flex items-center justify-between mb-4">
+                <div>
+                  <h4 className="font-semibold">Anonymous Mode</h4>
+                  <p className="text-sm text-gray-600">Enable to hide your identity in reports and chats</p>
+                </div>
+                <label className="relative inline-flex items-center cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={user.isAnonymous || false}
+                    onChange={async (e) => {
+                      const isAnonymous = e.target.checked;
+                      if (isAnonymous) {
+                        const confirmed = confirm(
+                          'Anonymous Mode will hide your name and profile picture from other residents in reports and chats. ' +
+                          'Only administrators will be able to see your identity. Continue?'
+                        );
+                        if (!confirmed) {
+                          e.target.checked = false;
+                          return;
+                        }
+                      }
+                      try {
+                        await updateProfile({ isAnonymous });
+                        notificationManager.success(
+                          isAnonymous ? 'Anonymous mode enabled' : 'Anonymous mode disabled'
+                        );
+                      } catch (error) {
+                        const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
+                        notificationManager.error('Error updating anonymous setting: ' + errorMessage);
+                      }
+                    }}
+                    className="sr-only"
+                  />
+                  <div className={`w-11 h-6 rounded-full transition-colors ${user.isAnonymous ? 'bg-primary' : 'bg-gray-300'}`}>
+                    <div className="dot absolute left-1 top-1 bg-white w-4 h-4 rounded-full transition-transform duration-200 ease-in-out" style={{ transform: user.isAnonymous ? 'translateX(20px)' : 'translateX(0)' }}></div>
+                  </div>
+                </label>
+              </div>
+              <div className="text-xs text-gray-500">
+                <p>When enabled:</p>
+                <ul className="list-disc list-inside mt-1 space-y-1">
+                  <li>Other residents will see "Anonymous" instead of your name in reports</li>
+                  <li>Your profile picture will be hidden from other residents</li>
+                  <li>Only administrators can see your real identity</li>
+                  <li>Your anonymity is maintained in chat conversations</li>
+                </ul>
+              </div>
+            </div>
+
             <div className="flex gap-4">
               <button
                 onClick={handleChangePassword}

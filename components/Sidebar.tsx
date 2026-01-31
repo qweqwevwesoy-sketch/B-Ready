@@ -100,7 +100,7 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
               </button>
             </div>
 
-            <div className="bg-white/20 p-4 rounded-lg mb-6 border-l-4 border-white/50">
+            <div className="bg-custom-yellow-100 p-4 rounded-lg mb-6 border-l-4 border-custom-yellow-600">
               <div className="flex items-center gap-3">
                 {user.profilePictureUrl ? (
                   <>
@@ -152,8 +152,8 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
                   onClick={() => handleNavigation(item.path)}
                   className={`w-full text-left p-4 rounded-lg transition-all flex items-center gap-3 ${
                     pathname === item.path
-                      ? 'bg-white/20 text-white border-l-4 border-white/50'
-                      : 'hover:bg-white/10 text-white'
+                      ? 'bg-custom-yellow-100 text-white border-l-4 border-custom-yellow-600'
+                      : 'hover:bg-custom-yellow-50 text-white'
                   }`}
                 >
                   <span className="text-xl">{item.icon}</span>

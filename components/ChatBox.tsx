@@ -759,10 +759,13 @@ export function ChatBox({ reportId, category, onClose, onSendMessage, onSendImag
             >
               <div className="flex gap-3">
                 {/* Profile Picture for received messages */}
-                {msg.type === 'received' && (
+              {msg.type === 'received' && (
                   <div className="flex-shrink-0">
                     <div className="w-8 h-8 rounded-full bg-gradient-to-br from-primary to-primary-dark text-white flex items-center justify-center font-bold text-sm">
-                      {msg.sender === 'B-READY Support' ? '🚨' : msg.sender.charAt(0).toUpperCase()}
+                      {msg.sender === 'B-READY Support' ? '🚨' : 
+                       msg.sender === 'Admin' ? '🚨' : 
+                       msg.sender === 'Anonymous User' ? '👤' :
+                       msg.sender.charAt(0).toUpperCase()}
                     </div>
                   </div>
                 )}
@@ -789,7 +792,8 @@ export function ChatBox({ reportId, category, onClose, onSendMessage, onSendImag
                 {/* Profile Picture for sent messages */}
                 {msg.type === 'sent' && (
                   <div className="flex-shrink-0">
-                    {user?.profilePictureUrl ? (
+                    {/* Hide profile picture for anonymous users */}
+                    {!user?.isAnonymous && user?.profilePictureUrl ? (
                       // eslint-disable-next-line @next/next/no-img-element
                       <img
                         src={user.profilePictureUrl}
@@ -807,9 +811,9 @@ export function ChatBox({ reportId, category, onClose, onSendMessage, onSendImag
                     ) : null}
                     <div
                       className="w-8 h-8 rounded-full bg-gradient-to-br from-primary to-primary-dark text-white flex items-center justify-center font-bold text-sm sent-avatar-fallback"
-                      style={{ display: user?.profilePictureUrl ? 'none' : 'flex' }}
+                      style={{ display: (!user?.isAnonymous && user?.profilePictureUrl) ? 'none' : 'flex' }}
                     >
-                      {user?.firstName.charAt(0)}{user?.lastName.charAt(0)}
+                      {!user?.isAnonymous ? `${user?.firstName.charAt(0)}${user?.lastName.charAt(0)}` : '👤'}
                     </div>
                   </div>
                 )}
@@ -1043,7 +1047,7 @@ export function ChatBox({ reportId, category, onClose, onSendMessage, onSendImag
                   <button
                     onClick={() => {
                       const mapUrl = `/real-time-map?lat=${currentReport.location!.lat}&lng=${currentReport.location!.lng}&zoom=15`;
-                      router.push(mapUrl);
+                      window.location.href = mapUrl;
                     }}
                     className="mt-2 px-3 py-1 bg-blue-500 text-white rounded-lg hover:bg-blue-600 text-xs font-semibold"
                   >

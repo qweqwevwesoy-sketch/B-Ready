@@ -11,6 +11,7 @@ export interface User {
   employeeId?: string;
   role: UserRole;
   profilePictureUrl?: string;
+  isAnonymous?: boolean;
   createdAt?: Date;
   updatedAt?: Date;
 }
@@ -41,6 +42,7 @@ export interface Report {
   imageData?: string;
   icon?: string;
   isTemporary?: boolean;
+  isAnonymous?: boolean;
   notes?: string;
   
   // Admin response tracking
@@ -60,6 +62,7 @@ export interface ChatMessage {
   userName: string;
   userRole: UserRole;
   timestamp: string;
+  isAnonymous?: boolean;
 }
 
 export interface Category {
