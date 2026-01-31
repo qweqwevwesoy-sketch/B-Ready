@@ -3,7 +3,6 @@
 import { useEffect, useState, useCallback, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
-import { useSocketContext } from '@/contexts/SocketContext';
 import { Header } from '@/components/Header';
 import { FAB } from '@/components/FAB';
 import { ReportCard } from '@/components/ReportCard';
@@ -36,7 +35,18 @@ function SearchParamsWrapper() {
 function DashboardContent({ searchParams }: { searchParams: URLSearchParams }) {
   const router = useRouter();
   const { user, loading: authLoading } = useAuth();
-  const { socket, connected, connectionError, reports, submitReport, updateReport, joinReportChat, sendChatMessage, chatMessages, setChatMessages } = useSocketContext();
+  
+  // Socket context state - initialize with default values
+  const [socket, setSocket] = useState<any>(null);
+  const [connected, setConnected] = useState(false);
+  const [connectionError, setConnectionError] = useState<string | null>(null);
+  const [reports, setReports] = useState<any[]>([]);
+  const [submitReport, setSubmitReport] = useState<((reportData: any) => void) | null>(null);
+  const [updateReport, setUpdateReport] = useState<((reportId: string, status: string, notes?: string) => void) | null>(null);
+  const [joinReportChat, setJoinReportChat] = useState<((reportId: string) => void) | null>(null);
+  const [sendChatMessage, setSendChatMessage] = useState<((reportId: string, text: string, userName: string, userRole: string, imageData?: string) => void) | null>(null);
+  const [chatMessages, setChatMessages] = useState<any>({});
+  const [setChatMessagesState, setSetChatMessages] = useState<((messages: any) => void) | null>(null);
   const isWebSocketAvailable = socket !== null;
   const [selectedCategory, setSelectedCategory] = useState<Category | null>(null);
   const [showChatbox, setShowChatbox] = useState(false);
@@ -64,6 +74,29 @@ function DashboardContent({ searchParams }: { searchParams: URLSearchParams }) {
     status: 'all'
   });
   const isOffline = useOfflineStatus();
+
+  // Load SocketContext dynamically to avoid SSR issues
+  useEffect(() => {
+    async function loadSocketContext() {
+      try {
+        const { useSocketContext } = await import('@/contexts/SocketContext');
+        const context = useSocketContext();
+        setSocket(context.socket);
+        setConnected(context.connected);
+        setConnectionError(context.connectionError);
+        setReports(context.reports || []);
+        setSubmitReport(() => context.submitReport);
+        setUpdateReport(() => context.updateReport);
+        setJoinReportChat(() => context.joinReportChat);
+        setSendChatMessage(() => context.sendChatMessage);
+        setChatMessages(context.chatMessages || {});
+        setSetChatMessages(() => context.setChatMessages);
+      } catch (error) {
+        console.warn('SocketContext not available during SSR:', error);
+      }
+    }
+    loadSocketContext();
+  }, []);
 
   // Handle report submission to transfer chat messages from temp ID to real ID
   useEffect(() => {
