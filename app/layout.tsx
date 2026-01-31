@@ -2,12 +2,12 @@ import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import "./globals.css";
 import { AuthProvider } from "@/contexts/AuthContext";
-import { OptimizedSocketProvider } from "@/contexts/OptimizedSocketContext";
 import { ModalManagerProvider } from "@/contexts/ModalManager";
 import { NotificationContainer } from "@/components/NotificationManager";
 import { ServiceWorker } from "@/components/ServiceWorker";
 import WebSocketConfig from "@/components/WebSocketConfig";
 import SiteBackground from "@/components/SiteBackground";
+import SocketProviderWrapper from "@/components/SocketProviderWrapper";
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -47,16 +47,18 @@ export default function RootLayout({
           <body className={inter.className} suppressHydrationWarning>
             <SiteBackground />
             <AuthProvider>
-              <OptimizedSocketProvider>
+              <SocketProviderWrapper>
                 <ModalManagerProvider>
                   {children}
                   <NotificationContainer />
                   <ServiceWorker />
                   <WebSocketConfig />
                 </ModalManagerProvider>
-              </OptimizedSocketProvider>
+              </SocketProviderWrapper>
             </AuthProvider>
           </body>
     </html>
   );
 }
+
+

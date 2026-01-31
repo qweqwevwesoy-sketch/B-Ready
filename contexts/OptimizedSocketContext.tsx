@@ -18,7 +18,15 @@ interface OptimizedSocketContextType {
   error: string | null;
   
   // Chat functionality
-  chatMessages: any[];
+  chatMessages: Array<{
+    id: string;
+    text: string;
+    userName: string;
+    userRole: string;
+    timestamp: string;
+    reportId: string;
+    imageData?: string;
+  }>;
   chatLoading: boolean;
   currentChatReportId: string | null;
   
@@ -75,12 +83,34 @@ export const OptimizedSocketProvider: React.FC<{ children: React.ReactNode }> = 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   
-  const [chatMessages, setChatMessages] = useState<any[]>([]);
+  const [chatMessages, setChatMessages] = useState<Array<{
+    id: string;
+    text: string;
+    userName: string;
+    userRole: string;
+    timestamp: string;
+    reportId: string;
+    imageData?: string;
+  }>>([]);
   const [chatLoading, setChatLoading] = useState(false);
   const [currentChatReportId, setCurrentChatReportId] = useState<string | null>(null);
   
   const reportsRef = useRef<Report[]>([]);
-  const chatMessagesRef = useRef<any[]>([]);
+  const chatMessagesRef = useRef<Array<{
+    id: string;
+    text: string;
+    userName: string;
+    userRole: string;
+    timestamp: string;
+    reportId: string;
+    imageData?: string;
+  }>>([]);
+  const isClientSide = useRef(false);
+
+  // Mark as client-side after first render
+  useEffect(() => {
+    isClientSide.current = true;
+  }, []);
 
   // Update refs when state changes
   useEffect(() => {
@@ -105,7 +135,7 @@ export const OptimizedSocketProvider: React.FC<{ children: React.ReactNode }> = 
   useEffect(() => {
     if (!isConnected) return;
 
-    const handleReportsUpdate = (data: any) => {
+    const handleReportsUpdate = (data: { reports: Report[] }) => {
       try {
         if (data && Array.isArray(data.reports)) {
           setReports(data.reports);
@@ -116,7 +146,7 @@ export const OptimizedSocketProvider: React.FC<{ children: React.ReactNode }> = 
       }
     };
 
-    const handleNewReport = (data: any) => {
+    const handleNewReport = (data: { report: Report }) => {
       try {
         if (data && data.report) {
           setReports(prev => {
@@ -130,7 +160,7 @@ export const OptimizedSocketProvider: React.FC<{ children: React.ReactNode }> = 
       }
     };
 
-    const handleReportUpdate = (data: any) => {
+    const handleReportUpdate = (data: { report: Report }) => {
       try {
         if (data && data.report) {
           setReports(prev => {
@@ -145,7 +175,15 @@ export const OptimizedSocketProvider: React.FC<{ children: React.ReactNode }> = 
       }
     };
 
-    const handleChatMessage = (data: any) => {
+    const handleChatMessage = (data: { message: {
+      id: string;
+      text: string;
+      userName: string;
+      userRole: string;
+      timestamp: string;
+      reportId: string;
+      imageData?: string;
+    }; reportId: string }) => {
       try {
         if (data && data.message && data.reportId === currentChatReportId) {
           setChatMessages(prev => [...prev, data.message]);
@@ -156,7 +194,15 @@ export const OptimizedSocketProvider: React.FC<{ children: React.ReactNode }> = 
       }
     };
 
-    const handleChatHistory = (data: any) => {
+    const handleChatHistory = (data: { messages: Array<{
+      id: string;
+      text: string;
+      userName: string;
+      userRole: string;
+      timestamp: string;
+      reportId: string;
+      imageData?: string;
+    }> }) => {
       try {
         if (data && Array.isArray(data.messages)) {
           setChatMessages(data.messages);
@@ -169,7 +215,7 @@ export const OptimizedSocketProvider: React.FC<{ children: React.ReactNode }> = 
       }
     };
 
-    const handleConnectionError = (error: any) => {
+    const handleConnectionError = (error: { message?: string }) => {
       console.error('Socket connection error:', error);
       setError('Connection error: ' + (error?.message || 'Unknown error'));
     };

@@ -59,6 +59,25 @@ const nextConfig = {
       ],
     },
   ],
+  // SSR Configuration to handle WebSocket connections gracefully
+  serverRuntimeConfig: {
+    // Server-side configuration
+    webSocketUrl: process.env.NEXT_PUBLIC_SOCKET_URL || 'http://localhost:3001',
+  },
+  publicRuntimeConfig: {
+    // Client-side configuration
+    webSocketUrl: process.env.NEXT_PUBLIC_SOCKET_URL || 'http://localhost:3001',
+  },
+  // Handle dynamic imports for WebSocket-dependent components
+  async rewrites() {
+    return [
+      {
+        source: '/api/socket',
+        destination: process.env.NEXT_PUBLIC_SOCKET_URL || 'http://localhost:3001',
+      },
+    ];
+  },
 }
 
 module.exports = nextConfig
+ 

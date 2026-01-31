@@ -1,6 +1,6 @@
 'use client';
 
-import React, { createContext, useContext, useEffect, useState, useCallback } from 'react';
+import React, { createContext, useContext, useEffect, useState, useCallback, useRef } from 'react';
 import { useSocketConnection, socketEvents } from '@/lib/socket-client';
 import type { Socket } from 'socket.io-client';
 import type { Report } from '@/types';
@@ -30,6 +30,12 @@ export function SocketProvider({ children }: { children: React.ReactNode }) {
 
   const [reports, setReports] = useState<Report[]>([]);
   const [chatMessages, setChatMessages] = useState<{ [reportId: string]: Array<{ id: string; text: string; userName: string; userRole: string; timestamp: string; reportId: string }> }>({});
+  const isClientSide = useRef(false);
+
+  // Mark as client-side after first render
+  useEffect(() => {
+    isClientSide.current = true;
+  }, []);
 
   useEffect(() => {
     if (isOfflineMode) {
