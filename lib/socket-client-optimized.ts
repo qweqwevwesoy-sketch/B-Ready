@@ -318,7 +318,30 @@ class SocketConnectionPool {
         }
         
         if (processedData) {
-          callback(processedData);
+          // For chat messages, process immediately for real-time updates
+          if (event === 'report_chat_message' && typeof processedData === 'object') {
+            // Ensure we have the proper message structure
+            const messageData = processedData as {
+              message?: {
+                id: string;
+                text: string;
+                userName: string;
+                userRole: string;
+                timestamp: string;
+                reportId: string;
+                imageData?: string;
+              };
+              reportId?: string;
+            };
+            if (messageData && messageData.message) {
+              callback(messageData);
+            } else {
+              // Handle direct message format
+              callback(processedData);
+            }
+          } else {
+            callback(processedData);
+          }
         }
       } catch (error) {
         console.error('Failed to handle message:', error);

@@ -63,9 +63,19 @@ export function ChatBox({ reportId, category, onClose, onSendMessage, onSendImag
       onlineMessages = contextMessages.map((msg) => {
         const isCurrentUser = user && msg.userName === `${user.firstName} ${user.lastName}`;
 
+        // Determine sender name based on role and anonymity
+        let senderName: string;
+        if (isCurrentUser) {
+          senderName = 'You';
+        } else if (msg.userRole === 'admin') {
+          senderName = 'Admin';
+        } else {
+          senderName = msg.userName || 'User';
+        }
+
         return {
           text: msg.text,
-          sender: isCurrentUser ? 'You' : msg.userName || 'User',
+          sender: senderName,
           time: new Date(msg.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
           type: (isCurrentUser ? 'sent' : 'received') as 'sent' | 'received',
           imageData: msg.imageData,
@@ -607,6 +617,37 @@ export function ChatBox({ reportId, category, onClose, onSendMessage, onSendImag
       setMessage('');
     }
   };
+
+  // Add real-time message handler for immediate updates
+  useEffect(() => {
+    if (!reportId) return;
+
+    // Listen for real-time message updates
+    const handleRealTimeMessage = (data: {
+      message: {
+        text: string;
+        userName: string;
+        timestamp: string;
+        imageData?: string;
+      };
+      reportId: string;
+    }) => {
+      if (data && data.message && data.reportId === reportId) {
+        // Add message immediately for real-time experience
+        const newMessage = {
+          text: data.message.text,
+          sender: data.message.userName === user?.uid ? 'You' : data.message.userName,
+          time: new Date(data.message.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+          type: data.message.userName === user?.uid ? 'sent' : 'received' as 'sent' | 'received',
+          imageData: data.message.imageData,
+        };
+        setLocalMessages(prev => [...prev, newMessage]);
+      }
+    };
+
+    // This would need to be connected to the socket context
+    // For now, we'll rely on the existing socket context updates
+  }, [reportId, user]);
 
   // Get proper z-index values from ModalManager
   const { getModalZIndex } = useModalManager();

@@ -295,12 +295,67 @@ export const OptimizedSocketProvider: React.FC<{ children: React.ReactNode }> = 
           return;
         }
 
-        if (messageData && messageData.message && messageData.reportId === currentChatReportId) {
-          setChatMessages(prev => [...prev, messageData.message]);
-          recordMessage();
+        if (messageData && messageData.message) {
+          // Always update messages for the specific report
+          if (messageData.reportId === currentChatReportId) {
+            setChatMessages(prev => [...prev, messageData.message]);
+            recordMessage();
+          }
+          // Also update if we're in a general chat context
+          else if (!currentChatReportId) {
+            setChatMessages(prev => [...prev, messageData.message]);
+            recordMessage();
+          }
         }
       } catch (error) {
         console.error('Error handling chat message:', error);
+      }
+    };
+
+    // Add a new handler for real-time message updates
+    const handleRealTimeMessage = (data: unknown) => {
+      try {
+        let messageData: {
+          id: string;
+          text: string;
+          userName: string;
+          userRole: string;
+          timestamp: string;
+          reportId: string;
+          imageData?: string;
+        };
+        
+        if (typeof data === 'string') {
+          try {
+            messageData = JSON.parse(data);
+          } catch (parseError) {
+            console.warn('📡 Failed to parse real-time message data as JSON:', data);
+            return;
+          }
+        } else {
+          messageData = data as {
+            id: string;
+            text: string;
+            userName: string;
+            userRole: string;
+            timestamp: string;
+            reportId: string;
+            imageData?: string;
+          };
+        }
+
+        if (messageData) {
+          // Update messages immediately for real-time updates
+          setChatMessages(prev => {
+            // Check if message already exists to avoid duplicates
+            const exists = prev.some(msg => msg.id === messageData.id);
+            if (exists) return prev;
+            return [...prev, messageData];
+          });
+          recordMessage();
+        }
+      } catch (error) {
+        console.error('Error handling real-time message:', error);
       }
     };
 

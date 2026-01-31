@@ -152,7 +152,7 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
                   onClick={() => handleNavigation(item.path)}
                   className={`w-full text-left p-4 rounded-lg transition-all flex items-center gap-3 ${
                     pathname === item.path
-                      ? 'bg-custom-yellow-100 text-white border-l-4 border-custom-yellow-600'
+                      ? 'bg-custom-yellow-600 text-white border-l-4 border-custom-yellow-500'
                       : 'hover:bg-custom-yellow-50 text-white'
                   }`}
                 >
@@ -168,7 +168,7 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
         <div className="flex-shrink-0 mt-auto p-6 border-t border-gray-200">
           <button
             onClick={handleLogout}
-            className="w-full text-left p-4 rounded-lg transition-all flex items-center gap-3 hover:bg-white/10 text-white"
+            className="w-full text-left p-4 rounded-lg transition-all flex items-center gap-3 hover:bg-white/10 text-red-500"
           >
             <span className="text-xl">🚪</span>
             <span>Logout</span>
