@@ -91,9 +91,9 @@ function DashboardContent({ searchParams }: { searchParams: URLSearchParams }) {
   );
   
   const filteredThirdColumnReports = filterReports(
-    user.role === 'admin'
+    user?.role === 'admin'
       ? reports.filter((r) => r.status === 'pending')
-      : reports.filter((r) => r.userId === user.uid),
+      : reports.filter((r) => r.userId === user?.uid),
     thirdColumnSearchTerm,
     thirdColumnFilters
   );
