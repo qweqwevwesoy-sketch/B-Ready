@@ -339,6 +339,9 @@ class SocketConnectionPool {
               // Handle direct message format
               callback(processedData);
             }
+          } else if (event === 'new_chat_message' || event === 'real_time_message') {
+            // Handle direct chat messages for immediate updates
+            callback(processedData);
           } else {
             callback(processedData);
           }

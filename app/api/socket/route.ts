@@ -104,7 +104,11 @@ function initSocketIO(httpServer: NetServer) {
       }
       messages.get(reportId).push(message);
 
+      // Emit to all clients in the report room for real-time updates
       io?.to(`report_${reportId}`).emit('new_chat_message', message);
+      
+      // Also emit to all clients for general real-time updates
+      io?.emit('real_time_message', message);
     });
 
     socket.on('disconnect', () => {
