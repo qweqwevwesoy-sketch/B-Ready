@@ -301,11 +301,21 @@ class SocketConnectionPool {
   public on(event: string, callback: (data: unknown) => void) {
     if (!this.socket) return () => {};
 
-    const handler = (data: string) => {
+    const handler = (data: unknown) => {
       try {
-        const decompressedData = decompressMessage(data);
-        if (decompressedData) {
-          callback(decompressedData);
+        let processedData: unknown;
+        
+        // Handle both compressed (string) and uncompressed (object) messages
+        if (typeof data === 'string') {
+          // Try to decompress if it's a string
+          processedData = decompressMessage(data);
+        } else {
+          // If it's already an object, use it directly
+          processedData = data;
+        }
+        
+        if (processedData) {
+          callback(processedData);
         }
       } catch (error) {
         console.error('Failed to handle message:', error);

@@ -134,29 +134,91 @@ export const OptimizedSocketProvider: React.FC<{ children: React.ReactNode }> = 
     }
   }, [user, connect, disconnect, startConnectionTimer]);
 
+  // Authenticate user and request initial reports when connected
+  useEffect(() => {
+    if (!isConnected || !user) return;
+
+    const authenticateAndFetchReports = async () => {
+      try {
+        console.log('🔐 Authenticating user:', user.email);
+        
+        // Authenticate with the server
+        emit('authenticate', {
+          email: user.email,
+          userId: user.uid,
+          role: user.role,
+        });
+
+        // Request initial reports after authentication
+        console.log('📋 Requesting initial reports');
+        emit('get_reports', {});
+
+      } catch (error) {
+        console.error('Error during authentication or report fetching:', error);
+        setError('Failed to authenticate or fetch reports');
+      }
+    };
+
+    authenticateAndFetchReports();
+  }, [isConnected, user, emit]);
+
   // Set up socket event listeners
   useEffect(() => {
     if (!isConnected) return;
 
-    const handleReportsUpdate = (data: { reports: Report[] }) => {
+    const handleReportsUpdate = (data: unknown) => {
       try {
-        if (data && Array.isArray(data.reports)) {
-          console.log('📡 Received reports update:', data.reports.length, 'reports');
-          setReports(data.reports);
-          recordMessage();
+        // Handle both direct objects and stringified JSON
+        let reportsData: { reports: Report[] };
+        
+        if (typeof data === 'string') {
+          try {
+            reportsData = JSON.parse(data);
+          } catch (parseError) {
+            console.warn('📡 Failed to parse reports data as JSON:', data);
+            return;
+          }
+        } else if (data && typeof data === 'object' && 'reports' in data) {
+          reportsData = data as { reports: Report[] };
         } else {
           console.warn('📡 Invalid reports data received:', data);
+          return;
+        }
+
+        if (reportsData && Array.isArray(reportsData.reports)) {
+          console.log('📡 Received reports update:', reportsData.reports.length, 'reports');
+          setReports(reportsData.reports);
+          recordMessage();
+        } else {
+          console.warn('📡 Invalid reports array received:', reportsData);
         }
       } catch (error) {
         console.error('Error handling reports update:', error);
       }
     };
 
-    const handleNewReport = (data: { report: Report }) => {
+    const handleNewReport = (data: unknown) => {
       try {
-        if (data && data.report) {
+        // Handle both direct objects and stringified JSON
+        let reportData: { report: Report };
+        
+        if (typeof data === 'string') {
+          try {
+            reportData = JSON.parse(data);
+          } catch (parseError) {
+            console.warn('📡 Failed to parse new report data as JSON:', data);
+            return;
+          }
+        } else if (data && typeof data === 'object' && 'report' in data) {
+          reportData = data as { report: Report };
+        } else {
+          console.warn('📡 Invalid new report data received:', data);
+          return;
+        }
+
+        if (reportData && reportData.report) {
           setReports(prev => {
-            const newReports = [data.report, ...prev];
+            const newReports = [reportData.report, ...prev];
             return newReports;
           });
           recordMessage();
@@ -166,12 +228,29 @@ export const OptimizedSocketProvider: React.FC<{ children: React.ReactNode }> = 
       }
     };
 
-    const handleReportUpdate = (data: { report: Report }) => {
+    const handleReportUpdate = (data: unknown) => {
       try {
-        if (data && data.report) {
+        // Handle both direct objects and stringified JSON
+        let reportData: { report: Report };
+        
+        if (typeof data === 'string') {
+          try {
+            reportData = JSON.parse(data);
+          } catch (parseError) {
+            console.warn('📡 Failed to parse report update data as JSON:', data);
+            return;
+          }
+        } else if (data && typeof data === 'object' && 'report' in data) {
+          reportData = data as { report: Report };
+        } else {
+          console.warn('📡 Invalid report update data received:', data);
+          return;
+        }
+
+        if (reportData && reportData.report) {
           setReports(prev => {
             return prev.map(report => 
-              report.id === data.report.id ? data.report : report
+              report.id === reportData.report.id ? reportData.report : report
             );
           });
           recordMessage();
