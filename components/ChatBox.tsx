@@ -19,18 +19,20 @@ interface ChatBoxProps {
   isAnonymous?: boolean;
 }
 
-const getInitialMessage = (category: Category | null | undefined, isAnonymous: boolean): { text: string; sender: string; time: string; type: 'sent' | 'received'; imageData?: string } => ({
-  text: isAnonymous
-    ? category
-      ? `Hello! I understand you're reporting a ${category.name} emergency anonymously. Can you please describe what happened?`
-      : 'Hello! I\'m here to help you report an emergency anonymously. What type of emergency are you experiencing?'
-    : category
-    ? `Hello! How can we help you today? You're reporting a ${category.name.toLowerCase()} incident.`
-    : 'Hello! How can we help you today?',
-  sender: 'B-READY Support',
-  time: 'Just now',
-  type: 'received',
-});
+const getInitialMessage = (category: Category | null | undefined, isAnonymous: boolean): { text: string; sender: string; time: string; type: 'sent' | 'received'; imageData?: string } => {
+  return {
+    text: isAnonymous
+      ? category
+        ? `Hello! I understand you're reporting a ${category.name} emergency anonymously. Can you please describe what happened?`
+        : 'Hello! I\'m here to help you report an emergency anonymously. What type of emergency are you experiencing?'
+      : category
+      ? `Hello! How can we help you today? You're reporting a ${category.name.toLowerCase()} incident.`
+      : 'Hello! How can we help you today?',
+    sender: 'B-READY Support',
+    time: 'Just now',
+    type: 'received',
+  };
+};
 
 export function ChatBox({ reportId, category, onClose, onSendMessage, onSendImage, isAnonymous = false }: ChatBoxProps) {
   const { chatMessages, reports } = useOptimizedSocketContext();
@@ -54,9 +56,10 @@ export function ChatBox({ reportId, category, onClose, onSendMessage, onSendImag
     let onlineMessages: Array<{ text: string; sender: string; time: string; type: 'sent' | 'received'; imageData?: string }> = [];
     let offlineMessages: Array<{ text: string; sender: string; time: string; type: 'sent' | 'received'; imageData?: string }> = [];
 
-    if (reportId && chatMessages[reportId]) {
-      // Convert stored messages to display format
-      onlineMessages = chatMessages[reportId].map((msg: { text: string; userName: string; userRole: string; timestamp: string; imageData?: string }) => {
+    if (reportId) {
+      // Get online messages from context
+      const contextMessages = chatMessages || [];
+      onlineMessages = contextMessages.map((msg) => {
         const isCurrentUser = user && msg.userName === `${user.firstName} ${user.lastName}`;
 
         return {
@@ -65,13 +68,12 @@ export function ChatBox({ reportId, category, onClose, onSendMessage, onSendImag
           time: new Date(msg.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
           type: (isCurrentUser ? 'sent' : 'received') as const,
           imageData: msg.imageData,
-          userName: msg.userName || 'User', // Ensure username exists
-          userRole: msg.userRole || 'user', // Ensure userRole exists
+          userName: msg.userName || 'User',
+          userRole: msg.userRole || 'user',
         };
       });
-    }
 
-    if (reportId) {
+      // Get offline messages
       const offlineMsgs = getOfflineMessagesForReport(reportId);
       offlineMessages = offlineMsgs.map(msg => ({
         text: msg.text,
@@ -84,7 +86,7 @@ export function ChatBox({ reportId, category, onClose, onSendMessage, onSendImag
 
     const allMessages = [...onlineMessages, ...offlineMessages, ...localMessages];
 
-    // Always include initial message if no other messages exist, otherwise just show all messages
+    // Always include initial message if no other messages exist
     if (allMessages.length === 0) {
       return [getInitialMessage(selectedCategory || category, isAnonymous)];
     }

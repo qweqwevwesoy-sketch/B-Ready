@@ -38,6 +38,9 @@ class SocketConnectionPool {
   private reconnectTimer: NodeJS.Timeout | null = null;
   private messageQueue: Array<{ event: string; data: unknown }> = [];
   private isProcessingQueue = false;
+  private lastConnectionAttempt = 0;
+  private connectionCooldown = 5000; // 5 second cooldown between connection attempts
+  private eventListeners: Map<string, ((data: unknown) => void)[]> = new Map();
 
   static getInstance(): SocketConnectionPool {
     if (!SocketConnectionPool.instance) {

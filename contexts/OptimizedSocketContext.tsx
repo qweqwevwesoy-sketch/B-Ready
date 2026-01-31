@@ -260,18 +260,43 @@ export const OptimizedSocketProvider: React.FC<{ children: React.ReactNode }> = 
       }
     };
 
-    const handleChatMessage = (data: { message: {
-      id: string;
-      text: string;
-      userName: string;
-      userRole: string;
-      timestamp: string;
-      reportId: string;
-      imageData?: string;
-    }; reportId: string }) => {
+    const handleChatMessage = (data: unknown) => {
       try {
-        if (data && data.message && data.reportId === currentChatReportId) {
-          setChatMessages(prev => [...prev, data.message]);
+        // Handle both direct objects and stringified JSON
+        let messageData: { message: {
+          id: string;
+          text: string;
+          userName: string;
+          userRole: string;
+          timestamp: string;
+          reportId: string;
+          imageData?: string;
+        }; reportId: string };
+        
+        if (typeof data === 'string') {
+          try {
+            messageData = JSON.parse(data);
+          } catch (parseError) {
+            console.warn('📡 Failed to parse chat message data as JSON:', data);
+            return;
+          }
+        } else if (data && typeof data === 'object' && 'message' in data && 'reportId' in data) {
+          messageData = data as { message: {
+            id: string;
+            text: string;
+            userName: string;
+            userRole: string;
+            timestamp: string;
+            reportId: string;
+            imageData?: string;
+          }; reportId: string };
+        } else {
+          console.warn('📡 Invalid chat message data received:', data);
+          return;
+        }
+
+        if (messageData && messageData.message && messageData.reportId === currentChatReportId) {
+          setChatMessages(prev => [...prev, messageData.message]);
           recordMessage();
         }
       } catch (error) {
@@ -279,20 +304,49 @@ export const OptimizedSocketProvider: React.FC<{ children: React.ReactNode }> = 
       }
     };
 
-    const handleChatHistory = (data: { messages: Array<{
-      id: string;
-      text: string;
-      userName: string;
-      userRole: string;
-      timestamp: string;
-      reportId: string;
-      imageData?: string;
-    }> }) => {
+    const handleChatHistory = (data: unknown) => {
       try {
-        if (data && Array.isArray(data.messages)) {
-          setChatMessages(data.messages);
+        // Handle both direct objects and stringified JSON
+        let historyData: { messages: Array<{
+          id: string;
+          text: string;
+          userName: string;
+          userRole: string;
+          timestamp: string;
+          reportId: string;
+          imageData?: string;
+        }> };
+        
+        if (typeof data === 'string') {
+          try {
+            historyData = JSON.parse(data);
+          } catch (parseError) {
+            console.warn('📡 Failed to parse chat history data as JSON:', data);
+            return;
+          }
+        } else if (data && typeof data === 'object' && 'messages' in data) {
+          historyData = data as { messages: Array<{
+            id: string;
+            text: string;
+            userName: string;
+            userRole: string;
+            timestamp: string;
+            reportId: string;
+            imageData?: string;
+          }> };
+        } else {
+          console.warn('📡 Invalid chat history data received:', data);
+          return;
+        }
+
+        if (historyData && Array.isArray(historyData.messages)) {
+          console.log('📡 Received chat history:', historyData.messages.length, 'messages');
+          setChatMessages(historyData.messages);
           setChatLoading(false);
           recordMessage();
+        } else {
+          console.warn('📡 Invalid chat history array received:', historyData);
+          setChatLoading(false);
         }
       } catch (error) {
         console.error('Error handling chat history:', error);
@@ -300,69 +354,43 @@ export const OptimizedSocketProvider: React.FC<{ children: React.ReactNode }> = 
       }
     };
 
-    const handleConnectionError = (error: { message?: string }) => {
-      console.error('Socket connection error:', error);
-      setError('Connection error: ' + (error?.message || 'Unknown error'));
+    const handleConnectionError = (error: unknown) => {
+      try {
+        let errorMessage = 'Unknown connection error';
+        if (typeof error === 'string') {
+          errorMessage = error;
+        } else if (error && typeof error === 'object' && 'message' in error) {
+          errorMessage = (error as { message?: string }).message || 'Unknown error';
+        }
+        
+        console.error('Socket connection error:', error);
+        setError('Connection error: ' + errorMessage);
+      } catch (err) {
+        console.error('Error handling connection error:', err);
+        setError('Connection error occurred');
+      }
     };
 
     const handleReconnect = () => {
       console.log('Socket reconnected');
       setError(null);
       if (currentChatReportId) {
+        console.log('🔄 Rejoining chat room after reconnection:', currentChatReportId);
         joinReportChat(currentChatReportId);
       }
     };
 
     // Subscribe to events
-    const unsubscribeReports = on('reports_update', (data: unknown) => {
-      if (data && typeof data === 'object' && 'reports' in data) {
-        handleReportsUpdate(data as { reports: Report[] });
-      }
-    });
-    const unsubscribeNewReport = on('new_report', (data: unknown) => {
-      if (data && typeof data === 'object' && 'report' in data) {
-        handleNewReport(data as { report: Report });
-      }
-    });
-    const unsubscribeReportUpdate = on('report_updated', (data: unknown) => {
-      if (data && typeof data === 'object' && 'report' in data) {
-        handleReportUpdate(data as { report: Report });
-      }
-    });
-    const unsubscribeChatMessage = on('report_chat_message', (data: unknown) => {
-      if (data && typeof data === 'object' && 'message' in data && 'reportId' in data) {
-        handleChatMessage(data as { message: {
-          id: string;
-          text: string;
-          userName: string;
-          userRole: string;
-          timestamp: string;
-          reportId: string;
-          imageData?: string;
-        }; reportId: string });
-      }
-    });
-    const unsubscribeChatHistory = on('report_chat_history', (data: unknown) => {
-      if (data && typeof data === 'object' && 'messages' in data) {
-        handleChatHistory(data as { messages: Array<{
-          id: string;
-          text: string;
-          userName: string;
-          userRole: string;
-          timestamp: string;
-          reportId: string;
-          imageData?: string;
-        }> });
-      }
-    });
-    const unsubscribeError = on('error', (data: unknown) => {
-      if (data && typeof data === 'object' && 'message' in data) {
-        handleConnectionError(data as { message?: string });
-      }
-    });
+    const unsubscribeReports = on('reports_update', handleReportsUpdate);
+    const unsubscribeNewReport = on('new_report', handleNewReport);
+    const unsubscribeReportUpdate = on('report_updated', handleReportUpdate);
+    const unsubscribeChatMessage = on('report_chat_message', handleChatMessage);
+    const unsubscribeChatHistory = on('report_chat_history', handleChatHistory);
+    const unsubscribeError = on('error', handleConnectionError);
     const unsubscribeReconnect = on('reconnect', handleReconnect);
 
     // Request initial reports
+    console.log('📋 Requesting initial reports after connection');
     emit('get_reports', {});
 
     return () => {

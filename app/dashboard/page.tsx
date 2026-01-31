@@ -98,18 +98,25 @@ function DashboardContent({ searchParams }: { searchParams: URLSearchParams }) {
     thirdColumnFilters
   );
 
-  // Debug logging to verify reports are being received
+  // Debug logging to verify reports are being received (throttled)
   useEffect(() => {
-    console.log('📡 Dashboard reports state:', {
-      totalReports: reports.length,
-      approvedReports: filteredApprovedReports.length,
-      currentReports: filteredCurrentReports.length,
-      thirdColumnReports: filteredThirdColumnReports.length,
-      connected,
-      socketLoading,
-      socketError
-    });
-  }, [reports, filteredApprovedReports, filteredCurrentReports, filteredThirdColumnReports, connected, socketLoading, socketError]);
+    // Throttle console logs to prevent spam
+    const logReportsState = () => {
+      console.log('📡 Dashboard reports state:', {
+        totalReports: reports.length,
+        approvedReports: filteredApprovedReports.length,
+        currentReports: filteredCurrentReports.length,
+        thirdColumnReports: filteredThirdColumnReports.length,
+        connected,
+        socketLoading,
+        socketError
+      });
+    };
+
+    // Only log on significant changes, not on every render
+    const timeoutId = setTimeout(logReportsState, 100);
+    return () => clearTimeout(timeoutId);
+  }, [reports.length, filteredApprovedReports.length, filteredCurrentReports.length, filteredThirdColumnReports.length, connected, socketLoading, socketError]);
 
   // Unified offline/online functionality - dashboard works in both modes
   useEffect(() => {
