@@ -83,7 +83,7 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
         />
       )}
       <aside
-        className={`fixed top-0 right-0 w-80 h-full bg-white/95 backdrop-blur-lg shadow-xl z-50 transform transition-transform duration-300 ease-in-out ${
+        className={`fixed top-0 right-0 w-80 h-full bg-gradient-to-b from-primary to-primary-dark text-white backdrop-blur-lg shadow-xl z-50 transform transition-transform duration-300 ease-in-out ${
           isOpen ? 'translate-x-0' : 'translate-x-full'
         } flex flex-col`}
       >
@@ -100,7 +100,7 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
               </button>
             </div>
 
-            <div className="bg-primary/10 p-4 rounded-lg mb-6 border-l-4 border-primary">
+            <div className="bg-white/20 p-4 rounded-lg mb-6 border-l-4 border-white/50">
               <div className="flex items-center gap-3">
                 {user.profilePictureUrl ? (
                   <>
@@ -152,8 +152,8 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
                   onClick={() => handleNavigation(item.path)}
                   className={`w-full text-left p-4 rounded-lg transition-all flex items-center gap-3 ${
                     pathname === item.path
-                      ? 'bg-primary/15 text-primary border-l-4 border-primary'
-                      : 'hover:bg-gray-100 text-gray-700'
+                      ? 'bg-white/20 text-white border-l-4 border-white/50'
+                      : 'hover:bg-white/10 text-white'
                   }`}
                 >
                   <span className="text-xl">{item.icon}</span>
@@ -168,7 +168,7 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
         <div className="flex-shrink-0 mt-auto p-6 border-t border-gray-200">
           <button
             onClick={handleLogout}
-            className="w-full text-left p-4 rounded-lg transition-all flex items-center gap-3 hover:bg-red-50 text-red-600"
+            className="w-full text-left p-4 rounded-lg transition-all flex items-center gap-3 hover:bg-white/10 text-white"
           >
             <span className="text-xl">🚪</span>
             <span>Logout</span>

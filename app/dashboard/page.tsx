@@ -385,7 +385,7 @@ function DashboardContent({ searchParams }: { searchParams: URLSearchParams }) {
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
             {/* Approved Reports Column */}
             <div className="bg-gray-50 rounded-xl overflow-hidden border border-gray-200 flex flex-col h-[70vh]">
-              <div className="bg-gradient-to-r from-custom-yellow-500 to-custom-yellow-600 text-white p-4 text-center font-semibold">
+              <div className="bg-custom-yellow-gradient bg-gradient-to-r from-custom-yellow-500 to-custom-yellow-600 text-white p-4 text-center font-semibold">
                 ✅ Approved Reports
                 <div className="text-sm opacity-90 mt-1">{filteredApprovedReports.length} reports</div>
               </div>
@@ -419,7 +419,7 @@ function DashboardContent({ searchParams }: { searchParams: URLSearchParams }) {
 
             {/* Current Reports Column */}
             <div className="bg-gray-50 rounded-xl overflow-hidden border border-gray-200 flex flex-col h-[70vh]">
-              <div className="bg-gradient-to-r from-custom-yellow-500 to-custom-yellow-600 text-white p-4 text-center font-semibold">
+              <div className="bg-custom-yellow-gradient bg-gradient-to-r from-custom-yellow-500 to-custom-yellow-600 text-white p-4 text-center font-semibold">
                 🔵 Active Reports
                 <div className="text-sm opacity-90 mt-1">{filteredCurrentReports.length} reports</div>
               </div>
@@ -453,7 +453,7 @@ function DashboardContent({ searchParams }: { searchParams: URLSearchParams }) {
 
             {/* Third Column (Pending/My Reports) */}
             <div className="bg-gray-50 rounded-xl overflow-hidden border border-gray-200 flex flex-col h-[70vh]">
-              <div className="bg-gradient-to-r from-custom-yellow-500 to-custom-yellow-600 text-white p-4 text-center font-semibold">
+              <div className="bg-custom-yellow-gradient bg-gradient-to-r from-custom-yellow-500 to-custom-yellow-600 text-white p-4 text-center font-semibold">
                 {user.role === 'admin' ? '⏳ Pending Review' : '📋 My Reports'}
                 <div className="text-sm opacity-90 mt-1">{filteredThirdColumnReports.length} reports</div>
               </div>

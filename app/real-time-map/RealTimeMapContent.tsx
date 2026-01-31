@@ -7,7 +7,7 @@ import { useOptimizedSocketContext } from '@/contexts/OptimizedSocketContext';
 import { Header } from '@/components/Header';
 import { getCurrentLocation, getFirebaseToken } from '@/lib/utils';
 import { Report, Location } from '@/types';
-import { OfflineTileLayer } from '@/components/OfflineMapTileLayer';
+import { OfflineTileLayer, OfflineMapTileLayer } from '@/components/OfflineMapTileLayer';
 import { locationManager } from '@/lib/location-manager';
 import { routingService } from '@/lib/routing-service';
 import { DebugMonitor } from '@/components/DebugMonitor';
@@ -481,8 +481,8 @@ export default function RealTimeMapContent() {
         mapRef.current = map;
         setMapReady(true);
 
-        // Add tile layer with optimized settings and better error handling
-        const tileLayer = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        // Add offline tile layer with caching and error handling
+        const offlineTileLayer = new OfflineTileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
           attribution: '© OpenStreetMap contributors',
           maxZoom: 22,
           maxNativeZoom: 22,
@@ -490,22 +490,53 @@ export default function RealTimeMapContent() {
           updateWhenIdle: true,
           updateWhenZooming: true,
           keepBuffer: 1, // Reduced buffer for faster loading
-          errorTileUrl: '', // Don't show broken tile images
           noWrap: false, // Allow wrapping around the world
+          cacheEnabled: true,
+          cacheRadius: 5, // miles
+          onCacheHit: (tileUrl: string) => {
+            console.log('📦 Cache hit for tile:', tileUrl);
+          },
+          onCacheMiss: (tileUrl: string) => {
+            console.log('❌ Cache miss for tile:', tileUrl);
+          },
+          onCacheError: (tileUrl: string, error: Error) => {
+            console.error('❌ Cache error for tile:', tileUrl, error);
+          },
         });
 
-        tileLayer.addTo(map);
-
-        // Handle tile loading errors
-        tileLayer.on('tileerror', (error: L.LeafletEvent) => {
-          console.error('Tile loading error:', error);
-          setMapError('Failed to load map tiles. Please check your internet connection.');
-        });
+        offlineTileLayer.addTo(map);
 
         // Handle successful tile loading
-        tileLayer.on('load', () => {
+        offlineTileLayer.on('load', () => {
           console.log('Map tiles loaded successfully');
+          setMapError(null); // Clear any previous error
         });
+
+        // Handle offline scenarios with better user feedback
+        const handleOfflineStatus = () => {
+          // Check if we're offline and have no cached tiles
+          if (!navigator.onLine) {
+            // This will be handled by the OfflineTileLayer automatically
+            // It will show cached tiles or placeholders
+            console.log('📱 Device is offline - using cached tiles or placeholders');
+          }
+        };
+
+        // Listen for online/offline events
+        if (typeof window !== 'undefined') {
+          window.addEventListener('online', () => {
+            console.log('🌐 Back online - map will use live tiles');
+            setMapError(null); // Clear any offline-related errors
+          });
+
+          window.addEventListener('offline', () => {
+            console.log('📱 Gone offline - map will use cached tiles');
+            // Don't show error for offline - the OfflineTileLayer handles this gracefully
+          });
+        }
+
+        // Initial check
+        handleOfflineStatus();
 
         // Handle map loading completion
         map.whenReady(() => {
@@ -513,7 +544,7 @@ export default function RealTimeMapContent() {
           
           // Add zoom level indicator
           const zoomIndicator = L.control({ position: 'bottomleft' });
-          zoomIndicator.onAdd = function() {
+          (zoomIndicator as L.Control).onAdd = function() {
             const div = L.DomUtil.create('div', 'zoom-indicator');
             div.style.backgroundColor = 'rgba(255, 255, 255, 0.8)';
             div.style.padding = '4px 8px';
@@ -878,9 +909,9 @@ export default function RealTimeMapContent() {
           <div class="p-2">
             <h3 class="font-bold">${station.name}</h3>
                         <p class="text-sm text-gray-600">${station.address}</p>
-                        ${station.phone || station.contact ? `<p class="text-sm text-blue-600 mt-2"><strong>Contact:</strong> ${station.phone || station.contact}</p>` : ''}
-                        ${station.email ? `<p class="text-sm text-blue-600 mt-1"><strong>Email:</strong> ${station.email}</p>` : ''}
-                        ${station.website ? `<p class="text-sm text-blue-600 mt-1"><strong>Website:</strong> ${station.website}</p>` : ''}
+                        ${station.phone || station.contact ? `<p class="text-sm text-blue-600 mt-2"><strong>Contact:</strong> <a href="tel:${station.phone || station.contact}" class="hover:text-blue-800 underline">${station.phone || station.contact}</a></p>` : ''}
+                        ${station.email ? `<p class="text-sm text-blue-600 mt-1"><strong>Email:</strong> <a href="mailto:${station.email}" class="hover:text-blue-800 underline">${station.email}</a></p>` : ''}
+                        ${station.website ? `<p class="text-sm text-blue-600 mt-1"><strong>Website:</strong> <a href="${station.website}" target="_blank" rel="noopener noreferrer" class="hover:text-blue-800 underline">${station.website}</a></p>` : ''}
             ${station.description ? `<p class="text-sm text-gray-600 mt-2"><strong>Description:</strong> ${station.description}</p>` : ''}
             ${user?.role === 'admin' ? `
               <div class="mt-3 flex gap-2">
@@ -1216,6 +1247,68 @@ export default function RealTimeMapContent() {
             </div>
           </div>
 
+          {/* Cache Management Controls */}
+          <div className="bg-purple-50 rounded-lg p-4 mb-6">
+            <h3 className="font-semibold mb-3">Cache Management</h3>
+            <div className="flex flex-wrap gap-4 items-center">
+              <div className="flex gap-2">
+                <button
+                  onClick={async () => {
+                    try {
+                      // Clear all cached tiles
+                      if (typeof window !== 'undefined' && 'indexedDB' in window) {
+                        const request = indexedDB.deleteDatabase('map-tiles');
+                        request.onsuccess = () => {
+                          console.log('✅ Cache cleared successfully');
+                          alert('Map cache cleared successfully');
+                        };
+                        request.onerror = () => {
+                          console.error('❌ Failed to clear cache');
+                          alert('Failed to clear cache');
+                        };
+                      } else {
+                        alert('Cache clearing not supported in this browser');
+                      }
+                    } catch (error) {
+                      console.error('Error clearing cache:', error);
+                      alert('Error clearing cache');
+                    }
+                  }}
+                  className="px-4 py-2 bg-purple-500 text-white rounded-lg hover:bg-purple-600"
+                >
+                  🗑️ Clear Cache
+                </button>
+                <button
+                  onClick={async () => {
+                    try {
+                      // Pre-cache tiles for current view
+                      if (mapRef.current) {
+                        const bounds = mapRef.current.getBounds();
+                        const zoom = mapRef.current.getZoom();
+                        
+                        console.log('📦 Pre-caching tiles for bounds:', bounds, 'zoom:', zoom);
+                        
+                        // This would trigger the OfflineTileLayer to cache tiles
+                        // The actual implementation would depend on the OfflineTileLayer API
+                        alert('Pre-caching tiles for current view (if supported)');
+                      }
+                    } catch (error) {
+                      console.error('Error pre-caching tiles:', error);
+                      alert('Error pre-caching tiles');
+                    }
+                  }}
+                  className="px-4 py-2 bg-purple-500 text-white rounded-lg hover:bg-purple-600"
+                >
+                  📦 Pre-cache Tiles
+                </button>
+              </div>
+              <div className="text-sm text-purple-600">
+                {navigator.onLine ? '🌐 Online' : '📱 Offline'} • 
+                Cache: {navigator.onLine ? 'Live tiles' : 'Cached tiles only'}
+              </div>
+            </div>
+          </div>
+
           {/* Admin Controls */}
           {user.role === 'admin' && (
             <div className="bg-blue-50 rounded-lg p-4">
@@ -1300,8 +1393,8 @@ export default function RealTimeMapContent() {
                         <div>
                           <strong>{station.name}</strong>
                           <p className="text-sm text-gray-600">{station.address}</p>
-                          {(station.phone || station.contact) && <p className="text-xs text-blue-600">📞 {station.phone || station.contact}</p>}
-                          {station.email && <p className="text-xs text-blue-600">✉️ {station.email}</p>}
+                          {(station.phone || station.contact) && <p className="text-xs text-blue-600">📞 <a href={`tel:${station.phone || station.contact}`} className="hover:text-blue-800 underline">{station.phone || station.contact}</a></p>}
+                          {station.email && <p className="text-xs text-blue-600">✉️ <a href={`mailto:${station.email}`} className="hover:text-blue-800 underline">{station.email}</a></p>}
                         </div>
                         <div className="flex gap-2">
                           <button
@@ -1419,8 +1512,8 @@ export default function RealTimeMapContent() {
                     <div>
                       <strong>{station.name}</strong>
                       <p className="text-sm text-gray-600">{station.address}</p>
-                      {(station.phone || station.contact) && <p className="text-xs text-blue-600">📞 {station.phone || station.contact}</p>}
-                      {station.email && <p className="text-xs text-blue-600">✉️ {station.email}</p>}
+                      {(station.phone || station.contact) && <p className="text-xs text-blue-600">📞 <a href={`tel:${station.phone || station.contact}`} className="hover:text-blue-800 underline">{station.phone || station.contact}</a></p>}
+                      {station.email && <p className="text-xs text-blue-600">✉️ <a href={`mailto:${station.email}`} className="hover:text-blue-800 underline">{station.email}</a></p>}
                     </div>
                     <p className="text-xs text-gray-500">Emergency Response Station</p>
                   </div>

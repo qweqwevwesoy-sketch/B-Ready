@@ -1039,7 +1039,7 @@ export function ChatBox({ reportId, category, onClose, onSendMessage, onSendImag
                     {currentReport.location.lat.toFixed(6)}, {currentReport.location.lng.toFixed(6)}
                   </div>
                 )}
-              {currentReport?.location && (
+                {currentReport?.location && (
                   <button
                     onClick={() => {
                       const mapUrl = `/real-time-map?lat=${currentReport.location!.lat}&lng=${currentReport.location!.lng}&zoom=15`;

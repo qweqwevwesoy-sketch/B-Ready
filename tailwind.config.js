@@ -17,8 +17,8 @@ module.exports = {
         info: '#3498db',
         'custom-yellow': {
           500: '#ffbd52',
-          600: '#ffbd52',
-          100: '#f9db91',
+          600: '#f7c472',
+          100: '#f5e8c8',
         },
       },
       backgroundImage: {
