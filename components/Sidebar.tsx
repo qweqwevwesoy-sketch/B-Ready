@@ -152,7 +152,7 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
                   onClick={() => handleNavigation(item.path)}
                   className={`w-full text-left p-4 rounded-lg transition-all flex items-center gap-3 ${
                     pathname === item.path
-                      ? 'bg-custom-yellow-600 text-white border-l-4 border-custom-yellow-500'
+                      ? 'bg-custom-yellow-100 text-white border-l-4 border-custom-yellow-600'
                       : 'hover:bg-custom-yellow-50 text-white'
                   }`}
                 >
