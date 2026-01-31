@@ -1039,13 +1039,13 @@ export function ChatBox({ reportId, category, onClose, onSendMessage, onSendImag
                     {currentReport.location.lat.toFixed(6)}, {currentReport.location.lng.toFixed(6)}
                   </div>
                 )}
-                {currentReport?.location && (
+              {currentReport?.location && (
                   <button
                     onClick={() => {
                       const mapUrl = `/real-time-map?lat=${currentReport.location!.lat}&lng=${currentReport.location!.lng}&zoom=15`;
                       router.push(mapUrl);
                     }}
-                    className="mt-2 px-3 py-1 bg-yellow-500 text-white rounded-lg hover:bg-yellow-600 text-xs font-semibold"
+                    className="mt-2 px-3 py-1 bg-blue-500 text-white rounded-lg hover:bg-blue-600 text-xs font-semibold"
                   >
                     🗺️ View in Map
                   </button>

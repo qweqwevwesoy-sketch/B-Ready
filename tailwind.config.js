@@ -18,7 +18,11 @@ module.exports = {
         'custom-yellow': {
           500: '#ffbd52',
           600: '#ffbd52',
+          100: '#f9db91',
         },
+      },
+      backgroundImage: {
+        'custom-yellow-gradient': 'radial-gradient(circle at center, rgba(249, 219, 145, 0.15) 0%, rgba(249, 219, 145, 0.05) 50%, rgba(249, 219, 145, 0) 100%)',
       },
       fontFamily: {
         sans: ['Inter', 'system-ui', 'sans-serif'],
