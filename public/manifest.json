@@ -12,9 +12,9 @@
   "categories": ["emergency", "utilities", "social"],
   "icons": [
     {
-      "src": "/favicon.ico",
+      "src": "/Logo.svg",
       "sizes": "32x32",
-      "type": "image/x-icon"
+      "type": "image/svg+xml"
     },
     {
       "src": "/Logo.svg",
