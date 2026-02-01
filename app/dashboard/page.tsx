@@ -341,6 +341,24 @@ function DashboardContent({ searchParams }: { searchParams: URLSearchParams }) {
               </p>
             </div>
             <div className="flex items-center gap-4">
+              <div className="flex items-center gap-2">
+                <div className={`px-3 py-1 rounded-full text-sm font-semibold ${
+                  isOffline
+                    ? 'bg-red-100 text-red-800'
+                    : 'bg-green-100 text-green-800'
+                }`}>
+                  {isOffline ? '🔴 Offline' : '🟢 Online'}
+                </div>
+                <div className={`px-3 py-1 rounded-full text-sm font-semibold ${
+                  connected
+                    ? 'bg-blue-100 text-blue-800'
+                    : socketError
+                    ? 'bg-red-100 text-red-800'
+                    : 'bg-yellow-100 text-yellow-800'
+                }`}>
+                  {connected ? '🔗 Connected' : socketError ? '❌ Reconnecting...' : '⏳ Connecting...'}
+                </div>
+              </div>
               {user.profilePictureUrl ? (
                 // eslint-disable-next-line @next/next/no-img-element
                 <img
@@ -360,24 +378,6 @@ function DashboardContent({ searchParams }: { searchParams: URLSearchParams }) {
               ) : null}
               <div className="w-12 h-12 rounded-full bg-gradient-to-br from-primary to-primary-dark text-white flex items-center justify-center font-bold text-lg dashboard-avatar-fallback" style={{ display: user.profilePictureUrl ? 'none' : 'flex' }}>
                 {user.firstName.charAt(0)}{user.lastName.charAt(0)}
-              </div>
-              <div className="flex items-center gap-2">
-                <div className={`px-3 py-1 rounded-full text-sm font-semibold ${
-                  isOffline
-                    ? 'bg-red-100 text-red-800'
-                    : 'bg-green-100 text-green-800'
-                }`}>
-                  {isOffline ? '🔴 Offline' : '🟢 Online'}
-                </div>
-                <div className={`px-3 py-1 rounded-full text-sm font-semibold ${
-                  connected
-                    ? 'bg-blue-100 text-blue-800'
-                    : socketError
-                    ? 'bg-red-100 text-red-800'
-                    : 'bg-yellow-100 text-yellow-800'
-                }`}>
-                  {connected ? '🔗 Connected' : socketError ? '❌ Reconnecting...' : '⏳ Connecting...'}
-                </div>
               </div>
             </div>
           </div>
