@@ -96,11 +96,23 @@ export function EmergencyResponseSystem({ userLocation, variant = 'display' }: E
 
   const addContact = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!newContact.name || !newContact.type || !newContact.phone) {
+    
+    // For fire stations (stations), only name and type are required
+    // For other emergency contacts, name, type, and phone are required
+    const isStation = newContact.type === 'fire';
+    const requiredFields = isStation 
+      ? !newContact.name || !newContact.type
+      : !newContact.name || !newContact.type || !newContact.phone;
+    
+    if (requiredFields) {
+      const errorMessage = isStation 
+        ? 'Please fill in the station name and type'
+        : 'Please fill in all required fields (name, type, and phone)';
+      
       if (variant === 'admin') {
-        notificationManager.error('Please fill in all required fields');
+        notificationManager.error(errorMessage);
       } else {
-        alert('Please fill in all required fields');
+        alert(errorMessage);
       }
       return;
     }
@@ -381,7 +393,7 @@ export function EmergencyResponseSystem({ userLocation, variant = 'display' }: E
             <form onSubmit={editingId ? updateItem : addContact} className="space-y-4">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-medium mb-1">Name</label>
+                  <label className="block text-sm font-medium mb-1">Name <span className="text-red-500">*</span></label>
                   <input
                     type="text"
                     value={newContact.name}
@@ -392,14 +404,16 @@ export function EmergencyResponseSystem({ userLocation, variant = 'display' }: E
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium mb-1">Phone Number</label>
+                  <label className="block text-sm font-medium mb-1">
+                    Phone Number {newContact.type === 'fire' ? '(Optional)' : '(Required)'}
+                  </label>
                   <input
                     type="tel"
                     value={newContact.phone}
                     onChange={(e) => setNewContact({ ...newContact, phone: e.target.value })}
                     className="w-full p-2 border rounded"
-                    placeholder="e.g., +63 2 123 4567"
-                    required
+                    placeholder={newContact.type === 'fire' ? "e.g., +63 2 123 4567 (optional)" : "e.g., +63 2 123 4567"}
+                    required={newContact.type !== 'fire'}
                   />
                 </div>
                 <div>
