@@ -35,10 +35,11 @@ export function ColumnSearch({
     customDateRange: { start: null, end: null },
     status: 'all'
   });
-  const [showDatePicker, setShowDatePicker] = useState(false);
-  const [dateInput, setDateInput] = useState('');
+  const [customDateRange, setCustomDateRange] = useState({
+    start: '',
+    end: ''
+  });
   const filterRef = useRef<HTMLDivElement>(null);
-  const datePickerRef = useRef<HTMLDivElement>(null);
 
   // Debounced search
   useEffect(() => {
@@ -55,28 +56,15 @@ export function ColumnSearch({
       if (filterRef.current && !filterRef.current.contains(event.target as Node)) {
         setIsFilterOpen(false);
       }
-      if (datePickerRef.current && !datePickerRef.current.contains(event.target as Node)) {
-        setShowDatePicker(false);
-      }
     }
 
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  // Detect if input is numeric (date/time) or text
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value;
     setSearchTerm(value);
-    
-    // Auto-detect if this looks like a date/time input
-    if (value.match(/^\d{1,2}[/\-.]\d{1,2}[/\-.]\d{2,4}$/) || 
-        value.match(/^\d{4}[/\-.]\d{1,2}[/\-.]\d{1,2}$/) ||
-        value.match(/^\d{1,2}:\d{2}$/)) {
-      setShowDatePicker(true);
-    } else if (value === '') {
-      setShowDatePicker(false);
-    }
   };
 
   const handleFilterChange = (key: keyof SearchFilters, value: SearchFilters[keyof SearchFilters]) => {
@@ -95,9 +83,8 @@ export function ColumnSearch({
     handleFilterChange('timePeriod', timePeriod);
     if (timePeriod !== 'custom') {
       handleFilterChange('customDateRange', { start: null, end: null });
-      setDateInput('');
+      setCustomDateRange({ start: '', end: '' });
     }
-    setIsFilterOpen(false);
   };
 
   const handleStatusChange = (status: SearchFilters['status']) => {
@@ -105,34 +92,22 @@ export function ColumnSearch({
     setIsFilterOpen(false);
   };
 
-  const formatDateRange = () => {
-    if (filters.timePeriod === 'custom' && filters.customDateRange?.start && filters.customDateRange?.end) {
-      return `${format(filters.customDateRange.start, 'MMM d, yyyy')} - ${format(filters.customDateRange.end, 'MMM d, yyyy')}`;
-    }
-    return filters.timePeriod;
+  const handleCustomDateRangeChange = (field: 'start' | 'end', value: string) => {
+    setCustomDateRange(prev => ({
+      ...prev,
+      [field]: value
+    }));
   };
 
   const applyCustomDateRange = () => {
-    if (dateInput) {
+    if (customDateRange.start && customDateRange.end) {
       try {
-        // Parse various date formats
-        let startDate: Date, endDate: Date;
+        const startDate = parseISO(customDateRange.start);
+        const endDate = parseISO(customDateRange.end);
         
-        if (dateInput.includes(' - ')) {
-          // Range format: "2024-01-01 - 2024-01-31"
-          const [startStr, endStr] = dateInput.split(' - ');
-          startDate = parseISO(startStr);
-          endDate = parseISO(endStr);
-        } else {
-          // Single date: treat as start of day to end of day
-          startDate = parseISO(dateInput);
-          endDate = new Date(startDate);
-          endDate.setHours(23, 59, 59, 999);
-        }
-
         handleFilterChange('customDateRange', { start: startDate, end: endDate });
         handleFilterChange('timePeriod', 'custom');
-        setShowDatePicker(false);
+        setIsFilterOpen(false);
       } catch (error) {
         console.error('Invalid date format:', error);
       }
@@ -147,52 +122,21 @@ export function ColumnSearch({
       customDateRange: { start: null, end: null },
       status: 'all'
     });
-    setDateInput('');
-    setShowDatePicker(false);
+    setCustomDateRange({ start: '', end: '' });
   };
 
   return (
     <div className="relative">
       <div className="flex items-center gap-2 bg-white rounded-lg border border-gray-300 p-2">
         {/* Search Input */}
-        <div className="flex-1 relative">
+        <div className="flex-1">
           <input
             type="text"
             value={searchTerm}
             onChange={handleInputChange}
             placeholder={placeholder}
             className="w-full px-3 py-2 text-sm border-0 focus:outline-none focus:ring-0"
-            onFocus={() => setShowDatePicker(false)}
           />
-          
-          {/* Date Picker Integration */}
-          {showDatePicker && (
-            <div 
-              ref={datePickerRef}
-              className="absolute top-full left-0 right-0 mt-1 bg-white border border-gray-300 rounded-lg shadow-lg z-50 p-4"
-            >
-              <div className="flex items-center gap-2 mb-2">
-                <input
-                  type="date"
-                  value={dateInput}
-                  onChange={(e) => setDateInput(e.target.value)}
-                  className="px-2 py-1 border border-gray-300 rounded text-sm"
-                />
-                <button
-                  onClick={applyCustomDateRange}
-                  className="px-3 py-1 bg-primary text-white rounded text-sm hover:opacity-90"
-                >
-                  Apply
-                </button>
-                <button
-                  onClick={() => setShowDatePicker(false)}
-                  className="px-3 py-1 bg-gray-200 text-gray-700 rounded text-sm hover:bg-gray-300"
-                >
-                  Cancel
-                </button>
-              </div>
-            </div>
-          )}
         </div>
 
         {/* Filter Button */}
@@ -261,7 +205,7 @@ export function ColumnSearch({
                 { value: 'this-week', label: 'This Week' },
                 { value: 'this-month', label: 'This Month' },
                 { value: 'last-3-months', label: 'Last 3 Months' },
-                { value: 'custom', label: 'Enter date in YYYY-MM-DD format or use the date picker' }
+                { value: 'custom', label: 'Custom Range' }
               ].map((option) => (
                 <label key={option.value} className="flex items-center gap-2 p-2 hover:bg-gray-50 rounded cursor-pointer">
                   <input
@@ -275,6 +219,51 @@ export function ColumnSearch({
                 </label>
               ))}
             </div>
+            
+            {/* Inline Date Picker for Custom Range */}
+            {filters.timePeriod === 'custom' && (
+              <div className="mt-3 p-3 bg-gray-50 rounded-lg border border-gray-200">
+                <div className="text-xs font-semibold text-gray-700 mb-2">Select Date Range</div>
+                <div className="grid grid-cols-2 gap-2 mb-3">
+                  <div>
+                    <label className="block text-xs text-gray-600 mb-1">Start Date</label>
+                    <input
+                      type="date"
+                      value={customDateRange.start}
+                      onChange={(e) => handleCustomDateRangeChange('start', e.target.value)}
+                      className="w-full px-2 py-1 border border-gray-300 rounded text-sm"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs text-gray-600 mb-1">End Date</label>
+                    <input
+                      type="date"
+                      value={customDateRange.end}
+                      onChange={(e) => handleCustomDateRangeChange('end', e.target.value)}
+                      className="w-full px-2 py-1 border border-gray-300 rounded text-sm"
+                    />
+                  </div>
+                </div>
+                <div className="flex gap-2">
+                  <button
+                    onClick={applyCustomDateRange}
+                    className="flex-1 px-3 py-1 bg-primary text-white rounded text-sm hover:opacity-90"
+                    disabled={!customDateRange.start || !customDateRange.end}
+                  >
+                    Apply
+                  </button>
+                  <button
+                    onClick={() => {
+                      setCustomDateRange({ start: '', end: '' });
+                      handleTimePeriodChange('all');
+                    }}
+                    className="flex-1 px-3 py-1 bg-gray-200 text-gray-700 rounded text-sm hover:bg-gray-300"
+                  >
+                    Clear
+                  </button>
+                </div>
+              </div>
+            )}
           </div>
 
           {/* Status Filters (for status update page) */}
