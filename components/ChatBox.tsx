@@ -622,7 +622,7 @@ export function ChatBox({ reportId, category, onClose, onSendMessage, onSendImag
   useEffect(() => {
     if (!reportId) return;
 
-    // Listen for real-time message updates
+    // Listen for real-time message updates from socket context
     const handleRealTimeMessage = (data: {
       message: {
         text: string;

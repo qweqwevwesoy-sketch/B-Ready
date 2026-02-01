@@ -260,10 +260,10 @@ export const OptimizedSocketProvider: React.FC<{ children: React.ReactNode }> = 
       }
     };
 
+    // Unified chat message handler - handles all chat message types
     const handleChatMessage = (data: unknown) => {
       try {
-        // Handle both direct objects and stringified JSON
-        let messageData: { message: {
+        let messageData: {
           id: string;
           text: string;
           userName: string;
@@ -271,8 +271,9 @@ export const OptimizedSocketProvider: React.FC<{ children: React.ReactNode }> = 
           timestamp: string;
           reportId: string;
           imageData?: string;
-        }; reportId: string };
+        };
         
+        // Handle both direct objects and stringified JSON
         if (typeof data === 'string') {
           try {
             messageData = JSON.parse(data);
@@ -280,8 +281,8 @@ export const OptimizedSocketProvider: React.FC<{ children: React.ReactNode }> = 
             console.warn('📡 Failed to parse chat message data as JSON:', data);
             return;
           }
-        } else if (data && typeof data === 'object' && 'message' in data && 'reportId' in data) {
-          messageData = data as { message: {
+        } else {
+          messageData = data as {
             id: string;
             text: string;
             userName: string;
@@ -289,130 +290,27 @@ export const OptimizedSocketProvider: React.FC<{ children: React.ReactNode }> = 
             timestamp: string;
             reportId: string;
             imageData?: string;
-          }; reportId: string };
-        } else {
-          console.warn('📡 Invalid chat message data received:', data);
-          return;
+          };
         }
 
-        if (messageData && messageData.message) {
-          // Always update messages for the specific report
-          if (messageData.reportId === currentChatReportId) {
+        if (messageData) {
+          // Only update messages for the current chat report or if no specific report is active
+          if (messageData.reportId === currentChatReportId || !currentChatReportId) {
             setChatMessages(prev => {
               // Check for duplicates to prevent message duplication
-              const exists = prev.some(msg => msg.id === messageData.message.id);
-              if (exists) return prev;
-              return [...prev, messageData.message];
-            });
-            recordMessage();
-          }
-          // Also update if we're in a general chat context
-          else if (!currentChatReportId) {
-            setChatMessages(prev => {
-              // Check for duplicates to prevent message duplication
-              const exists = prev.some(msg => msg.id === messageData.message.id);
-              if (exists) return prev;
-              return [...prev, messageData.message];
+              const exists = prev.some(msg => msg.id === messageData.id);
+              if (exists) {
+                console.log('📝 Message already exists, skipping duplicate:', messageData.id);
+                return prev;
+              }
+              console.log('📝 Adding new message:', messageData.id);
+              return [...prev, messageData];
             });
             recordMessage();
           }
         }
       } catch (error) {
         console.error('Error handling chat message:', error);
-      }
-    };
-
-    // Add direct message handler for immediate updates
-    const handleDirectMessage = (data: unknown) => {
-      try {
-        let messageData: {
-          id: string;
-          text: string;
-          userName: string;
-          userRole: string;
-          timestamp: string;
-          reportId: string;
-          imageData?: string;
-        };
-        
-        if (typeof data === 'string') {
-          try {
-            messageData = JSON.parse(data);
-          } catch (parseError) {
-            console.warn('📡 Failed to parse direct message data as JSON:', data);
-            return;
-          }
-        } else {
-          messageData = data as {
-            id: string;
-            text: string;
-            userName: string;
-            userRole: string;
-            timestamp: string;
-            reportId: string;
-            imageData?: string;
-          };
-        }
-
-        if (messageData) {
-          // Update messages immediately for real-time updates
-          setChatMessages(prev => {
-            // Check for duplicates to prevent message duplication
-            const exists = prev.some(msg => msg.id === messageData.id);
-            if (exists) return prev;
-            return [...prev, messageData];
-          });
-          recordMessage();
-        }
-      } catch (error) {
-        console.error('Error handling direct message:', error);
-      }
-    };
-
-    // Add a new handler for real-time message updates
-    const handleRealTimeMessage = (data: unknown) => {
-      try {
-        let messageData: {
-          id: string;
-          text: string;
-          userName: string;
-          userRole: string;
-          timestamp: string;
-          reportId: string;
-          imageData?: string;
-        };
-        
-        if (typeof data === 'string') {
-          try {
-            messageData = JSON.parse(data);
-          } catch (parseError) {
-            console.warn('📡 Failed to parse real-time message data as JSON:', data);
-            return;
-          }
-        } else {
-          messageData = data as {
-            id: string;
-            text: string;
-            userName: string;
-            userRole: string;
-            timestamp: string;
-            reportId: string;
-            imageData?: string;
-          };
-        }
-
-        if (messageData) {
-          // Update messages immediately for real-time updates
-          setChatMessages(prev => {
-            // Check if message already exists to avoid duplicates
-            const exists = prev.some(msg => msg.id === messageData.id);
-            if (exists) return prev;
-            return [...prev, messageData];
-          });
-          recordMessage();
-        }
-      } catch (error) {
-        console.error('Error handling real-time message:', error);
       }
     };
 
@@ -497,8 +395,7 @@ export const OptimizedSocketProvider: React.FC<{ children: React.ReactNode }> = 
     const unsubscribeNewReport = on('new_report', handleNewReport);
     const unsubscribeReportUpdate = on('report_updated', handleReportUpdate);
     const unsubscribeChatMessage = on('report_chat_message', handleChatMessage);
-    const unsubscribeDirectMessage = on('new_chat_message', handleDirectMessage);
-    const unsubscribeRealTimeMessage = on('real_time_message', handleRealTimeMessage);
+    const unsubscribeNewChatMessage = on('new_chat_message', handleChatMessage);
     const unsubscribeChatHistory = on('report_chat_history', handleChatHistory);
     const unsubscribeError = on('error', handleConnectionError);
     const unsubscribeReconnect = on('reconnect', handleReconnect);
@@ -512,8 +409,7 @@ export const OptimizedSocketProvider: React.FC<{ children: React.ReactNode }> = 
       unsubscribeNewReport();
       unsubscribeReportUpdate();
       unsubscribeChatMessage();
-      unsubscribeDirectMessage();
-      unsubscribeRealTimeMessage();
+      unsubscribeNewChatMessage();
       unsubscribeChatHistory();
       unsubscribeError();
       unsubscribeReconnect();
