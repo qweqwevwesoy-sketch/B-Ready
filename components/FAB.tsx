@@ -36,22 +36,28 @@ export function FAB({ onCategorySelect }: FABProps) {
       {isOpen && (
         <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4" style={{ zIndex: fabZIndex }}>
           <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full max-h-[80vh] overflow-y-auto">
-            <div className="p-6">
-              <div className="flex justify-between items-center mb-6">
-                <h2 className="text-2xl font-bold text-gray-800">Report Emergency</h2>
-                <button
-                  onClick={() => setIsOpen(false)}
-                  className="text-gray-500 hover:text-gray-700 text-2xl leading-none"
-                  aria-label="Close"
-                >
-                  ×
-                </button>
+            {/* Header - Fixed at top */}
+            <div className="sticky top-0 bg-white rounded-t-2xl border-b border-gray-200 z-10">
+              <div className="p-6">
+                <div className="flex justify-between items-center mb-6">
+                  <h2 className="text-2xl font-bold text-gray-800">Report Emergency</h2>
+                  <button
+                    onClick={() => setIsOpen(false)}
+                    className="text-gray-500 hover:text-gray-700 text-2xl leading-none"
+                    aria-label="Close"
+                  >
+                    ×
+                  </button>
+                </div>
+
+                <p className="text-gray-600 mb-6">
+                  Select the type of emergency you want to report:
+                </p>
               </div>
+            </div>
 
-              <p className="text-gray-600 mb-6">
-                Select the type of emergency you want to report:
-              </p>
-
+            {/* Content - Scrollable */}
+            <div className="p-6">
               <div className="grid grid-cols-1 gap-3">
                 {categories.map((category) => (
                   <button
