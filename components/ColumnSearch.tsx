@@ -312,6 +312,45 @@ export function ColumnSearch({
   );
 }
 
+// Utility function to check if search term matches report date/time
+function checkDateSearch(report: Report, searchTerm: string): boolean {
+  if (!report.timestamp) return false;
+  
+  const reportDate = new Date(report.timestamp);
+  const searchLower = searchTerm.toLowerCase();
+  
+  // Format date in various ways to match user input
+  const dateFormats = [
+    // Full date formats
+    format(reportDate, 'yyyy-MM-dd'),      // 2024-01-15
+    format(reportDate, 'MM/dd/yyyy'),      // 01/15/2024
+    format(reportDate, 'dd/MM/yyyy'),      // 15/01/2024
+    format(reportDate, 'MMM dd, yyyy'),    // Jan 15, 2024
+    format(reportDate, 'MMMM dd, yyyy'),   // January 15, 2024
+    
+    // Date without year
+    format(reportDate, 'MM/dd'),           // 01/15
+    format(reportDate, 'dd/MM'),           // 15/01
+    format(reportDate, 'MMM dd'),          // Jan 15
+    format(reportDate, 'MMMM dd'),         // January 15
+    
+    // Time formats
+    format(reportDate, 'HH:mm'),           // 14:30
+    format(reportDate, 'hh:mm a'),         // 2:30 PM
+    format(reportDate, 'HH:mm:ss'),        // 14:30:45
+    format(reportDate, 'hh:mm:ss a'),      // 2:30:45 PM
+    
+    // Combined date and time
+    format(reportDate, 'yyyy-MM-dd HH:mm'),    // 2024-01-15 14:30
+    format(reportDate, 'MM/dd/yyyy HH:mm'),    // 01/15/2024 14:30
+    format(reportDate, 'dd/MM/yyyy HH:mm'),    // 15/01/2024 14:30
+    format(reportDate, 'MMM dd, yyyy HH:mm'),  // Jan 15, 2024 14:30
+  ];
+  
+  // Check if search term matches any of the date formats
+  return dateFormats.some(format => format.toLowerCase().includes(searchLower));
+}
+
 // Utility function to filter and sort reports
 export function filterReports(reports: Report[], searchTerm: string, filters: SearchFilters) {
   let filtered = [...reports];
@@ -328,7 +367,13 @@ export function filterReports(reports: Report[], searchTerm: string, filters: Se
         report.description
       ].filter(Boolean).join(' ').toLowerCase();
       
-      return searchableText.includes(searchLower);
+      // Check if search term matches any text field
+      const textMatches = searchableText.includes(searchLower);
+      
+      // Check if search term matches date/time
+      const dateMatches = checkDateSearch(report, searchTerm);
+      
+      return textMatches || dateMatches;
     });
   }
 
