@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useRef, useState, useCallback } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
 import { useOptimizedSocketContext } from '@/contexts/OptimizedSocketContext';
 import { Header } from '@/components/Header';
@@ -104,6 +104,7 @@ interface PhotonResponse {
 
 export default function RealTimeMapContent() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const { user, loading: authLoading } = useAuth();
   const { reports, connected, connectionState, queueLength, hasPendingMessages, refreshReports } = useOptimizedSocketContext();
   const [userLocation, setUserLocation] = useState<{ lat: number; lng: number } | null>(null);
@@ -207,6 +208,33 @@ export default function RealTimeMapContent() {
       return fallbackResults;
     }
   };
+
+  // Handle URL parameters on component mount
+  useEffect(() => {
+    const searchParam = searchParams.get('search');
+    const latParam = searchParams.get('lat');
+    const lngParam = searchParams.get('lng');
+    const zoomParam = searchParams.get('zoom');
+
+    // If search parameter exists, populate the search bar and trigger search
+    if (searchParam) {
+      setSearchQuery(searchParam);
+      
+      // If coordinates are also provided, navigate to that location after search
+      if (latParam && lngParam && zoomParam) {
+        const lat = parseFloat(latParam);
+        const lng = parseFloat(lngParam);
+        const zoom = parseInt(zoomParam);
+        
+        // Wait a bit for the map to be ready, then navigate
+        setTimeout(() => {
+          if (mapRef.current) {
+            mapRef.current.setView([lat, lng], zoom);
+          }
+        }, 1000);
+      }
+    }
+  }, [searchParams]);
 
   // Debounced search effect
   useEffect(() => {

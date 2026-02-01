@@ -1087,7 +1087,8 @@ export function ChatBox({ reportId, category, onClose, onSendMessage, onSendImag
                 {currentReport?.location && (
                   <button
                     onClick={() => {
-                      const mapUrl = `/real-time-map?lat=${currentReport.location!.lat}&lng=${currentReport.location!.lng}&zoom=15`;
+                      const searchQuery = currentReport.address || `Lat: ${currentReport.location!.lat.toFixed(6)}, Lng: ${currentReport.location!.lng.toFixed(6)}`;
+                      const mapUrl = `/real-time-map?search=${encodeURIComponent(searchQuery)}&lat=${currentReport.location!.lat}&lng=${currentReport.location!.lng}&zoom=15`;
                       window.location.href = mapUrl;
                     }}
                     className="mt-2 px-3 py-1 bg-blue-500 text-white rounded-lg hover:bg-blue-600 text-xs font-semibold"
