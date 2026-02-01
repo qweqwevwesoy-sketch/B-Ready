@@ -22,13 +22,13 @@ export function Header() {
           >
             <div className="flex flex-col">
               <div className="flex items-center gap-2">
-                <Image
-                  src="/BLogo.png"
-                  alt="B-READY Logo"
-                  width={32}
-                  height={32}
-                  className="w-8 h-8"
-                />
+<Image
+  src="/Logo.svg"
+  alt="B-READY Logo"
+  width={32}
+  height={32}
+  className="w-8 h-8"
+/>
                 <div 
                   className="notranslate font-extrabold tracking-tight text-white" 
                   style={{ 
