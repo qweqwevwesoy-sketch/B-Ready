@@ -10,6 +10,7 @@ import { EnhancedNotificationSystem } from '@/components/EnhancedNotificationSys
 import { ColumnSearch, filterReports, type SearchFilters } from '@/components/ColumnSearch';
 import { notificationManager } from '@/components/NotificationManager';
 import type { ReportStatus } from '@/types';
+import { LoadingScreen } from '@/components/LoadingScreen';
 
 export default function StatusUpdatePage() {
   const router = useRouter();
@@ -21,7 +22,7 @@ export default function StatusUpdatePage() {
     loading: socketLoading,
     error: socketError
   } = useOptimizedSocketContext();
-  
+
   // Search state for each column
   const [pendingSearchTerm, setPendingSearchTerm] = useState('');
   const [pendingFilters, setPendingFilters] = useState<SearchFilters>({
@@ -79,18 +80,7 @@ export default function StatusUpdatePage() {
   };
 
   if (authLoading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="text-center">
-          <img
-            src="/BLogo.png"
-            alt="B-READY Logo"
-            className="w-16 h-16 mx-auto mb-4 animate-pulse"
-          />
-          <p>Loading...</p>
-        </div>
-      </div>
-    );
+    return <LoadingScreen />;
   }
 
   if (!user || user.role !== 'admin') return null;
@@ -101,13 +91,13 @@ export default function StatusUpdatePage() {
     pendingSearchTerm,
     pendingFilters
   );
-  
+
   const filteredCurrentReports = filterReports(
     reports.filter((r) => r.status === 'current'),
     currentSearchTerm,
     currentFilters
   );
-  
+
   const filteredApprovedReports = filterReports(
     reports.filter((r) => r.status === 'approved'),
     approvedSearchTerm,
@@ -117,7 +107,7 @@ export default function StatusUpdatePage() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-200">
       <Header />
-      
+
       <main className="max-w-7xl mx-auto px-4 py-8">
         <div className="bg-white/95 backdrop-blur-lg rounded-2xl p-8 shadow-xl">
           <h1 className="text-3xl font-bold mb-4">Status Update</h1>

@@ -6,20 +6,12 @@ import dynamic from 'next/dynamic';
 import { useAuth } from '@/contexts/AuthContext';
 import { Header } from '@/components/Header';
 import { notificationManager } from '@/components/NotificationManager';
+import { LoadingScreen } from '@/components/LoadingScreen';
 
 // Dynamically import MapPicker to avoid SSR issues
 const MapPicker = dynamic(() => import('@/components/MapPicker').then(mod => ({ default: mod.MapPicker })), {
   ssr: false,
-  loading: () => (
-    <div className="fixed inset-0 bg-black/80 z-50 flex items-center justify-center p-4">
-      <div className="bg-white rounded-2xl p-6 max-w-2xl w-full">
-        <div className="text-center">
-          <div className="text-4xl mb-4">⏳</div>
-          <p>Loading map...</p>
-        </div>
-      </div>
-    </div>
-  )
+  loading: () => <LoadingScreen />
 });
 
 export default function ProfilePage() {
@@ -55,14 +47,7 @@ export default function ProfilePage() {
 
   // Wait for authentication to complete before redirecting
   if (loading) {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-200 flex items-center justify-center">
-        <div className="bg-white/95 backdrop-blur-lg rounded-2xl p-8 shadow-xl text-center">
-          <div className="text-4xl mb-4">⏳</div>
-          <p className="text-gray-600 font-semibold">Loading profile...</p>
-        </div>
-      </div>
-    );
+    return <LoadingScreen />;
   }
 
   if (!user) {
@@ -135,7 +120,7 @@ export default function ProfilePage() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-200">
       <Header />
-      
+
       <main className="max-w-4xl mx-auto px-4 py-8">
         <div className="bg-white/95 backdrop-blur-lg rounded-2xl p-8 shadow-xl">
           <h1 className="text-3xl font-bold mb-6">Account Settings</h1>
@@ -345,7 +330,7 @@ export default function ProfilePage() {
 
             <div className="mt-8 pt-8 border-t border-gray-200">
             <h3 className="text-xl font-bold mb-4">Account Security</h3>
-            
+
             <div className="bg-gray-50 p-6 rounded-xl mb-6">
               <div className="flex items-center justify-between mb-4">
                 <div>
