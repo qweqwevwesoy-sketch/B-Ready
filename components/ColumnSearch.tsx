@@ -191,9 +191,6 @@ export function ColumnSearch({
                   Cancel
                 </button>
               </div>
-              <p className="text-xs text-gray-600">
-                Enter date in YYYY-MM-DD format or use the date picker
-              </p>
             </div>
           )}
         </div>
@@ -264,7 +261,7 @@ export function ColumnSearch({
                 { value: 'this-week', label: 'This Week' },
                 { value: 'this-month', label: 'This Month' },
                 { value: 'last-3-months', label: 'Last 3 Months' },
-                { value: 'custom', label: 'Custom Range' }
+                { value: 'custom', label: 'Enter date in YYYY-MM-DD format or use the date picker' }
               ].map((option) => (
                 <label key={option.value} className="flex items-center gap-2 p-2 hover:bg-gray-50 rounded cursor-pointer">
                   <input

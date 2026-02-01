@@ -14,7 +14,7 @@ export function Header() {
 
   return (
     <> 
-      <header className="bg-gradient-to-r from-primary to-primary-dark text-white p-4 sticky top-0 z-50 shadow-md">
+      <header className="bg-gradient-to-r from-primary to-primary-dark text-white py-3 px-4 sticky top-0 z-50 shadow-md">
         <nav className="max-w-7xl mx-auto flex justify-between items-center">
           <h1
             className="text-2xl font-bold cursor-pointer flex items-center gap-2"

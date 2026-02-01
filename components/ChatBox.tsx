@@ -1098,6 +1098,27 @@ export function ChatBox({ reportId, category, onClose, onSendMessage, onSendImag
                 )}
               </div>
 
+              {/* Time and Date */}
+              <div className="bg-gray-50 rounded-lg p-2">
+                <div className="text-xs font-semibold text-gray-600">Time and Date</div>
+                <div className="text-sm">
+                  {currentReport ? (
+                    new Date(currentReport.timestamp).toLocaleString('en-US', {
+                      month: 'short',
+                      day: 'numeric',
+                      year: 'numeric',
+                      hour: '2-digit',
+                      minute: '2-digit',
+                      hour12: true
+                    })
+                  ) : reportId ? (
+                    reportId.startsWith('temp_') ? 'Time not available' :
+                    reportId.startsWith('anonymous_') ? 'Time not available' :
+                    'Time not available'
+                  ) : 'Time not available'}
+                </div>
+              </div>
+
               {/* Contact Info */}
               <div className="bg-gray-50 rounded-lg p-2">
                 <div className="text-xs font-semibold text-gray-600">Contact</div>
