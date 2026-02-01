@@ -53,11 +53,11 @@ export default function LandingPage() {
         }} />
 
         <div className="text-center text-white z-10 max-w-4xl px-4">
-          <img
-            src="/BLogo.png"
-            alt="B-READY Logo"
-            className="w-24 h-24 mx-auto mb-6 animate-pulse"
-          />
+<img
+  src="/Logo.svg"
+  alt="B-READY Logo"
+  className="w-24 h-24 mx-auto mb-6 animate-pulse"
+/>
           <h1 className="text-5xl md:text-6xl font-black mb-4">
             B-READY
           </h1>
