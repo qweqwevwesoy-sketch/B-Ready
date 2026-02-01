@@ -10,7 +10,6 @@ import { Report, Location } from '@/types';
 import { OfflineTileLayer, OfflineMapTileLayer } from '@/components/OfflineMapTileLayer';
 import { locationManager } from '@/lib/location-manager';
 import { routingService } from '@/lib/routing-service';
-import { DebugMonitor } from '@/components/DebugMonitor';
 
 // Import Leaflet CSS for proper map rendering - ensure it loads correctly
 import 'leaflet/dist/leaflet.css';
@@ -400,8 +399,8 @@ export default function RealTimeMapContent() {
   };
 
   const selectSearchResult = (result: SearchResult): void => {
-        const lat = parseFloat(result.lat);
-        const lng = parseFloat(result.lon);
+    const lat = parseFloat(result.lat);
+    const lng = parseFloat(result.lon);
 
     if (mapRef.current) {
       mapRef.current.setView([lat, lng], 18);
@@ -544,7 +543,7 @@ export default function RealTimeMapContent() {
           
           // Add zoom level indicator
           const zoomIndicator = L.control({ position: 'bottomleft' });
-          (zoomIndicator as L.Control).onAdd = function() {
+          zoomIndicator.onAdd = function() {
             const div = L.DomUtil.create('div', 'zoom-indicator');
             div.style.backgroundColor = 'rgba(255, 255, 255, 0.8)';
             div.style.padding = '4px 8px';
@@ -1542,8 +1541,6 @@ export default function RealTimeMapContent() {
         </div>
       </main>
 
-      {/* Debug Monitor */}
-      <DebugMonitor />
     </div>
   );
 }
