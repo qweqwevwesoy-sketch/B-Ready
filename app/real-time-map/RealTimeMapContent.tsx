@@ -370,10 +370,10 @@ export default function RealTimeMapContent() {
     }
 
     try {
-      // Reverse geocode to get address
-      const response = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}`);
+// Reverse geocode to get address using backend API route
+      const response = await fetch(`/api/reverse-geocode?lat=${lat}&lng=${lng}`);
       const data = await response.json();
-      const address = data.display_name || `Lat: ${lat.toFixed(6)}, Lng: ${lng.toFixed(6)}`;
+      const address = data.address || `Lat: ${lat.toFixed(6)}, Lng: ${lng.toFixed(6)}`;
 
       // Add station via API with contact information
       const apiResponse = await fetch('/api/stations', {
