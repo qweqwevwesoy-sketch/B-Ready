@@ -140,28 +140,28 @@ export async function POST(request: NextRequest) {
   console.log('📡 POST /api/stations called - Firestore version');
 
   try {
-    const { name, type, location, address, capacity, currentLoad, status, contact, phone, email, website, description } = await request.json();
+const { name, type, location, address, capacity, currentLoad, status, contact, phone, email, website, description } = await request.json();
 
-    if (!name || !type || !location || !address || !capacity || !currentLoad || !status || !contact) {
+    if (!name) {
       return NextResponse.json(
-        { success: false, error: 'All required fields must be provided' },
+        { success: false, error: 'Station name is required' },
         { status: 400 }
       );
     }
 
     const stationData = {
       name,
-      type,
-      location,
-      address,
-      capacity,
-      currentLoad,
-      status,
-      contact,
-      phone,
-      email,
-      website,
-      description
+      type: type || 'medical',
+      location: location || { lat: 0, lng: 0 },
+      address: address || 'Unknown',
+      capacity: capacity || 0,
+      currentLoad: currentLoad || 0,
+      status: status || 'operational',
+      contact: contact || 'Unknown',
+      phone: phone || '',
+      email: email || '',
+      website: website || '',
+      description: description || ''
     };
 
     const stationId = await createStation(stationData);
