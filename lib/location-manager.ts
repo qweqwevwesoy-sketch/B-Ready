@@ -43,6 +43,8 @@ class LocationManager {
    * 3. Profile address (fallback)
    * 4. Default fallback (lowest priority)
    */
+
+  
   private async initializeLocation(): Promise<void> {
     try {
       // Check for manual location first

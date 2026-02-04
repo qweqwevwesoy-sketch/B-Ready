@@ -241,10 +241,10 @@ async function getLocationByIP(): Promise<{ lat: number; lng: number }> {
 export async function reverseGeocode(lat: number, lng: number): Promise<string> {
   try {
     const response = await fetch(
-      `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&zoom=18&addressdetails=1`
+      `/api/reverse-geocode?lat=${lat}&lng=${lng}`
     );
     const data = await response.json();
-    return data.display_name || `Coordinates: ${lat.toFixed(6)}, ${lng.toFixed(6)}`;
+    return data.address || `Coordinates: ${lat.toFixed(6)}, ${lng.toFixed(6)}`;
   } catch {
     return `Coordinates: ${lat.toFixed(6)}, ${lng.toFixed(6)}`;
   }
