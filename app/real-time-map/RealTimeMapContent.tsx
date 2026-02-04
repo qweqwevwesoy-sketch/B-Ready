@@ -52,19 +52,7 @@ const MAP_CONFIG = {
   ]
 };
 
-interface Station {
-  id: string;
-  name: string;
-  lat: number;
-  lng: number;
-  address: string;
-  phone?: string;
-  email?: string;
-  website?: string;
-  description?: string;
-  contact?: string;
-}
-
+import type { Station } from '@/types';
 interface SearchResult {
   place_id: number;
   display_name: string;
@@ -426,10 +414,9 @@ export default function RealTimeMapContent() {
     }
   };
 
-  const selectSearchResult = (result: SearchResult): void => {
+const selectSearchResult = (result: SearchResult): void => {
     const lat = parseFloat(result.lat);
     const lng = parseFloat(result.lon);
-
     if (mapRef.current) {
       mapRef.current.setView([lat, lng], 18);
       setSearchQuery('');
@@ -570,7 +557,7 @@ export default function RealTimeMapContent() {
           console.log('Map loaded successfully');
           
           // Add zoom level indicator
-          const zoomIndicator = L.control({ position: 'bottomleft' });
+const zoomIndicator = L.control({ position: 'bottomleft' });
           zoomIndicator.onAdd = function() {
             const div = L.DomUtil.create('div', 'zoom-indicator');
             div.style.backgroundColor = 'rgba(255, 255, 255, 0.8)';
@@ -581,14 +568,14 @@ export default function RealTimeMapContent() {
             div.style.color = '#333';
             div.style.boxShadow = '0 2px 4px rgba(0,0,0,0.1)';
             div.style.pointerEvents = 'none'; // Let clicks pass through
-            
+
             function updateZoom() {
               div.innerHTML = `Zoom: ${map.getZoom()}`;
             }
-            
+
             map.on('zoomend', updateZoom);
             updateZoom();
-            
+
             return div;
           };
           zoomIndicator.addTo(map);

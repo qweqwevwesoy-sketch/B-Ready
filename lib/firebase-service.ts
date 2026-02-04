@@ -1,6 +1,6 @@
-import { collection, addDoc, updateDoc, deleteDoc, doc, getDocs, query, orderBy, where } from 'firebase/firestore';
+import { collection, addDoc, updateDoc, deleteDoc, doc, getDocs, getDoc, query, orderBy, where } from 'firebase/firestore';
 import { db } from './firebase';
-import type { SafetyTip, EmergencyKitItem, EmergencyContact } from '@/types';
+import type { SafetyTip, EmergencyKitItem, EmergencyContact, Station } from '@/types';
 
 // Safety Tips Firestore operations
 export const safetyTipsCollection = collection(db, 'safety_tips');
@@ -172,5 +172,120 @@ export const fetchEmergencyContacts = async (): Promise<EmergencyContact[]> => {
   } catch (error) {
     console.error('Error fetching emergency contacts:', error);
     throw new Error('Failed to fetch emergency contacts');
+  }
+};
+
+// Stations Firestore operations
+export const stationsCollection = collection(db, 'emergency_stations');
+
+export const createStation = async (station: Omit<Station, 'id' | 'created_at' | 'updated_at'>): Promise<string> => {
+  try {
+    const docRef = await addDoc(stationsCollection, {
+      ...station,
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString()
+    });
+    return docRef.id;
+  } catch (error) {
+    console.error('Error creating station:', error);
+    throw new Error('Failed to create station');
+  }
+};
+
+export const updateStation = async (id: string, station: Partial<Station>): Promise<void> => {
+  try {
+    if (!id || id.trim() === '') {
+      throw new Error('Station ID cannot be empty');
+    }
+    
+    const stationRef = doc(stationsCollection, id);
+    await updateDoc(stationRef, {
+      ...station,
+      updated_at: new Date().toISOString()
+    });
+  } catch (error) {
+    console.error('Error updating station:', error);
+    throw new Error('Failed to update station');
+  }
+};
+
+export const deleteStation = async (id: string): Promise<void> => {
+  try {
+    const stationRef = doc(stationsCollection, id);
+    await deleteDoc(stationRef);
+  } catch (error) {
+    console.error('Error deleting station:', error);
+    throw new Error('Failed to delete station');
+  }
+};
+
+export const fetchStations = async (): Promise<Station[]> => {
+  try {
+    const q = query(stationsCollection, orderBy('name', 'asc'));
+    const querySnapshot = await getDocs(q);
+    const stations: Station[] = [];
+    
+    querySnapshot.forEach((doc) => {
+      stations.push({ id: doc.id, ...doc.data() } as Station);
+    });
+    
+    return stations;
+  } catch (error) {
+    console.error('Error fetching stations:', error);
+    throw new Error('Failed to fetch stations');
+  }
+};
+
+export const fetchStationById = async (id: string): Promise<Station | null> => {
+  try {
+    if (!id || id.trim() === '') {
+      throw new Error('Station ID cannot be empty');
+    }
+    
+    const stationRef = doc(stationsCollection, id);
+    const docSnapshot = await getDoc(stationRef);
+    
+    if (docSnapshot.exists()) {
+      return { id: docSnapshot.id, ...docSnapshot.data() } as Station;
+    }
+    
+    return null;
+  } catch (error) {
+    console.error('Error fetching station by ID:', error);
+    throw new Error('Failed to fetch station by ID');
+  }
+};
+
+export const fetchStationsByType = async (type: Station['type']): Promise<Station[]> => {
+  try {
+    const q = query(stationsCollection, where('type', '==', type), orderBy('name', 'asc'));
+    const querySnapshot = await getDocs(q);
+    const stations: Station[] = [];
+    
+    querySnapshot.forEach((doc) => {
+      stations.push({ id: doc.id, ...doc.data() } as Station);
+    });
+    
+    return stations;
+  } catch (error) {
+    console.error('Error fetching stations by type:', error);
+    throw new Error('Failed to fetch stations by type');
+  }
+};
+
+export const fetchStationsByStatus = async (status: Station['status']): Promise<Station[]> => {
+  try {
+    const q = query(stationsCollection, where('status', '==', status), orderBy('name', 'asc'));
+    const querySnapshot = await getDocs(q);
+    const stations: Station[] = [];
+    
+    querySnapshot.forEach((doc) => {
+      stations.push({ id: doc.id, ...doc.data() } as Station);
+    });
+    
+    return stations;
+  } catch (error) {
+    console.error('Error fetching stations by status:', error);
+    throw new Error('Failed to fetch stations by status');
   }
 };

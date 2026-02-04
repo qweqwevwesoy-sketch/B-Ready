@@ -1,217 +1,174 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { mysqlConnection } from '@/lib/mysql-connection';
-import { db } from '@/lib/firebase';
-import { collection, getDocs } from 'firebase/firestore';
+import { createStation, updateStation, deleteStation, fetchStations, fetchStationById, fetchStationsByType, fetchStationsByStatus } from '@/lib/firebase-service';
 
-console.log('🚀 Stations API route loaded - Database version with Firebase fallback');
+console.log('🚀 Stations API route loaded - Firestore version');
 
 interface Station {
   id: string;
   name: string;
-  lat: number;
-  lng: number;
+  type: 'fire' | 'police' | 'medical' | 'barangay';
+  location: {
+    lat: number;
+    lng: number;
+  };
   address: string;
+  capacity: number;
+  currentLoad: number;
+  status: 'operational' | 'overloaded' | 'closed';
+  contact: string;
   phone?: string;
   email?: string;
   website?: string;
   description?: string;
-  created_by?: string;
-  created_at?: string;
-  updated_at?: string;
+  created_at: string;
+  updated_at: string;
 }
 
 // GET /api/stations - Get all stations
-export async function GET() {
-  console.log('📡 GET /api/stations called - Database version with Firebase fallback');
+export async function getAllStations() {
+  console.log('📡 GET /api/stations called - Firestore version');
 
   try {
-    // Try database first
-    const rows = await mysqlConnection.query(
-      'SELECT * FROM emergency_stations ORDER BY name'
-    );
-
-    console.log('✅ Successfully fetched stations from database:', rows.length);
+    const stations = await fetchStations();
+    console.log('✅ Successfully fetched stations from Firestore:', stations.length);
     return NextResponse.json({
       success: true,
-      stations: rows as Station[]
+      stations: stations
     });
   } catch (error) {
-    console.error('❌ Database error fetching stations:', error);
+    console.error('❌ Error fetching stations:', error);
+    return NextResponse.json(
+      { success: false, error: 'Failed to fetch stations' },
+      { status: 500 }
+    );
+  }
+}
 
-    // Fallback to Firebase if database fails
-    try {
-      console.log('🔥 Falling back to Firebase for stations data');
-      const stationsCollection = collection(db, 'emergency_stations');
-      const snapshot = await getDocs(stationsCollection);
+// GET /api/stations?id=station_id - Get station by ID
+export async function getStationById(request: NextRequest) {
+  const { searchParams } = new URL(request.url);
+  const stationId = searchParams.get('id');
 
-      const stations = snapshot.docs.map(doc => ({
-        id: doc.id,
-        ...doc.data()
-      })) as Station[];
+  if (!stationId) {
+    return NextResponse.json(
+      { success: false, error: 'Station ID is required' },
+      { status: 400 }
+    );
+  }
 
-      console.log('✅ Successfully fetched stations from Firebase:', stations.length);
-
-      // If Firebase also fails or returns empty, return default stations
-      if (stations.length === 0) {
-        console.log('📋 Using default stations as fallback');
-        const defaultStations = [
-          {
-            id: 'station_1',
-            name: 'Manila Central Fire Station',
-            lat: 14.5995,
-            lng: 120.9842,
-            address: 'Manila, Metro Manila, Philippines',
-            phone: '+63 2 8527 3100',
-            email: 'manila.fire@bureau.gov.ph',
-            website: 'https://www.bfp.gov.ph',
-            description: 'Main fire station for Metro Manila area'
-          },
-          {
-            id: 'station_2',
-            name: 'Cebu City Fire Station',
-            lat: 10.3157,
-            lng: 123.8854,
-            address: 'Cebu City, Cebu, Philippines',
-            phone: '+63 32 253 7777',
-            email: 'cebu.fire@bureau.gov.ph',
-            website: 'https://www.bfp.gov.ph',
-            description: 'Primary fire response station for Cebu City'
-          },
-          {
-            id: 'station_3',
-            name: 'Davao City Fire Station',
-            lat: 7.1907,
-            lng: 125.4553,
-            address: 'Davao City, Davao del Sur, Philippines',
-            phone: '+63 82 221 0234',
-            email: 'davao.fire@bureau.gov.ph',
-            website: 'https://www.bfp.gov.ph',
-            description: 'Main fire station for Davao City and surrounding areas'
-          },
-          {
-            id: 'station_4',
-            name: 'Baguio Emergency Response Center',
-            lat: 16.4023,
-            lng: 120.5960,
-            address: 'Baguio City, Benguet, Philippines',
-            phone: '+63 74 442 3333',
-            email: 'baguio.fire@bureau.gov.ph',
-            website: 'https://www.bfp.gov.ph',
-            description: 'Emergency response center for Baguio City'
-          }
-        ];
-
-        return NextResponse.json({
-          success: true,
-          stations: defaultStations
-        });
-      }
-
-      return NextResponse.json({
-        success: true,
-        stations: stations
-      });
-    } catch (firebaseError) {
-      console.error('❌ Firebase error fetching stations:', firebaseError);
-
-      // Return default stations as last resort
-      console.log('📋 Using default stations as final fallback');
-      const defaultStations = [
-        {
-          id: 'station_1',
-          name: 'Manila Central Fire Station',
-          lat: 14.5995,
-          lng: 120.9842,
-          address: 'Manila, Metro Manila, Philippines',
-          phone: '+63 2 8527 3100',
-          email: 'manila.fire@bureau.gov.ph',
-          website: 'https://www.bfp.gov.ph',
-          description: 'Main fire station for Metro Manila area'
-        },
-        {
-          id: 'station_2',
-          name: 'Cebu City Fire Station',
-          lat: 10.3157,
-          lng: 123.8854,
-          address: 'Cebu City, Cebu, Philippines',
-          phone: '+63 32 253 7777',
-          email: 'cebu.fire@bureau.gov.ph',
-          website: 'https://www.bfp.gov.ph',
-          description: 'Primary fire response station for Cebu City'
-        },
-        {
-          id: 'station_3',
-          name: 'Davao City Fire Station',
-          lat: 7.1907,
-          lng: 125.4553,
-          address: 'Davao City, Davao del Sur, Philippines',
-          phone: '+63 82 221 0234',
-          email: 'davao.fire@bureau.gov.ph',
-          website: 'https://www.bfp.gov.ph',
-          description: 'Main fire station for Davao City and surrounding areas'
-        },
-        {
-          id: 'station_4',
-          name: 'Baguio Emergency Response Center',
-          lat: 16.4023,
-          lng: 120.5960,
-          address: 'Baguio City, Benguet, Philippines',
-          phone: '+63 74 442 3333',
-          email: 'baguio.fire@bureau.gov.ph',
-          website: 'https://www.bfp.gov.ph',
-          description: 'Emergency response center for Baguio City'
-        }
-      ];
-
-      return NextResponse.json({
-        success: true,
-        stations: defaultStations
-      });
+  try {
+    const station = await fetchStationById(stationId);
+    if (!station) {
+      return NextResponse.json(
+        { success: false, error: 'Station not found' },
+        { status: 404 }
+      );
     }
+
+    console.log('✅ Successfully fetched station by ID:', stationId);
+    return NextResponse.json({
+      success: true,
+      station: station
+    });
+  } catch (error) {
+    console.error('❌ Error fetching station by ID:', error);
+    return NextResponse.json(
+      { success: false, error: 'Failed to fetch station' },
+      { status: 500 }
+    );
+  }
+}
+
+// GET /api/stations?type=fire - Get stations by type
+export async function getStationsByType(request: NextRequest) {
+  const { searchParams } = new URL(request.url);
+  const type = searchParams.get('type') as Station['type'];
+
+  if (!type) {
+    return NextResponse.json(
+      { success: false, error: 'Station type is required' },
+      { status: 400 }
+    );
+  }
+
+  try {
+    const stations = await fetchStationsByType(type);
+    console.log('✅ Successfully fetched stations by type:', type);
+    return NextResponse.json({
+      success: true,
+      stations: stations
+    });
+  } catch (error) {
+    console.error('❌ Error fetching stations by type:', error);
+    return NextResponse.json(
+      { success: false, error: 'Failed to fetch stations by type' },
+      { status: 500 }
+    );
+  }
+}
+
+// GET /api/stations?status=operational - Get stations by status
+export async function getStationsByStatus(request: NextRequest) {
+  const { searchParams } = new URL(request.url);
+  const status = searchParams.get('status') as Station['status'];
+
+  if (!status) {
+    return NextResponse.json(
+      { success: false, error: 'Station status is required' },
+      { status: 400 }
+    );
+  }
+
+  try {
+    const stations = await fetchStationsByStatus(status);
+    console.log('✅ Successfully fetched stations by status:', status);
+    return NextResponse.json({
+      success: true,
+      stations: stations
+    });
+  } catch (error) {
+    console.error('❌ Error fetching stations by status:', error);
+    return NextResponse.json(
+      { success: false, error: 'Failed to fetch stations by status' },
+      { status: 500 }
+    );
   }
 }
 
 // POST /api/stations - Add a new station (admin only)
 export async function POST(request: NextRequest) {
-  console.log('📡 POST /api/stations called - Database version');
+  console.log('📡 POST /api/stations called - Firestore version');
 
   try {
-    const { name, lat, lng, address, phone, email, website, description, created_by } = await request.json();
+    const { name, type, location, address, capacity, currentLoad, status, contact, phone, email, website, description } = await request.json();
 
-    if (!name) {
+    if (!name || !type || !location || !address || !capacity || !currentLoad || !status || !contact) {
       return NextResponse.json(
-        { success: false, error: 'Station name is required' },
+        { success: false, error: 'All required fields must be provided' },
         { status: 400 }
       );
     }
 
-    // Generate a unique ID
-    const stationId = `station_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+    const stationData = {
+      name,
+      type,
+      location,
+      address,
+      capacity,
+      currentLoad,
+      status,
+      contact,
+      phone,
+      email,
+      website,
+      description
+    };
 
-    await mysqlConnection.execute(
-      'INSERT INTO emergency_stations (id, name, lat, lng, address, phone, email, website, description, created_by) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
-      [
-        stationId,
-        name,
-        parseFloat(lat),
-        parseFloat(lng),
-        address || null,
-        phone || null,
-        email || null,
-        website || null,
-        description || null,
-        created_by || null
-      ]
-    );
+    const stationId = await createStation(stationData);
+    const station = await fetchStationById(stationId);
 
-    // Fetch the newly created station
-    const [newStation] = await mysqlConnection.query(
-      'SELECT * FROM emergency_stations WHERE id = ?',
-      [stationId]
-    );
-
-    console.log('✅ Station added to database:', stationId);
-    return NextResponse.json({ success: true, station: newStation as Station });
+    console.log('✅ Station added to Firestore:', stationId);
+    return NextResponse.json({ success: true, station: station });
   } catch (error) {
     console.error('❌ Error adding station:', error);
     return NextResponse.json(
@@ -221,9 +178,52 @@ export async function POST(request: NextRequest) {
   }
 }
 
+// PUT /api/stations - Update a station (admin only)
+export async function PUT(request: NextRequest) {
+  console.log('📡 PUT /api/stations called - Firestore version');
+
+  try {
+    const { id, name, type, location, address, capacity, currentLoad, status, contact, phone, email, website, description } = await request.json();
+
+    if (!id) {
+      return NextResponse.json(
+        { success: false, error: 'Station ID is required' },
+        { status: 400 }
+      );
+    }
+
+    const stationData: Partial<Station> = {
+      name,
+      type,
+      location,
+      address,
+      capacity,
+      currentLoad,
+      status,
+      contact,
+      phone,
+      email,
+      website,
+      description
+    };
+
+    await updateStation(id, stationData);
+    const updatedStation = await fetchStationById(id);
+
+    console.log('✅ Station updated in Firestore:', id);
+    return NextResponse.json({ success: true, station: updatedStation });
+  } catch (error) {
+    console.error('❌ Error updating station:', error);
+    return NextResponse.json(
+      { success: false, error: 'Failed to update station' },
+      { status: 500 }
+    );
+  }
+}
+
 // DELETE /api/stations?id=station_id - Delete a station (admin only)
 export async function DELETE(request: NextRequest) {
-  console.log('📡 DELETE /api/stations called - Database version');
+  console.log('📡 DELETE /api/stations called - Firestore version');
 
   try {
     const { searchParams } = new URL(request.url);
@@ -245,88 +245,14 @@ export async function DELETE(request: NextRequest) {
       );
     }
 
-    const result = await mysqlConnection.execute(
-      'DELETE FROM emergency_stations WHERE id = ?',
-      [stationId]
-    );
+    await deleteStation(stationId);
 
-    if (result.affectedRows === 0) {
-      return NextResponse.json(
-        { success: false, error: 'Station not found' },
-        { status: 404 }
-      );
-    }
-
-    console.log('✅ Station deleted from database:', stationId);
+    console.log('✅ Station deleted from Firestore:', stationId);
     return NextResponse.json({ success: true });
   } catch (error) {
     console.error('❌ Error deleting station:', error);
     return NextResponse.json(
       { success: false, error: 'Failed to delete station' },
-      { status: 500 }
-    );
-  }
-}
-
-// PUT /api/stations - Update a station (admin only)
-export async function PUT(request: NextRequest) {
-  console.log('📡 PUT /api/stations called - Database version');
-
-  try {
-    const { id, name, lat, lng, address, phone, email, website, description } = await request.json();
-
-    if (!id) {
-      return NextResponse.json(
-        { success: false, error: 'Station ID is required' },
-        { status: 400 }
-      );
-    }
-
-    // Build update query dynamically based on provided fields
-    const updates: string[] = [];
-    const params: (string | number | null)[] = [];
-
-    if (name !== undefined) { updates.push('name = ?'); params.push(name); }
-    if (lat !== undefined && lat !== null) { updates.push('lat = ?'); params.push(parseFloat(lat)); }
-    if (lng !== undefined && lng !== null) { updates.push('lng = ?'); params.push(parseFloat(lng)); }
-    if (address !== undefined) { updates.push('address = ?'); params.push(address); }
-    if (phone !== undefined) { updates.push('phone = ?'); params.push(phone); }
-    if (email !== undefined) { updates.push('email = ?'); params.push(email); }
-    if (website !== undefined) { updates.push('website = ?'); params.push(website); }
-    if (description !== undefined) { updates.push('description = ?'); params.push(description); }
-
-    if (updates.length === 0) {
-      return NextResponse.json(
-        { success: false, error: 'No fields to update' },
-        { status: 400 }
-      );
-    }
-
-    params.push(id); // Add ID for WHERE clause
-
-    const query = `UPDATE emergency_stations SET ${updates.join(', ')}, updated_at = CURRENT_TIMESTAMP WHERE id = ?`;
-
-    const result = await mysqlConnection.execute(query, params);
-
-    if (result.affectedRows === 0) {
-      return NextResponse.json(
-        { success: false, error: 'Station not found' },
-        { status: 404 }
-      );
-    }
-
-    // Fetch the updated station
-    const [updatedStation] = await mysqlConnection.query(
-      'SELECT * FROM emergency_stations WHERE id = ?',
-      [id]
-    );
-
-    console.log('✅ Station updated in database:', id);
-    return NextResponse.json({ success: true, station: updatedStation as Station });
-  } catch (error) {
-    console.error('❌ Error updating station:', error);
-    return NextResponse.json(
-      { success: false, error: 'Failed to update station' },
       { status: 500 }
     );
   }
