@@ -493,9 +493,10 @@ const timestamp = new Date().toISOString();
               </div>
             </div>
           </div>
-        </div>
-        {/* Statistics Section */}
+          {/* Statistics Section */}
           <Statistics reports={reports} />
+        </div>
+        
       </main>
 
       {user && <FAB onCategorySelect={handleCategorySelect} />}
