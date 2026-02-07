@@ -20,14 +20,22 @@ export function Statistics({ reports }: StatisticsProps) {
   const weeklyReports = reports.filter(r => 
     new Date(r.timestamp) >= new Date(new Date().setDate(new Date().getDate() - new Date().getDay()))
   ).length;
+  const monthlyReports = reports.filter(r => 
+    new Date(r.timestamp) >= new Date(new Date().getFullYear(), new Date().getMonth(), 1)
+  ).length;
+  const yearlyReports = reports.filter(r => 
+    new Date(r.timestamp) >= new Date(new Date().getFullYear(), 0, 1)
+  ).length;
 
   // Generate sentence summary
   const generateSummary = () => {
     const totalText = totalReports === 1 ? '1 report' : `${totalReports} reports`;
     const dailyText = dailyReports === 1 ? '1 report today' : `${dailyReports} reports today`;
     const weeklyText = weeklyReports === 1 ? '1 report this week' : `${weeklyReports} reports this week`;
+    const monthlyText = monthlyReports === 1 ? '1 report this month' : `${monthlyReports} reports this month`;
+    const yearlyText = yearlyReports === 1 ? '1 report this year' : `${yearlyReports} reports this year`;
 
-    return `There are ${totalText} in the system. In the last 24 hours, there were ${dailyText}. This week, we've received ${weeklyText}.`;
+    return `There are ${totalText} in the system. In the last 24 hours, there were ${dailyText}. This week, we've received ${weeklyText}. This month, we've received ${monthlyText}. This year, we've received ${yearlyText}.`;
   };
 
   // Chart data for trends
@@ -37,9 +45,9 @@ export function Statistics({ reports }: StatisticsProps) {
       datasets: [
         {
           label: 'Report Counts',
-          data: [dailyReports, weeklyReports, reports.filter(r => new Date(r.timestamp) >= new Date(new Date().getFullYear(), new Date().getMonth(), 1)).length, reports.filter(r => new Date(r.timestamp) >= new Date(new Date().getFullYear(), Math.floor(new Date().getMonth() / 3) * 3, 1)).length, reports.filter(r => new Date(r.timestamp) >= new Date(new Date().getFullYear(), 0, 1)).length, totalReports],
-          borderColor: 'rgb(75, 192, 192)',
-          backgroundColor: 'rgba(75, 192, 192, 0.2)',
+          data: [dailyReports, weeklyReports, monthlyReports, reports.filter(r => new Date(r.timestamp) >= new Date(new Date().getFullYear(), Math.floor(new Date().getMonth() / 3) * 3, 1)).length, yearlyReports, totalReports],
+          borderColor: 'rgb(255, 205, 86)', // Yellow color
+          backgroundColor: 'rgba(255, 205, 86, 0.2)', // Yellow color
           tension: 0.1,
           fill: true
         }
@@ -82,29 +90,42 @@ export function Statistics({ reports }: StatisticsProps) {
         </div>
       </div>
 
-      {/* 2-Column Layout */} 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
-        {/* Graph (Left Column) */} 
-        <div className="h-64 bg-white rounded-lg shadow">
-          <Line data={getTrendData()} options={trendOptions} />
-        </div>
+      {/* Reports Container */} 
+      <div className="bg-white/95 backdrop-blur-lg rounded-2xl p-8 shadow-xl mb-6">
+        {/* 2-Column Layout */} 
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          {/* Graph (Left Column) */} 
+          <div className="h-64 bg-white rounded-lg shadow">
+            <Line data={getTrendData()} options={trendOptions} />
+          </div>
 
-        {/* Statistics (Right Column) */} 
-        <div className="space-y-4">
-          <div className="bg-blue-50 rounded-lg p-4 hover:shadow-lg transition-shadow">
-            <div className="text-2xl font-bold text-blue-600">{totalReports}</div>
-            <div className="text-sm text-blue-800">Total Reports</div>
-            <div className="text-xs text-blue-400 mt-1">All time</div>
-          </div>
-          <div className="bg-blue-50 rounded-lg p-4 hover:shadow-lg transition-shadow">
-            <div className="text-2xl font-bold text-blue-600">{dailyReports}</div>
-            <div className="text-sm text-blue-800">Today</div>
-            <div className="text-xs text-blue-400 mt-1">Last 24 hours</div>
-          </div>
-          <div className="bg-blue-50 rounded-lg p-4 hover:shadow-lg transition-shadow">
-            <div className="text-2xl font-bold text-blue-600">{weeklyReports}</div>
-            <div className="text-sm text-blue-800">This Week</div>
-            <div className="text-xs text-blue-400 mt-1">Last 7 days</div>
+          {/* Statistics (Right Column) */} 
+          <div className="space-y-4">
+            <div className="bg-blue-50 rounded-lg p-4 hover:shadow-lg transition-shadow">
+              <div className="text-2xl font-bold text-blue-600">{totalReports}</div>
+              <div className="text-sm text-blue-800">Total Reports</div>
+              <div className="text-xs text-blue-400 mt-1">All time</div>
+            </div>
+            <div className="bg-blue-50 rounded-lg p-4 hover:shadow-lg transition-shadow">
+              <div className="text-2xl font-bold text-blue-600">{dailyReports}</div>
+              <div className="text-sm text-blue-800">Today</div>
+              <div className="text-xs text-blue-400 mt-1">Last 24 hours</div>
+            </div>
+            <div className="bg-blue-50 rounded-lg p-4 hover:shadow-lg transition-shadow">
+              <div className="text-2xl font-bold text-blue-600">{weeklyReports}</div>
+              <div className="text-sm text-blue-800">This Week</div>
+              <div className="text-xs text-blue-400 mt-1">Last 7 days</div>
+            </div>
+            <div className="bg-blue-50 rounded-lg p-4 hover:shadow-lg transition-shadow">
+              <div className="text-2xl font-bold text-blue-600">{monthlyReports}</div>
+              <div className="text-sm text-blue-800">This Month</div>
+              <div className="text-xs text-blue-400 mt-1">Current month</div>
+            </div>
+            <div className="bg-blue-50 rounded-lg p-4 hover:shadow-lg transition-shadow">
+              <div className="text-2xl font-bold text-blue-600">{yearlyReports}</div>
+              <div className="text-sm text-blue-800">This Year</div>
+              <div className="text-xs text-blue-400 mt-1">Current year</div>
+            </div>
           </div>
         </div>
       </div>
