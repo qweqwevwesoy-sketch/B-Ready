@@ -88,24 +88,24 @@ const getTrendData = () => {
 
       {/* 2-Column Layout */} 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
-        {/* Graph (Left Column) */} 
-        <div className="h-64 bg-white rounded-lg shadow">
+{/* Graph (Left Column) */} 
+        <div className="bg-white rounded-lg shadow">
           <Line data={getTrendData()} options={trendOptions} />
         </div>
 
-        {/* Statistics (Right Column) */} 
-        <div className="space-y-4">
-          <div className="bg-blue-50 rounded-lg p-4 hover:shadow-lg transition-shadow">
+{/* Statistics (Right Column) */} 
+        <div className="flex flex-col space-y-4 lg:space-y-0 lg:flex-row lg:items-stretch">
+          <div className="flex-1 bg-blue-50 rounded-lg p-4 hover:shadow-lg transition-shadow">
             <div className="text-2xl font-bold text-blue-600">{totalReports}</div>
             <div className="text-sm text-blue-800">Total Reports</div>
             <div className="text-xs text-blue-400 mt-1">All time</div>
           </div>
-          <div className="bg-blue-50 rounded-lg p-4 hover:shadow-lg transition-shadow">
+          <div className="flex-1 bg-blue-50 rounded-lg p-4 hover:shadow-lg transition-shadow">
             <div className="text-2xl font-bold text-blue-600">{dailyReports}</div>
             <div className="text-sm text-blue-800">Today</div>
             <div className="text-xs text-blue-400 mt-1">Last 24 hours</div>
           </div>
-          <div className="bg-blue-50 rounded-lg p-4 hover:shadow-lg transition-shadow">
+          <div className="flex-1 bg-blue-50 rounded-lg p-4 hover:shadow-lg transition-shadow">
             <div className="text-2xl font-bold text-blue-600">{weeklyReports}</div>
             <div className="text-sm text-blue-800">This Week</div>
             <div className="text-xs text-blue-400 mt-1">Last 7 days</div>

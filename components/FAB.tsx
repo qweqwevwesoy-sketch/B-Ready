@@ -29,7 +29,7 @@ export function FAB({ onCategorySelect }: FABProps) {
         className="fixed bottom-6 right-6 w-16 h-16 bg-gradient-to-r from-yellow-400 to-yellow-600 text-white rounded-full shadow-2xl hover:shadow-3xl transform hover:scale-105 transition-all duration-200 z-50 flex items-center justify-center text-2xl font-bold"
         aria-label="Report Emergency"
       >
-        +
+        SOS
       </button>
 
       {/* Modal Overlay */}
