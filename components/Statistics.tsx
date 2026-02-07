@@ -1,11 +1,11 @@
 'use client';
 
-import { Chart as ChartJS, CategoryScale, LinearScale, BarElement, LineElement, PointElement, Title, Tooltip, Legend, BarController, DoughnutController, PieController } from 'chart.js';
+import { Chart as ChartJS, CategoryScale, LinearScale, BarElement, LineElement, PointElement, ArcElement, Title, Tooltip, Legend, BarController, DoughnutController, PieController } from 'chart.js';
 import { Line, Bar, Doughnut } from 'react-chartjs-2';
 import { formatDateTime } from '@/lib/utils';
 import type { Report } from '@/types';
 
-ChartJS.register(CategoryScale, LinearScale, BarElement, LineElement, PointElement, Title, Tooltip, Legend, BarController, DoughnutController, PieController);
+ChartJS.register(CategoryScale, LinearScale, BarElement, LineElement, PointElement, ArcElement, Title, Tooltip, Legend, BarController, DoughnutController, PieController);
 
 interface StatisticsProps {
   reports: Report[];
