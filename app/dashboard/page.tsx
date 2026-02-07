@@ -26,6 +26,7 @@ import {
   type OfflineMessage
 } from '@/lib/offline-manager';
 import { getLocalStorageItem } from '@/lib/client-utils';
+import { Statistics } from '@/components/Statistics';
 
 function SearchParamsWrapper() {
   const searchParams = useSearchParams();
@@ -48,7 +49,7 @@ function DashboardContent({ searchParams }: { searchParams: URLSearchParams }) {
     loading: socketLoading,
     error: socketError
   } = useOptimizedSocketContext();
-  
+
   const isWebSocketAvailable = connected;
   const [selectedCategory, setSelectedCategory] = useState<Category | null>(null);
   const [showChatbox, setShowChatbox] = useState(false);
@@ -83,13 +84,13 @@ function DashboardContent({ searchParams }: { searchParams: URLSearchParams }) {
     approvedSearchTerm,
     approvedFilters
   );
-  
+
   const filteredCurrentReports = filterReports(
     reports.filter((r) => r.status === 'current'),
     currentSearchTerm,
     currentFilters
   );
-  
+
   const filteredThirdColumnReports = filterReports(
     user?.role === 'admin'
       ? reports.filter((r) => r.status === 'pending')
@@ -241,7 +242,7 @@ function DashboardContent({ searchParams }: { searchParams: URLSearchParams }) {
       console.error('Error creating report:', error);
       notificationManager.error('Failed to get location. Report will be submitted without location.');
 
-      const timestamp = new Date().toISOString();
+const timestamp = new Date().toISOString();
       const tempId = `temp_${Date.now()}_${user.uid}`;
       setTempReportId(tempId);
       setCurrentReportChat(tempId); // Enable chat immediately
@@ -326,6 +327,9 @@ function DashboardContent({ searchParams }: { searchParams: URLSearchParams }) {
       <Header />
 
       <main className="max-w-7xl mx-auto px-4 py-8">
+
+        {/* Statistics Section */}
+        <Statistics reports={reports} />
 
         {/* Reports Section */}
         <div className="bg-white/95 backdrop-blur-lg rounded-2xl p-8 shadow-xl">

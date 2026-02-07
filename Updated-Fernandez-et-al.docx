@@ -1,0 +1,1017 @@
+B-READY: A WEB-BASED SYSTEM FOR REAL-TIME BARANGAY DISASTER REPORTING AND RESPONSE
+
+
+
+
+
+
+
+
+
+
+
+A  Research Presented to the
+
+Senior High School Department
+
+Of Tagum National Trade High School
+
+Tagum City, Davao Del Norte
+
+
+
+
+
+
+
+In Partial Fulfillment of the Requirements 
+
+in  Practical Research 2
+
+
+
+
+
+
+
+	
+
+ALDREI GIFT M. FERNANDEZ
+
+RYNA FLOR ALLEN M. CABREROS
+
+ANGEL V. LUMBA 
+
+KYLE SEAN J. FALLER
+
+EDRIEL DAVE P. CALAPOTOC
+
+MARIEL C. ADOLFO
+
+RYAN CHRISTIAN CANOY
+
+
+
+
+
+
+
+November 2025
+
+TABLE OF CONTENTS
+
+                  Page
+
+TITLE PAGE										i
+
+ACCEPTANCE AND APPROVAL SHEET                                                   ii
+
+ACKNOWLEDGMENT								iii
+
+DEDICATION 									iv
+
+ABSTRACT										v
+
+TABLE OF CONTENTS								vi
+
+LIST OF TABLES									viii
+
+LIST OF FIGURES								   	ix
+
+CHAPTER
+
+      1   INTRODUCTION
+
+	Project Context       								1
+
+	Purpose and Description							3
+
+	Objective of the study							5
+
+	Review of Related Literature						5
+
+	Conceptual Framework							15
+
+	Significance of the study							21
+
+	Scope and Delimitation of the Study					23
+
+	Definition of Terms								24
+
+      2   MATERIALS AND METHODS
+
+	Research Design								26
+
+	Research Subject								27
+
+	Process Model								28
+
+	Research Instrument							36
+
+	Data Gathering Procedure							37
+
+	Data Analysis								40
+
+	Safety Precautions								44
+
+	Ethical Considerations							45
+
+REFERENCES								   	48
+
+
+
+
+
+
+
+LIST OF TABLES
+
+      TABLE									      PAGE
+
+Distribution of Research Subjects       	       		    	           27
+
+ Research Timeline                                                			           30
+
+Hardware and Software Minimum 
+
+System Requirements/Specifications		        		           31
+
+Implementation Progress Tracking                            		           33
+
+Parameter Limits with their descriptive equivalent of the B-READY       38
+
+
+
+LIST OF FIGURES
+
+     FIGURE									      PAGE
+
+Conceptual Framework of the Study                           		            16
+
+SDLC Iterative Model                                             		            29
+
+System Architecture Diagram of B-READY				            32
+
+Use Case Diagram of B-READY						 33
+
+Screenshot of Victim Dashboard Prototype                                    	 35
+
+Screenshot of Administrator Dashboard Prototype                  	            36
+
+
+
+
+
+					Chapter 1
+
+INTRODUCTION
+
+Project Context	
+
+Disasters are a growing global concern, occurring with increasing frequency and intensity due to climate change, globalization, and rapid urbanization. Around the world, emergency management and health agencies play critical roles during disaster events, yet studies reveal that communication breakdowns between these sectors often hinder timely and effective response. Barriers such as unclear protocols, delayed reporting, and poor data integration limit decision-making efficiency, sometimes turning manageable incidents into large-scale crises. Global experts highlight the potential of digital tools and artificial intelligence to improve data sharing, streamline incident reporting, and support faster, better-coordinated responses (Abbas et al., 2025).
+
+The Philippines ranks among the most disaster-prone countries in the world, with an average of 15 to 20 typhoons annually. Despite having national policies and programs aimed at disaster risk reduction management (DRRM), implementation often suffers from inefficiency, corruption, and poor inter-agency coordination. These gaps in disaster preparedness underscore the urgent need for technology-driven solutions that empower communities to respond rapidly and effectively at the local level. Strengthening barangay-level disaster reporting systems is particularly important in the Philippine context, where small-scale, community-focused action can significantly reduce risks and losses (Lallana, 2021).
+
+In Davao City, catastrophic flooding events such as the 2011 flash flood resulted in significant property damage and loss of lives. Post-disaster studies revealed that the absence of a clear communication protocol and low community awareness contributed to a six-hour delay in the initial response, which worsened the disaster’s impact. While agencies displayed a degree of preparedness, the lack of a real-time, coordinated reporting mechanism left communities highly vulnerable. These findings emphasize the critical importance of localized disaster management solutions that prioritize immediate communication and coordination between residents and authorities (Cayamanda & Paunlagui, 2020).
+
+Traditional disaster reporting methods in many Philippine barangays rely on manual communication, such as phone calls or in-person reports. While these methods have served communities for years, they are often too slow to support rapid response in time-sensitive situations. Delays in communication can lead to greater property loss, injuries, and fatalities. In the context of modern technology, relying solely on outdated reporting systems is no longer sufficient to protect communities from disaster impacts.
+
+Despite global advancements in digital disaster management tools, there is a research gap in developing localized, real-time, two-way communication systems specifically tailored to barangay-level needs in the Philippines. Existing systems often fail to integrate community participation, rapid verification, and instant information dissemination to residents. This study seeks to fill that gap by developing and evaluating a web-based system designed to facilitate real-time disaster reporting, enhance communication, and improve coordination between communities and local authorities.	This study addresses a critical gap in Philippine disaster management by developing a localized, web-based system for real-time barangay-level reporting and response. Its primary contribution is an innovative two-way communication platform that empowers community participation, a key factor often missing in existing top-down models (Damaševičius et al., 2023). The research is directly relevant to national efforts to enhance local resilience, with the potential to improve response times and reduce disaster impacts through practical, technology-driven action. To ensure practical application, the study's findings and the B-READY system will be presented to barangay officials and school planning team, with a plan for controlled deployment and integration into local disaster protocols.
+
+Purpose and Description
+
+The purpose of this developmental study is to facilitate disaster reporting and response at the barangay level. It emphasizes real-time communication. The website would enable quick reporting of incidents and provide timely responses to disasters or emergencies within a barangay community. It improves the disaster preparedness and management localized.
+
+Features
+
+The Login/Signup System allows new users to create an account by providing their name or username, email address, password with confirmation, and agreeing to the terms and conditions, while returning users can log in using their username or email and password, with options for a “Remember Me” checkbox and a “Forgot Password?” link. Once logged in, users are directed to their respective dashboard.
+
+ 	The Victim Dashboard includes a header with the user’s name, SOS button, and notifications, a sidebar with options for reporting emergencies, viewing rescue requests, safety tips, and account settings, and a main content area displaying a live map of nearby rescue units, current disaster warnings, and the status of active rescue requests. 
+
+The Rescue Team Dashboard provides a header with the team name, mission alerts, and logout, a sidebar for assigned missions, disaster zone maps, resource checklists, and team chat, and a main content area featuring a real-time map with victim pins color-coded by urgency, mission details, status update buttons, and emergency contact integration, and it also includes system settings that provide a live disaster feed, mission tracking, performance analytics, and a communication panel for broadcasting announcements.
+
+A real-time map integrates across dashboards to show victims, rescue teams, and disaster-affected areas, updated instantly through live location tracking using the Google Maps API, GPS from rescue team devices, and victim locations via mobile GPS or manual pin-drop. 
+
+Incident reporting is streamlined through a pre-registered user profile storing full name, home address, and contact number, which auto-fills during reports. Instead of slow dropdown menus, large clickable buttons allow quick reporting for disasters like flood, fire, earthquake, typhoon, medical emergencies, or others, with options to upload auto-compressed photos or videos for clarification.
+
+
+
+Objectives of the Study	
+
+This study aims to develop and evaluate "B-READY," a web-based system designed to enhance real-time disaster reporting, improve response coordination, and increase community participation at the barangay level. To achieve this, the study pursues the following specific objectives:
+
+1. To design and develop B-READY, a web-based system that will facilitate real-time disaster reporting, enhance communication between residents and authorities, improve response efficiency, empower community participation, and strengthen localized disaster management.
+
+2. Evaluate the effectiveness of B-READY in terms of:
+
+a. Functional Suitability 
+
+b. Reliability 
+
+c. Portability 
+
+d. Usability 
+
+e. Performance Efficiency 
+
+f. Security 
+
+g. Compatibility 
+
+h. Maintainability
+
+Review of Related Literature
+
+	The review of related literature provides a comprehensive overview of existing studies, theories, and insights relevant to the topic at hand. This section aims to establish the foundation for the research by examining prior works that inform, support, and contextualize the current investigation. 
+
+
+
+
+
+Defining and Describing B-READY
+
+Functional Suitability, Functional Suitability refers to the degree to which a system provides functions that meet stated and implied needs when used under specified conditions (Yaneza et al., 2025). For B-READY, this directly translates to features that address specific gaps in barangay-level disaster management, such as the one-click incident reporting buttons, role-based dashboards for victims and rescue teams, and the live map. These functions must accurately fulfill the real-world tasks of reporting, coordinating, and responding to emergencies as outlined in the system's objectives.
+
+The completeness of these functions is paramount. A system's functional suitability is judged by how well its features cover the necessary tasks without omission (Gatchalian et al., 2023). In the context of B-READY, the system must comprehensively support the entire incident lifecycle from the victim's initial SOS to the rescue team's mission closure, ensuring no critical step in the process is unsupported by the software.
+
+Furthermore, the functions must be logically sound and correct. According to Pascual et al. (2025), the accuracy of a system's operations is a key measure of its suitability. For B-READY, this means that when a victim reports a flood, the system must correctly assign the urgency level, pin the location accurately on the map, and notify the appropriate rescue units without error. Functional correctness is non-negotiable in a disaster scenario where misinformation can have serious consequences.
+
+Reliability. Reliability is the ability of a system to perform its required functions under stated conditions for a specified period of time (Nuevas et al., 2024). For a mission-critical system like B-READY, this means maintaining 24/7 operational readiness and ensuring that the reporting, mapping, and communication functions are available and perform correctly, especially during peak usage caused by a disaster. System failure during an emergency would undermine its entire purpose and erode community trust.
+
+A reliable system must exhibit fault tolerance, allowing it to continue operating as intended despite the presence of hardware or software faults (Del Pilar et al., 2024). B-READY must be designed to handle potential issues, such as a temporary loss of a user's GPS signal or a spike in server load, without a complete system crash, ensuring that partial functionality is maintained even under suboptimal conditions.
+
+The capability to recover quickly from an interruption is also crucial (Gatchalian et al., 2023). In the event of a server outage or power failure, B-READY must have mechanisms to rapidly restore service and any critical data, such as pending rescue requests, to prevent the loss of life-saving information and re-establish operational status as soon as possible.
+
+Portability, Portability is the degree of effectiveness and efficiency with which a system can be transferred from one hardware, software, or operational environment to another (Kedziora, 2025). For B-READY, this is critical as barangay responders and residents will access the system from a diverse range of devices and browsers. A highly portable web-based system ensures that all users, regardless of their personal technology, can reliably report incidents and view the real-time map, which is fundamental to the system's mission of universal accessibility during a crisis.
+
+A key aspect of portability, adaptability, ensures that the system can be effectively installed and run in different environments without significant rework (Al-Hawamleh, 2022). This is essential for B-READY's deployment across multiple barangays, which may have varying IT infrastructure and levels of technological sophistication, ensuring it functions as a uniform tool for disaster response and eliminates technical barriers to adoption.
+
+Furthermore, a portable architecture supports the long-term maintainability and scalability of the system. As noted by Naqvi et al. (2025), such a design is easier to update and modify. For B-READY, this means the core application can be more readily adapted to integrate new mapping services or communication protocols in the future, ensuring its continued effectiveness without requiring a complete system redesign.
+
+Usability. Usability is the capability of the software product to be understood, learned, used, and attractive to the user, when used under specified conditions (Debnath et al., 2020). For B-READY, this means that both distressed victims and busy rescue personnel can navigate the interface intuitively under high-stress conditions, with clearly labeled buttons like the SOS and straightforward menus to access critical functions without confusion or training.
+
+A vital aspect of usability is designing interfaces that provide user error protection (Arony et al., 2023). In B-READY, this could involve confirmation dialogs before sending an SOS or designing the incident form to auto-fill from user profiles, thereby minimizing manual data entry mistakes during a panic and preventing accidental or incorrect reports.
+
+Furthermore, high learnability ensures that users can easily become proficient with the application with minimal time and effort (Peters & Aggrey, 2020). Given that B-READY may be used infrequently until an emergency arises, its design must be instantly recognizable and easy to recall, allowing residents and responders to use it effectively without needing to re-learn complex procedures during a disaster.
+
+Performance Efficiency. Performance Efficiency is the ability of a software system to provide appropriate performance relative to the amount of resources used under stated conditions (Zhang, 2024). For B-READY, this quality is critical during a disaster when a surge of users simultaneously reporting incidents and tracking responses could strain the system. Efficient resource utilization ensures that the real-time map and notification services remain responsive, preventing dangerous delays in communication.
+
+The capacity to handle the anticipated peak load of concurrent users from a barangay community is a fundamental requirement (Naqvi et al., 2025). B-READY must be designed and tested to ensure that its database, server, and network bandwidth can process a high volume of incident reports, location pings, and status updates without significant degradation in response time.
+
+Furthermore, excellent time-behavior is a direct measure of its performance (Pakkanen, 2025). In the context of B-READY, this translates to near-instantaneous updates on the rescue team dashboard when an SOS is triggered and minimal latency in the live location tracking of both victims and responders. Slow performance could lead to misallocated resources and delayed aid, directly impacting emergency outcomes.
+
+Security. Security is the degree to which a product protects information and data so that persons or other products or systems have the data access appropriate to their types and levels of authorization (Naqvi et al., 2025). For B-READY, this is critical because the system handles sensitive personal data, including user identities, home addresses, and real-time locations, which must be safeguarded against unauthorized access that could lead to misuse or panic.
+
+Ensuring confidentiality is paramount, as it guarantees that data is accessible only to those authorized to access it (Alvarez et al., 2021). This requires B-READY to implement robust authentication for the login system and role-based access control to ensure that, for example, a regular victim cannot see the rescue team's internal communications, thereby maintaining data segregation and privacy.
+
+Protecting data integrity is equally important, as it prevents information from being unauthorized modification or deletion (Zhang, 2024). In the context of B-READY, it is vital that incident reports, mission statuses, and location coordinates cannot be maliciously altered. Ensuring integrity guarantees that rescue teams are acting on accurate and trustworthy information, which is foundational for effective and safe emergency response.
+
+Compatibility. Compatibility is the degree to which a product can exchange information with other systems, and/or perform its required functions while sharing the same hardware or software environment (Zhang, 2024). For B-READY, this is foundational, as the system's core functionality depends on seamless integration with external APIs like Google Maps for geolocation and WebSockets for real-time notifications. Any compatibility issue with these services would directly cripple the live-mapping and instant alert features, rendering the system ineffective for emergency response.
+
+The ability to co-exist with existing software is crucial because B-READY must operate reliably alongside municipal systems and network infrastructure without causing conflicts (Chicas & Maag, 2021). In the varied technological landscape of barangays, the system must function correctly across different browsers and operating systems, preventing user exclusion due to minor environmental differences.
+
+Finally, achieving interoperability enables B-READY to act as a central hub by effectively consuming and utilizing data from external platforms. As highlighted in a study on local governance systems, this structured integration is what transforms a standalone application into a powerful, connected tool that enhances operational efficiency (Amar, 2025). Therefore, B-READY's compatibility ensures it can provide a comprehensive solution by seamlessly working with other critical technologies. 
+
+Maintainability. Maintainability is the effectiveness and efficiency with which a product can be modified to improve it, correct it, or adapt it to changes in environment, or requirements (Özdemir & Buzluca, 2024). For a long-term project like B-READY, this means the codebase must be structured to allow for easy updates, such as adding new disaster types or integrating new communication APIs, without requiring a complete system rewrite.
+
+Achieving this requires a modular design, where the system is composed of segmented and loosely coupled components (Kedziora, 2025). For instance, B-READY's architecture should allow developers to update the real-time mapping module independently from the user authentication module, making the development process more agile and reducing the risk of introducing new bugs when making changes.
+
+High testability is a crucial enabler of maintainability, as it allows for the establishment of effective and efficient test criteria (Ariningsih, 2024). A well-designed B-READY system will have automated tests for its critical functions. This allows developers to confidently make improvements or fixes, knowing that any regression in performance or functionality will be quickly identified, ensuring the system's long-term reliability.
+
+Benefits of B-READY
+
+	The advancement in technology has resulted in the integration of internet-compliant devices and systems in emergency response and management, known as the Internet of Emergency Services (IoES). The integration has the potential to revolutionize the provision of emergency services through facilitating real-time data analysis and collection and coordination among various agencies involved in emergency response. Emergencies may be of various types, including natural emergencies like hurricanes, earthquakes, and wildfires, and man-made emergencies like terrorist attacks, industrial accidents, and pandemics. Successful emergency management and response measures have the potential to decrease the impact of such emergencies, prevent loss of life, and minimize loss to property. Possibly the greatest reason why emergency management and response are so crucial is that emergencies can be spontaneous and may require immediate response. In most cases, emergency responders have only minutes or hours in which to act before the situation turns dangerous or deadly. By using effective emergency management plans and response protocols, emergency responders can act quickly and decisively and possibly prevent a crisis from arising (Damaševičius et al,. 2023).
+
+	Catastrophes often propagate swiftly. Clear instructions and effective communication are crucial, as they represent the primary aspect of the necessary response and can significantly enhance public safety. This piece suggests an extensive cloud notification application that can manage a range of emergency scenarios. It delivers instant notifications and guidance to all impacted and necessary individuals via their mobile devices and computer displays within a specific organization, regardless of their location (inside or outside the organization). Additionally, these individuals do not necessarily need to possess a mobile phone with a particular operating system, like an Android smartphone as seen in much of the earlier research. This is due to the fact that the suggested system only necessitates a browser that operates on any device with any operating system, including mobile phones (Abd-Alsabour & Salib, 2022).
+
+Existing Related Innovations to B-READY	
+
+While few studies exist in the use of Internet of Things (IoT) in indoor disaster management scenarios, there is a significant absence of research and scalable products in voice command assistant based IoT solutions for public safety and emergency responder situations like mass transit accident, floods, active shooter, and other incidents where just-in-time response and immediate aid are essential. Public safety is the cornerstone of our research study. Social networks drive consumer adoption of IoT technology because users seek feedback from peers, family, and social media influencers to lessen IoT product or service uncertainty. Prior research has demonstrated that customer trust affects IoT adoption. With the advance in Industrial IoT (IIOT) in disaster management, we have solutioned Zenext-IoT (ZIOT) which runs on a core voice command technology for public safety personnel. The goal of this research is to evaluate the degree to which first responders are willing to use the Internet of Things-based disaster management framework that has been proposed. This research aims to solve an urgent and imminent solution of providing the target segment of public safety officials and rescue worker with hands-free voice command virtual assistant IoT model. Our target users are emergency responders and rescue workers for whom technology needs to be simple to use and just-in-time (Swarnamouli Majumdar et al, 2024).
+
+The research introduces the design of an AI-based disaster response system that subscribes to enhance real-time emergency management. Manual processing, slow communication and siloed data sources are common downsides of traditional-approach systems, which ultimately translate into slower response times or insufficient resource spend. The system deals with them by exploiting ML, predictive analytics, and automatic decision-making so that these can consolidate pre-existing real-time information from social media, satellite images or IoT sensors. Several experiments show better-than-previous: response times decrease from an average of 11 hours to 3.6 and prediction accuracy increased from 62.5% up to cover 85% Average efficiency also improved including +23% in resource allocation. The innovative solution shifts disaster response from being entirely reactive to proactive, creating faster and more informed responses during times of crisis, thereby assuring public safety for all in the face of calamities (T. K. Lakshmi et al, 2025).
+
+	Regardless of the extensive research conducted on large-scale evacuations, the instrumentation of these processes still represents an open issue for first response organizations. Self-evacuation of civilians that follows evacuation plans has shown to be feasible as early response to several natural disasters; however, the typical lack of interaction capability of the evacuees with first response organizations and emergency managers jeopardizes the effectiveness of these processes. This article proposes an IoT-based infrastructure that supports self-evacuation of civilians in mass processes, allowing people to participate as information providers and consumers. This infrastructure is the backbone of an ambient intelligence system used as a bridge between evacuees, first response units, and the emergency operation center managing the process. Depending on the people location and the status of the area, the system implements breadcrumbs that guide people to shelters and safe places. The proposed infrastructure includes (1) an architecture that captures the core design aspects of the solution and makes it reusable for other researchers, (2) an implementation of the system based on Raspberry Pi 3 devices with LoRa radio connectivity, (3) a mobile application that allows evacuees to interact with the evacuation system, and (4) a simplified algorithm to support the deployment of the IoT-based infrastructure into an urban area. The solution was evaluated using real measurements and simulations, and the obtained results are highly encouraging (Finochiettoe et al, 2021).
+
+Conceptual  Framework
+
+The conceptual framework outlines the key concepts, variables, and relationships that guide this study. It serves as a blueprint, connecting the research objectives to existing theories and providing a structured approach to understanding the problem and its context (Majumdar, 2024).
+
+Figure 1 illustrated the step-by-step sequence on the process of making B-READY. 
+
+
+
+Figure 1	
+
+Conceptual Framework of the Study
+
+
+
+
+
+	INPUT 			PROCESS			OUTPUT
+
+
+
+Concept and Ideas
+
+Related Literatures and Studies
+
+Web Development Tools
+
+Internet connectivity and network infrastructure
+
+B-READY: A WEB-BASED SYSTEM FOR REAL-TIME BARANGAY DISASTER REPORTING AND RESPONSE
+
+Initial Planning
+
+Planning 
+
+Requirements
+
+Analysis and Design
+
+Implementation
+
+Testing
+
+Evaluation
+
+Deployment
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Input
+
+The input are in the following contents will be illustrated:
+
+	Concept and Ideas. The idea of using a digital platform to improve disaster preparedness and response at the barangay level served as the foundation for the researchers' investigation. The researchers developed a web-based solution that emphasizes real-time communication and effective resource allocation after identifying the shortcomings of the current reporting systems,  including delays,  a lack of coordination,  and restricted accessibility. These ideas and concepts serve as the bedrock for developing new technologies and improving existing ones (Kharazishvili et al., 2021).
+
+Related Literature and Studies. The primary purposes of reviewing literature is to identify gaps in existing knowledge and to propose future research directions (Ruiz et al., 2025). The researchers looked at a number of studies and publications pertaining to crisis informatics, information systems, and disaster management in order to fortify the system's framework. In order to reduce risks and increase efficiency, prior research has highlighted the significance of incorporating contemporary technology into local government disaster response. The platform is evidence-based and in line with best practices thanks to the insightful information gleaned from these studies, which helped shape system features like resource monitoring, incident reporting, and communication channels.
+
+Web Development Tools. he researchers used contemporary web development tools that support security, scalability, and responsive design 23 when creating the B-READY system. While backend frameworks like Node.js or Django guaranteed dependable server-side operations, frontend technologies like HTML5, CSS, and JavaScript made it possible to create user- friendly interfaces. Disaster reports and user information were safely stored in a relational database. These tools ensured a dependable and maintainable solution by offering a stable environment for system implementation, debugging, and testing. By eradicating the silos between front end and back end development, these advanced tools empower developers to navigate complexities with unprecedented agility and precision. This exploration delves into the journey of these advanced tools, charting their evolution and elucidating their pivotal role in reshaping the fabric of web application development (Vasuki et. al., 2024).
+
+Internet Connectivity and Network Infrastructure. For the system to be deployed, reliable internet access and a well-functioning network infrastructure were crucial. Residents, local officials, and responders were able to engage with the system without major delays thanks to the platform's support for real-time data transmission made possible by internet access. Accessibility, data integrity, and system resilience were further guaranteed by cloud hosting and secure server configurations, especially during emergency situations with high traffic volumes. Internet connectivity and robust network infrastructure are fundamental enablers of digital transformation across various sectors (Gabarró, 2020).
+
+Process
+
+	In the process illustrated by following the step:
+
+Initial Planning. To make sure the system meets the unique requirements of barangay disaster management, the researchers started by establishing goals, specifying the project's scope, and identifying success indicators. Initial planning provides a structured framework for making informed decisions and allocating resources effectively (McClung et al., 2020).
+
+Planning. To involve a systematic approach to defining the objectives, scope, and success metrics specifically tailored for Barangay disaster management. By integrating web engineering principles like rapid development, high user interaction, and scalability, the system's adaptability and security are ensured. This process creates a clear path for making informed decisions and allocating resources efficiently, supporting real-time feedback capabilities. Effective planning is essential for the system's ability to provide timely and reliable support during disaster events (Chahar & Singh, 2024).
+
+Requirements. To pinpointing precise needs and functionalities to suit the available resources and skills for a web-based disaster response system. This process guarantees that the system is in sync with the specific demands of Barangay disaster management through iterative adjustments based on user feedback. The main goal is to direct the development process, ensuring the system achieves its objectives and offers reliable support for real-time disaster response. Clear requirements are crucial for the system's effectiveness in supporting disaster management efforts (Okesola et al., 2020).
+
+Analysis & Design. To translates gathered requirements into a structured framework that guides the creation of the web-based disaster reporting and response system. This involves developing models and designs that address user, business, and governance needs, ensuring the system effectively supports Barangay disaster management. This phase provides a detailed blueprint for development, ensuring the system is comprehensive and aligned with its intended purpose (Shrestha, et al., 2020).
+
+Implementation. Putting strategies into action to bridge the gap between research and practical use in a real-time Barangay disaster reporting system. This includes using stakeholder engagement, process mapping, and problem-solving to ensure the system is adopted effectively. This ensures the system is integrated into daily disaster response operations, enhancing its utility and impact (Lu, et al., 2021).
+
+Testing. The formal process of verifying and validating the software to ensure it meets specifications and aligns with customer needs. In the context of a Barangay disaster reporting system, testing involves creating and running test cases to confirm the system's functionality, reliability, and performance. This process ensures that the system effectively supports disaster response and meets user needs (Mohapatra, 2025).
+
+Evaluation. Identifying areas for improvement in the system through techniques like process mining. For a Barangay disaster reporting system, this means assessing performance, finding areas for enhancement, and gathering feedback from experts and users. This ensures that the system is continuously improved to meet the evolving needs of disaster management (Erdogan, et al., 2022).
+
+Deployment. Making independently deployable services available for use in a real-time Barangay disaster reporting system. This includes launching the system's components to ensure they are accessible and operational for users. This ensures the system can assist in disaster management, providing real-time support and information to those who need it (Panogoulias, et al., 2022).
+
+Output
+
+In the output the following system will be illustrated: 
+
+B-READY: A Web-Based System for Real-Time Barangay Disaster Reporting and Response. The study's final product is a useful web-based application that lets local officials and responders effectively manage, monitor, and respond to incidents while also enabling residents to submit disaster reports promptly and accurately. With features like real-time notifications, data analytics, and live mapping, the system offers a dependable platform that improves disaster preparedness and response at the barangay level.
+
+The primary output is a fully developed and tested web system, ready for deployment. This includes the operational Victim and Rescue Team dashboards, a secure login/signup system, the real-time mapping module integrated with the Google Maps API, and the incident reporting module with media upload. The system's effectiveness, having been evaluated against ISO/IEC 25010 standards, provides a concrete, technology-based solution to the documented communication and coordination gaps in barangay-level disaster management.
+
+Significance of the Study
+
+The significance of this research aims to strengthen disaster preparedness, improve real-time reporting, and enhance community resilience at the barangay level. Here, the researchers outline the key terms and concepts that underpin this study:
+
+Barangay Officials and Local Government Units (LGUs). The system is essential for enabling immediate disaster reporting, faster decision-making, and better coordination during emergencies. It equips them with accurate, timely data, allowing them to respond more efficiently and fulfil their mandate in protecting the community.
+
+Community Residents. The website empowers residents to actively participate in disaster preparedness and response by instantly reporting incidents and receiving timely alerts, helping them make informed decisions and stay safe during emergencies.
+
+Emergency Responders and Disaster Risk Reduction Management (DRRM). This system provides responders with rapid access to verified incident information, enabling faster interventions that can save lives and minimize property damage.
+
+Students. Students gain practical knowledge about disaster preparedness and the role of technology in community safety, enhancing their awareness and readiness to contribute to emergency response efforts. 
+
+Teachers. Educators can integrate the system into disaster preparedness lessons and drills, providing students with hands-on experience in using technology for real-world problem-solving in emergency situations. 
+
+Future Researchers. This research contributes to the body of knowledge on localized disaster management systems and can serve as a foundation for future studies on enhancing real-time communication, reporting, and community engagement during disasters. 
+
+
+
+Scope and Delimitation of the Study
+
+This study aims to develop a web-based system for real-time barangay disaster reporting and response, designed to equip local officials and authorized administrators with a secure platform for receiving, verifying, and responding to incident reports both online and on-site. The system strengthens disaster preparedness, improves coordination, and enhances community safety by enabling residents to submit timely reports and barangay officials to immediately act upon them, whether through digital communication or direct physical rescue operations. It aligns with existing barangay disaster risk reduction protocols, ensuring that reports lead to rapid and organized action. 
+
+The focus of the system is on collecting and processing disaster-related reports from residents, which are transmitted exclusively to authorized administrators for prompt decision-making and deployment of appropriate responses. This secure, admin-only access safeguards sensitive information and prevents misinformation, though it also means the public cannot view or track all submitted reports. The system does not cover national-level disaster reporting and is limited to the jurisdiction of participating barangays. Its effectiveness may depend on internet connectivity, the accuracy of user-submitted information, and the availability of trained responders and resources during emergencies. While external factors such as severe infrastructure damage or network outages may affect operations, the platform serves as a vital bridge between community reporting and immediate, coordinated disaster response efforts.
+
+
+
+Definition of Terms
+
+	The following section provides definitions for critical terminology to ensure clarity and consistency in discussing key concepts relate to web-based system disaster reporting and response. 
+
+Barangay. Barangay is the smallest administrative division, similar to a village or district. It serves as the primary unit for implementing government policies, projects, and services at the local level. (Watanabe, 2025). For this research, conducted in sample Brgy. Apokon, the barangay serves as the fundamental unit for collecting and disseminating real-time disaster information. Its purpose within the web-based system is to facilitate immediate, localized reporting and response to ensure community safety and resilience.
+
+Web-Based System. The Web System Development Process includes creating, updating, and managing websites or platforms, offering a reliable and secure environment that controls data flow and provides commercial advantages over desktop applications due to its accessibility and flexibility. This system enhances mobile working, system integration, and browser compatibility, allowing access from any device and supporting flexible work arrangements that boost employee productivity. Consequently, Web Systems offer uniformity for each user, simplifying issue resolution and enabling the conversion of most desktop software for use on any mobile device. (Jean, P., & Martin, F., 2023)
+
+Real-Time Reporting. Real-Time Reporting involves delivering up-to-the-minute data as it's generated, enabling immediate insights and informed decision-making. This approach provides a continuous flow of information, ensuring stakeholders have the most current view of operations and performance. Real-time reporting refers to the immediate collection, analysis, and presentation of data as events unfold. Key concepts include data automation, live dashboards, and instant alerts, all of which enhance operational efficiency (Bradley, K., 2025)
+
+Disaster Reporting. Disaster Reporting conceptually refers to the immediate and continuous flow of information regarding disasters from residents to the barangay administrator. This real-time reporting facilitates swift assessment, response coordination, and resource allocation to mitigate the impact of disasters within the community. Disaster reporting, as explored in the context of web-based systems, involves the fast and accurate generation of impact reports by extracting and curating information from the web to aid in humanitarian assistance planning (Grace, C., Paul, D., & et. al., 2023.
+
+
+
+Chapter 2
+
+MATERIALS AND METHODS
+
+This chapter presents the research design, research subject, research instrument, process model, data collection procedure, data analysis, safety precautions, and ethical considerations that were followed by the researcher in this study.
+
+Research Design
+
+	This study employed developmental research to create a website-based platform for real-time disaster and accident reporting and response. According to Retno, et al. (2024), developmental research involves a structured design and evaluation methodology to develop innovative tools and models. By following this approach, the study aimed to provide practical solutions to common challenges faced by residents and emergency responders in a specific barangay. Through comprehensive analysis and rigorous testing, the research sought to ensure the website's effectiveness in real-world applications.
+
+Additionally, Menezes and Salgado framework on Product Design and Development supports this study by providing a systematic approach to creating functional products (Menezes, & Salgado, 2024). This framework is particularly relevant as it emphasizes adapting strategies to meet user needs. The study's goal of building a user-centered platform for real-time reporting and response aligns with Dhore's methodology. By integrating this approach, the research ensures the website is both practical and market-ready. This comprehensive development strategy enables the website to effectively meet real-time reporting and response needs.
+
+Research Subject
+
+	The research investigation will be conducted among local government personnel in Barangay Apokon, with a primary focus on evaluating their current brgy. officials during disasters and accidents. To facilitate a holistic assessment of the product’s viability, the research team will engage a diverse group of stakeholders, including ICT Teachers with expertise in information technology, who will provide valuable insights on the product’s pedagogical and technical merits. Additionally, specialists from City Disaster Risk Reduction Management (CDRRM) will contribute their extensive knowledge on risk mitigation strategies and emergency preparedness measures (Sarmiento, 2024). The community members, being the primary end-users, will play a pivotal role in testing the product’s functionality and user experience within the context of a disaster reporting platform. By adopting this multi-pronged approach, the researchers will aim to develop a solution that is both efficacious and intuitive for its target audience.
+
+Table 1.
+
+Distribution of Research Subjects
+
+Respondents
+
+Population
+
+Percentage
+
+Sample
+
+ICT Teachers
+
+15
+
+28%
+
+14
+
+School Planning Team
+
+10
+
+22%
+
+10
+
+Residents
+
+(with a 6-months residency)
+
+15
+
+28%
+
+14
+
+Barangay Tanod
+
+10
+
+22%
+
+10
+
+TOTAL
+
+50
+
+100%
+
+48
+
+	For this study, a total of 48 individuals will participate, chosen through a blend of selective accessible sampling techniques. This methodology will ensure a broad spectrum of viewpoints from various stakeholders. The participants will be grouped into four categories based on their roles, professional roles and specialized knowledge.
+
+Process Model
+
+	The researchers adopted the Iterative Development Model for the design and creation of the B-READY system. This software development life cycle (SDLC) approach is characterized by cyclical prototyping, where a basic version of the software is built, tested, and then progressively refined with enhanced features and functionality in repeated cycles. This model was chosen to prioritize the development of a core, functional application for real-time reporting and response, allowing for continuous feedback and improvement throughout the project lifecycle, ensuring the final product is robust and closely aligned with user needs (Bahure, 2022). The iterative cycle is visualized in Figure 2.
+
+
+
+
+
+
+
+
+
+
+
+
+
+Figure 2
+
+SDLC Iterative Model
+
+
+
+Software Development Framework — Iterative Model | by JIN | Geek Culture | Medium
+
+Planning
+
+The planning phase involved defining the project's core objectives, scope, and key functionalities based on the identified problem of inefficient disaster reporting at the barangay level. The researchers outlined the essential features, including the two distinct user dashboards for victims and administrator, the real-time mapping system, and the incident reporting form. A detailed project timeline was established using a Gantt chart to allocate resources, set milestones, and manage task dependencies, ensuring the project remained on schedule. This timeline facilitated the iterative cycles of development, testing, and refinement.
+
+
+
+
+
+
+
+Table 2
+
+Research Timeline
+
+Weeks (7 Days)
+
+
+
+The research timeline was also included in the planning, where Table 2 presented the timeline of work phases, with a Gantt chart serving as a crucial planning and monitoring tool for the researchers. It helped estimate project duration, allocate resources, and determine task sequences while managing dependencies between tasks. Additionally, the chart allowed researchers to track progress, ensuring milestones were met on time. If delays occurred, it 32 enabled quick identification of issues, allowing researchers to take corrective action and keep the project on course.
+
+Requirements
+
+The functional requirements were derived from the study's objectives and specified features, encompassing user authentication, role-based dashboards, real-time GPS mapping, and an incident reporting module with media upload. Non-functional requirements focused on usability, reliability, real-time performance, and data security.
+
+
+
+Table 3
+
+Hardware and Software Minimum System Requirements/Specifications
+
+Category
+
+Parameter
+
+Minimum Requirements
+
+Hardware
+
+System Type
+
+x64-based PC
+
+
+
+Processor Speed
+
+2000 MHz
+
+
+
+Processor Cores
+
+2 cores8 GB
+
+
+
+System Memory
+
+8 GB
+
+
+
+Total Storage Space
+
+100 GB
+
+Operating System (OS)
+
+System Name
+
+Microsoft Windows 10 / macOS Monterey
+
+
+
+OS Version
+
+Win 10 21H2 / macOS 12.0
+
+
+
+OS Build
+
+19044.2604
+
+Software
+
+Programming Language
+
+JavaScript (React/Node.js)
+
+
+
+Text Editor
+
+Visual Studio Code
+
+
+
+Software Version
+
+1.78.2
+
+
+
+Mapping API
+
+Google Maps API
+
+
+
+Database
+
+MongoDB / Firebase Firestore
+
+
+
+Real-Time Communication
+
+WebSockets (Socket.io)
+
+
+
+Software Version
+
+4.7.2
+
+The technical specifications for development and testing were defined to ensure all team members and testing environments used compatible systems. The requirements, detailed in Table 3, were based on common modern web development standards to ensure accessibility and ease of development.
+
+Analysis & Design
+
+	The researchers designed the system architecture and user interface components based on the requirements gathered during the planning phase. The analysis focused on creating a scalable system that could handle real-time data processing, while the design phase involved creating detailed specifications for user interfaces and system components. This phase ensured that all design elements aligned with the goal of creating an efficient disaster response platform.
+
+Figure 3System Architecture Diagram of B-READY
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Figure 4Use Case Diagram of B-READY
+
+
+
+Implementation	
+
+The researchers implemented the B-READY system following the iterative development model, building the application incrementally through multiple development cycles. Each iteration added functional modules that were integrated and tested to ensure system stability and performance.	
+
+Table 4Implementation Progress Tracking
+
+Iteration
+
+Features Implemented
+
+Status
+
+1
+
+Project setup, basic routing, auth prototype
+
+Completed
+
+2
+
+Dashboard layouts, basic incident reporting
+
+Completed
+
+3
+
+Map integration, location services
+
+In Progress
+
+4
+
+Real-time features, notification system
+
+Planned
+
+
+
+Iteration 1. This first iteration, "Foundation and Basic Structure," centers on establishing the core system. The process involves setting up the development environment with a React frontend and a Node.js backend. It also entails implementing the basic project structure and routing mechanisms, while creating the initial database schema in Firebase Firestore. Furthermore, this phase includes developing a basic prototype for the user authentication system.
+
+	Iteration 2. The second iteration focuses on User Interface and Basic Functionality, concentrating on the development of the core user interfaces and features. This phase involves implementing the Victim Dashboard with its critical SOS functionality and developing the layout for the Rescue Team Dashboard. It also includes creating the incident reporting form with disaster-type buttons and building the basic user profile management system.
+
+A.  Core Module Development
+
+This phase focuses on the development of the application's three core foundational modules.
+
+A.1 Authentication System Implementation
+
+	The team develops a secure login and signup system using Firebase Authentication. This implementation includes user registration with email verification, secure password encryption, and session management. Furthermore, it establishes role-based access control to differentiate between victims and rescue teams and incorporates essential user convenience features such as a "remember me" option and a password recovery system.
+
+
+
+A.2 Dashboard Development
+
+The project implements two specialized dashboards, each with distinct functionalities tailored to their users. The Victim Dashboard features a header with a user greeting and notification indicators, a prominently placed SOS button for emergency reporting, a sidebar for navigation, and a main content area with a prototype for live map integration. Conversely, the Rescue Team Dashboard is equipped with a mission alert system, a resource management interface, a team communication panel, and a real-time map for tracking incidents.
+
+A.3 Map Integration and Location Services
+
+	The system integrates the Google Maps API to provide essential location services. This integration delivers base mapping functionality with defined barangay boundaries and uses the browser's GPS for location capture. It enables the placement of markers for incident locations and includes basic map controls and zoom functionality for user navigation.
+
+Figure 5Screenshot of Victim Dashboard Prototype
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Figure 6Screenshot of Administrator Dashboard Prototype
+
+
+
+Research Instrument
+
+The researchers will use questionnaires as the main tool for gathering data. The questionnaire will be divided into three parts: (a) a cover letter, (b) personal information, and (c) evaluation items related to the system. The cover letter will introduce the purpose of the study, assure participants that their answers will remain confidential, and provide the researchers’ contact details in case they have questions or concerns. The second part of the questionnaire will ask for basic personal information, such as the respondent’s name, age, gender, occupation or role in the barangay, and years of experience in disaster management or barangay services.                                                                                                                                                                                                                                                                                                                                                                                                                                                            
+
+	Additionally, the questionnaire will provide item statements related to the variables under evaluation. To measure the effectiveness of B-READY as the independent variable, the researchers will adopt an ISO/IEC 25010-based questionnaire from the study ICTeachMUPO: An Evaluation of Information E-Learning Module System for Faculty and Students by Urera and Balahadia (2019). This questionnaire will include eight indicators: Functional Suitability, Reliability, Portability, Usability, Performance Efficiency, Security, Compatibility, and Maintainability. Respondents will indicate their level of satisfaction or dissatisfaction with each statement by marking a check corresponding to their response. The questionnaire will use a five-point Likert scale ranging from 1 (“Strongly Disagree”) to 5 (“Strongly Agree”).
+
+To assess effectiveness, the ratings will be categorized with their associated mean ranges and descriptions.de
+
+Table 5
+
+Parameter Limits with their descriptive equivalent of the B-READY.
+
+­­­­­­­­­­­­Range Of Means
+
+Descriptive Equivalent
+
+Interpretation
+
+4.21 – 5.00
+
+Very High
+
+It means that the B-READY is very much Functionally Suitable.
+
+3.41 – 4.20
+
+High
+
+It means that the B-READY is very Functionally Suitable.
+
+2.61 – 3.40
+
+Moderate
+
+It means that the B-READY is Functionally Suitable.
+
+1.81 – 2.60
+
+Low
+
+It means that the B-READY is slightly Functionally Suitable.
+
+1.00 – 1.80
+
+Very Low
+
+It means that the B-READY is 
+
+not Functionally Suitable.
+
+		
+
+Data Gathering Procedure
+
+	In gathering the data for this study, the researchers will follow the procedures below.
+
+	Seeking Permission to Conduct the Study. To begin the study, the researchers will secure the necessary approvals from barangay officials and relevant authorities to ensure the smooth conduct of the research. They will also coordinate with disaster management personnel to guarantee that the system evaluation will not disrupt actual disaster operations.
+
+	Seeking the Consent of the Respondents. The researchers will obtain informed consent from all participants before involving them in the study. Respondents will be informed about the purpose of the research, their role in the evaluation, and their right to withdraw participation at any time without consequence.
+
+	Orienting the Respondents on the Nature and Purpose of the Study. Before answering the questionnaire, participants will be given a clear explanation of the study, including how the B-READY system works and why their feedback is important. They will be assured that all responses will remain confidential and used only for research purposes.
+
+	Designing and Developing the Web-based System. The researchers will design and develop the B-READY system, which will allow real-time reporting and response during disasters at the barangay level. The system’s core features such as disaster incident reporting, response coordination, and data logging will be carefully tested before presenting it to the respondents for evaluation.
+
+	Administering and Retrieving the Survey Questionnaire. The validated questionnaires will be distributed to selected barangay officials, staff, and community members. The researchers will guide respondents through the process, address their questions, and ensure honest and unbiased responses. Completed questionnaires will then be retrieved for analysis.
+
+	Checking, Collating, and Processing the Data. The researchers will check the collected questionnaires for completeness and accuracy. Data will be carefully organized, tabulated, and statistically processed to generate meaningful results.
+
+	Drawing Conclusions and Recommendations. Based on the analyzed data, the researchers will draw conclusions about the effectiveness of the B-READY system. They will also provide recommendations for further improvement and future development to strengthen barangay disaster preparedness and response.	
+
+	System Testing and Evaluation. To ensure the reliability and practicality of the system, the researchers will conduct the following assessments:
+
+	Accuracy Testing. The accuracy of the B-READY system will be measured by comparing reported incidents in the system with actual barangay records and official reports.
+
+Efficiency Testing. The system’s efficiency will be tested by recording the time it takes to report an incident and generate alerts for barangay responders. Various conditions, such as internet speed and device type, will be considered.
+
+Usability Testing. Respondents will evaluate the system’s ease of use, clarity of interface, and accessibility. Feedback will be gathered from both barangay staff and community residents.
+
+Evaluation. The study and the system will be reviewed by a research evaluation committee to ensure that the objectives are met. Feedback from the committee will be considered for improving the system and ensuring its readiness for actual deployment.
+
+Deployment. The researchers will plan a controlled deployment of the system in participating barangays. Proper documentation and orientation will be provided to ensure smooth integration into existing disaster management practices.
+
+Data Analysis
+
+	The goal will be to evaluate whether B-READY can accurately record and show real-time disaster reports from residents, make it easier to share information, and meet usability standards for both citizens and barangay officials. The analysis process will address each research question and test the hypotheses regarding the system’s performance.
+
+Examine Data
+
+	Accuracy Data. The accuracy of B-READY will be evaluated by comparing user-submitted disaster reports with verified records from barangay authorities. Metrics such as the percentage of correct reports, false reports, and duplicate entries will be used to assess the reliability of the system.
+
+Efficiency Data. The system's speed at processing submitted reports, updating the database, and displaying alerts on the platform will be assessed by looking at the timestamps of each reporting step. The responsiveness of the reporting pipeline will be ascertained with the aid of this analysis.
+
+Usability Data. Qualitative and quantitative feedback from barangay officials and residents will be gathered through surveys and interviews. The evaluation will focus on ease of use, clarity of instructions, works on different devices, and overall user satisfaction. This will provide insights into the system’s usability and areas for improvement.
+
+Environmental/Contextual Data. External factors such as internet connectivity, device type (mobile or desktop), and disaster severity will be examined to assess their influence on reporting accuracy and timeliness. This analysis will determine the system’s effectiveness under varying real-world conditions.
+
+Organize the Data
+
+Categorization of Responses: The researchers will organize the collected data by grouping respondents according to their roles (e.g., barangay officials, disaster response personnel, and community residents), age groups, and level of experience in disaster management. This categorization will make it possible to analyze whether user background influences perceptions of the system’s effectiveness and usability.
+
+Performance Tables. The researchers will summarize the results using tables that will present the mean scores and descriptive interpretations of the eight quality indicators from the ISO 25010 model: functional suitability, reliability, portability, usability, performance efficiency, security, compatibility, and maintainability. These tables will provide a structured overview of the B-READY system’s performance, showing both its strengths and the areas that will require improvement.
+
+Statistical Data Grouping. For more detailed analysis, the researchers will group the responses according to feedback categories such as accuracy of reporting, timeliness of response, and ease of system use. Ratings will be further segmented based on user demographics and device type (e.g., mobile phone vs. desktop). This organization will allow for statistical comparisons and will help identify factors that affect the system’s performance in real-world scenarios.
+
+Interpret the Data to Answer Research Questions
+
+	The researchers will focus on evaluating the effectiveness of the B-READY web-based system in supporting barangay disaster reporting and response. Data will be gathered through survey questionnaires distributed to barangay officials, disaster response personnel, and community residents. Their responses will be analyzed based on the software quality ISO 25010 model, which includes the criteria of functional suitability, reliability, portability, usability, performance efficiency, security, compatibility, and maintainability.
+
+	To assess accuracy, the researchers will compare the disaster reports logged in the B-READY system with the official barangay incident records. The consistency between the two datasets will provide evidence of the system’s reliability in capturing and transmitting disaster-related information in real-time.	The study will also examine efficiency, particularly the speed with which disaster incidents are reported and disseminated through the system. By recording the time from report submission to the generation of alerts, the researchers will be able to determine whether B-READY can facilitate timely responses under different conditions, such as varying internet speeds and device usage.
+
+	To evaluate usability, the researchers will gather feedback from participants regarding their experience using the system. Questions will focus on ease of navigation, clarity of instructions, and accessibility for users with limited technical skills. This feedback will allow the researchers to assess how well the system can be adopted in real-world barangay settings.
+
+	Mean. The mean will be used as a measure of central tendency to summarize the respondents' ratings for each of the eight quality indicators: Functional Suitability, Reliability, Portability, Usability, Performance Efficiency, Security, Compatibility, and Maintainability. This statistical metric will provide an overview of the average response for each indicator, allowing the researchers to determine whether the system is perceived as effective across all criteria. By calculating the mean score for each aspect covered in the ISO/IEC 25010 questionnaire adapted from the study ICTeachMUPO: An Evaluation of Information E-Learning Module System for Faculty and Students by Urera and Balahadia (2019), the researchers will be able to identify which areas of the B-READY system are strongest and which require further improvement. The mean will serve as a foundational tool for quantifying the overall user satisfaction and the system's perceived effectiveness from the perspective of barangay personnel and community members.
+
+Standard Deviation. The standard deviation will serve as a measure of variability or dispersion in the respondents' ratings for each software quality indicator. A low standard deviation will indicate that the responses are consistent, suggesting a general agreement among the respondents about the system's performance for that specific characteristic. Conversely, a high standard deviation will point to greater variability in opinions, highlighting areas where user experiences diverge significantly (Turner, 2020). This information will be crucial for understanding the consensus among different stakeholder groups (e.g., ICT teachers, CDRRM officers, community members) and for identifying any specific features or issues that lead to disagreement. Insights gained from the standard deviation will guide targeted refinements to the B-READY system to ensure it meets the diverse needs and expectations of all end-users.
+
+Drawing Conclusions	
+
+	Drawing from the data interpretations, the researchers will assess the efficiency of the B-READY system in accomplishing its intended goals. Additionally, they will evaluate the need for any adjustments to enhance performance in suburban areas, including accuracy under varying emergency response and enhancement of user interface. The final report will determine whether the data supports the system's viability as a practical tool for reporting and coordinating real-time disaster responses.
+
+Safety Precautions
+
+Equipment safety. The researchers will make certain that every piece of equipment used is in top operating condition throughout the project and will receive routine inspections for maintenance. The need of adhering to validated reporting procedures will be emphasized in this course in order to avoid false alarms and guarantee the effective use of response resources. To guarantee accountability and offer a transparent audit trail for post-event assessment, every system access, report submissions, and alert escalations will be recorded. All barangay officials will receive the appropriate training, and there will be a transparent audit trail for the post-event review (Akinola et al., 2024).
+
+Prototyping Safety. When creating prototypes or models for the B-READY: Real-time barangay Disaster Reporting and Response system, the researchers will be highly attentive to potential hazards associated with the tools, technologies, and materials used in the development process. Throughout this process, the research team will be highly attentive to potential hazards associated with the tools and materials used. Adopting a safety-first methodology, the team will carefully assess risks at each step of the prototyping workflow. The researchers will also conduct thorough training sessions to educate team members on the proper use of tools, devices, and laboratory resources, emphasizing safety protocols and best practices (Laura et al., 2025).
+
+Data Security. The researchers will emphasize safeguarding confidential information and study results by following recognized data protection guidelines all through the project. The team will implement routine data backups and access control protocols to ensure the integrity and confidentiality of disaster reports. They will stay attentive to intellectual property rights related to the research, guaranteeing that all proprietary technology or discoveries are accurately recorded and safeguarded. These initiatives will guarantee that this system will function dependably even in crucial disaster scenarios. Through implementing these thorough actions, the researchers will develop a reliable atmosphere that will nurture confidence among participants and interested parties while preserving the authenticity of the research data(Condon et al., 2022).
+
+Ethical Considerations
+
+	In this study, ethical considerations will play an important role in guiding the researchers in their interactions with participants and in maintaining the integrity of the research. The researchers will ensure that only necessary information is collected and that sensitive data is kept secure to protect the privacy of barangay residents and officials. This study will also adhere to ethical principles to safeguard the rights and well-being of all participants, particularly the community members and responders involved in testing the B-READY system.
+
+	Informed Consent. All respondents will be given clear information about the study’s objectives, procedures, and possible outcomes. This will ensure that they can make an informed decision about their participation. They will also be reminded that participation is voluntary and that they have the right to withdraw at any time without consequences (Millum & Bromwich, 2021).
+
+Privacy and Confidentiality. Protecting the privacy of participants will be prioritized throughout the research. In compliance with Republic Act 10173, the Data Privacy Act of 2012, only essential information will be collected. Data will be anonymized, stored securely, and restricted to authorized personnel to prevent any breaches of confidentiality (Adarmouch et al., 2020).
+
+Data Handling. Information gathered during the study will be handled responsibly. Access will be limited to the research team, and secure methods such as password-protected files and encrypted databases will be applied. Participants will also be informed that their data will be used only for academic and research purposes (Buhomoli & Muneja, 2022).
+
+Beneficence. The research will be designed to minimize risks while maximizing benefits for the participants. Strategies will be applied to safeguard their well-being, and their involvement will contribute to creating outcomes that could improve community preparedness and resilience (Ajuwon, 2020). 
+
+Respect for Persons. The researchers will respect the dignity and autonomy of all participants. Respondents will not be forced to take part, and decisions regarding their participation will be fully honored. The study will ensure that participants are engaged in a considerate and fair manner (Millum & Bromwich, 2020).
+
+Fair Treatment. Recruitment and participation will be carried out fairly and without discrimination. All individuals will be given equal opportunity to join, ensuring that no group bears an unfair burden or is excluded from the benefits of participation (Government of Canada, 2023).
+
+Transparency. The study will maintain openness with all participants by clearly communicating its goals, processes, and expected benefits. Findings will be reported in understandable terms to promote accountability and ensure that participants and stakeholders are well-informed (Malički et al., 2023).
+
+
+
+	
+
+
+
+
+
+REFERENCES
+
+Abd-Alsabour, N., & Salib, E. (2022). A comprehensive web cloud application for dealing with various emergency situations. 2022 International Conference on Microelectronics, ICM. https://doi.org/10.1109/ICMCT57031.2022.00015
+
+Abbas, R., & Miller, T. (2025). Exploring communication inefficiencies in disaster response: Perspectives of emergency managers and health professionals. International Journal of Disaster Risk Reduction, 120, 105393. https://doi.org/10.1016/j.ijdrr.2025.105393
+
+Akinola, O., Akinola, A., Oyekan, B., Oyerinde, O., Adebiyi, H. F., & Sulaimon, B. (2024). Blockchain-Enabled security solutions for medical device integrity and provenance in cloud environments. International Journal of Innovative Science and Research Technology (IJISRT), 123–135.https://doi.org/10.38124/ijisrt/ijisrt24apr225
+
+Alamksyah, A. S. N., Muis, M. A., & Fathahillah, F. (2023b). Web-Based Inventory Information System design of research and community service. Journal of Research and Innovation, 1(1), 13. https://doi.org/10.59562/jorein.v1i1.43804
+
+Amar, J. C. (2025). Development and evaluation of a technology-based Barangay management system. International Journal of Science and Research (IJSR), 14(3), 104–107. https://doi.org/10.21275/sr25303115701
+
+Ariningsih, P., & Muhammad, A. H. (2024). Quality evaluation of ticketing management system using ISO/IEC 25010:2023 standards and AHP method. InTechno – Jurnal Ilmiah Teknologi. https://doi.org/10.24076/intechnojournal.2024v6i2.1870
+
+B-GIS: Modernizing Local Governance Through a Web-Based Barangay Geographic Information System for Barangay 99, Tondo, Manila | IEEE Conference Publication | IEEE Xplore https://ieeexplore.ieee.org/abstract/document/10912845
+
+Bradley, K., (2025). Using Logs to Reduce the Impact of Process Variability and Dependence on Practitioners in Requirements Engineering for Traditional Business Process Automation Software | IEEE Journals & Magazine | IEEE Xplore https://ieeexplore.ieee.org/abstract/document/10788716/
+
+
+
+Cayamanda, K. J., Paunlagui, M., Baconguis, R., & Quimbo, M. A. (2021). Vulnerability profile and risk perception towards an inclusive disaster risk reduction for the flood vulnerable communities of Davao City. International Review of Social Sciences Research, 1(1), 25–53. https://doi.org/10.53378/346474
+
+Cayamanda, K. J. G., & Paunlagui, M. (2020). A participatory management model for flood-risk communication (PMMFRC) in Davao City, Philippines. European Journal of Business and Management Research, 5(4). http://dx.doi.org/10.24018/ejbmr.2020.5.4.451
+
+Chicas, Y., & Maag, S. (2021). AN AUTOMATED PARALLEL COMPATIBILITY TESTING FRAMEWORK FOR WEB-BASED SYSTEMS. IEEE Transactions on Software Engineering (TSE)TESTING FRAMEWORK FOR WEB-BASED SYSTEMS.https://doi.org/10.33965/icwi_ac2021_202109l020
+
+Condon, P., Simpson, J., & Emanuel, M. (2022). Research data integrity: A cornerstone of rigorous and reproducible research. IASSIST Quarterly, 46(3). https://doi.org/10.29173/iq1033
+
+Damaševičius, R., Bacanin, N., & Misra, S. (2023). From sensors to safety: Internet of emergency services (IoES) for emergency response and disaster management. Journal of Sensor and Actuator Networks, 12(3), 41. https://doi.org/10.3390/jsan12030041
+
+Del Pilar, et al. (2024). Development of an Integrated Natural and Socioeconomic Indicators Monitoring System for Bulacan Using Earth Intelligence Tools | Isabela State University Linker: Journal of Engineering, Computing and Technology https://www.isujournals.ph/index.php/ject/article/view/207
+
+Edward, A., Mbega, E. R., & Kaijage, S. F. (2021). Potential of Mobile-Based Apps Online platforms in Fast-Tracking access of agriculture Information. Indian Journal of Science and Technology, 14(39), 2953–2960. https://doi.org/10.17485/ijst/v14i39.729
+
+Finochietto, J. M., & et al. (2021). (2022). An IoT-based infrastructure to enhance self-evacuations in natural hazardous events. Personal and Ubiquitous Computing DOI:10.1109/ISNCC62547.2024.10759061Corpus
+
+Ford, D. N., & Wolf, C. M. (2020). Smart Cities with Digital Twin Systems for Disaster Management. Journal of Management in Engineering, 36(4). https://doi.org/10.1061/(ASCE)ME.1943-5479.0000779
+
+Gabarró, P. P. (2020). Digital connectivity: The infrastructure of the future. Inter-American Development Bank. https://doi.org/10.18235/0002352
+
+Gatchalian, et al.(2023). Real-Time Incident Reporting and Emergency Response: A Mobile GPS App for Abuyog, Leyte, Philippines | IEEE Conference Publication | IEEE Xplore https://ieeexplore.ieee.org/abstract/document/10823942
+
+Gersaniva, A. J., & Damasco, B., Jr. (2025). Innovative flood monitoring system: Enhancing disaster response and community safety. International Journal of Innovative Science and Research Technology. http://dx.doi.org/10.38124/ijisrt/25jun1859
+
+Government of Canada, Interagency Advisory Panel on Research Ethics. (2023). Tri-Council Policy Statement: Ethical conduct for research involving humans. https://ethics.gc.ca
+
+Grace, C., Paul, D., & et al. (2023). Teaching Disaster Risk Reduction and Management to Secondary School students using Online Interactive course proceedings of the 2024 15th International Conference on E-Education, E-Business, E-Management and E-Learning htpps://dl.acm.org/doi/abs/10.1145/3670013.3670052
+
+Kharazishvili, Y., Kwilinski, A., Dzwigol, H., & Liashenko, V. (2021). Strategic European integration scenarios of Ukrainian and Polish research, education and innovation spaces. Virtual Economics, 4(2), 7–40. https://doi.org/10.34021/ve.2021.04.02
+
+Lakshmi, T. K., Mangalapu, N. K., Swaminathan, M. F. A. J., Chandravadhana, S., Pari, R., & Ranjana, T. (2025, January). AI for Disaster Response: Developing Intelligent Systems for Real-Time Emergency Management. In 2025 International Conference on Next Generation Communication & Information Processing (INCIP) DOI:10.1109/INCIP64058.2025.11019428Corpus
+
+Laura, M., Eli, V., Shima, S., & Adam, M. (2025). Safety first, bubbles second: Integrating regulatory compliance with innovation in rapid prototyped focused ultrasound devices. Virginia Tech University.https://hdl.handle.net/10919/133140
+
+Majumdar, S., Srivastava, M., & Khan, A. (2024). Voice AI IoT Model for Rescue Operations Among First Responders for Disaster Management. In 2024 International Symposium on Networks, Computers and Communications (ISNCC) DOI:10.1109/ISNCC62547.2024.10759061Corpus
+
+Menezes, & Salgado (2024). Implementation Strategies for Frontline Healthcare Professionals: People, Process Mapping, and problem Solving. Journal of General Internal Medicine https://linl.springer.com/article/10.1007/s11606-020-06169-3
+
+Mex-Alvarez, D. C., Hernández-Cruz, L. M., Ortiz-Cuevas, N. G., & Lao, F. J. B. (2021). A methodology to evaluate the safety-based witch ISO 25010: 2011. ECORFAN Journal Republic of Paraguay, 1–7. https://doi.org/10.35429/ejrop.2021.12.7.1.7
+
+
+
+Naqvi, B., Kedziora, D., Zhang, L., & Oyedeji, S. (2025). Quality of Low-Code/No-Code development platforms through the lens of ISO 25010:2023. Computer, 58(3), 30–40. https://doi.org/10.1109/mc.2024.3493192
+
+Nawar Arony, N., Shi Li, Z., Damian, D., & Xu, B. (2023). Unveiling Inclusiveness-Related User Feedback in Mobile Applications. arXiv e-prints, arXiv-2311. https:doi.org/10.48550/arXiv.2311.00984
+
+Nuevas, et al.(2024). ONLINE EMERGENCY RESPONSE MANAGEMENT SYSTEM FOR CITY DISASTER RISK REDUCTION MANAGEMENT OFFICE OF CALAMBA CITY, LAGUNA. | EBSCOhost https://doi.org//10.26483/ijarcs.v16i3.7254
+
+Ona, S. E., & Lallana, E. C. (2020). Challenges and opportunities of information management in disaster preparedness. In IT security and organizational perspectives (pp. 87–98). IGI Global. https://doi.org/10.4018/978-1-7998-3468-7.ch005
+
+Özdemir, O., & Buzluca, F. (2024). Evaluating Microservices Maintainability: A Classification System Using Code Metrics and ISO/IEC 250xy Standards. In Proceedings of the 2024 13th International Conference on Software and Computer Applications (ICSCA 2024) (pp. 55-61). Association for Computing Machinery. https://doi.org/10.1145/3651781.3651790
+
+Peters, E., & Aggrey, G. K. (2020). An ISO 25010 based quality model for ERP systems. Advances in Science Technology and Engineering Systems Journal, 5(2), 578–583. https://doi.org/10.25046/aj050272
+
+Portugal, A., & Ruiz, L. A. B. (2023). Systematic literature mapping: Studies related to ESL/EFL oral communication skills (2018-2022). English Language Teaching, 16(10), 99. https://doi.org/10.5539/elt.v16n10p99
+
+Retno, et, al. (2024). Conceptual framework design for STEM-integrated project-based learning (PjBL-STEM) for elementary schools Asian education and Development Studies emerald Publishing https://www.emerald.com/aeds/article-abstract/14/3/579/1263163/Conceptual-framework-design-for-STEM-integrated?redirectedfrom=fulltext
+
+Smith, T., & Johnson, P. (2020). Real-time data systems in emergency management. Journal of Disaster Preparedness, 12(3), 112-125. https://doi.org/10.3390/land12081514
+
+Vasuki, M., Amalrajvictoire, T., & Kalithas, P. (2024). Exploring innovative solutions for web app development. International Journal of Scientific Research in Engineering and Management (IJSREM), 8(5), 1–7. https://doi.org/10.55041/IJSREM34444
+
+Wanatabe, D. (2025). Barangays in the Philippines Nipo.com-Bridging Japan and the Philippines Online https://www.nipino.com/barangays-in-the-philippines
+
+Yaneza, S., Lerios, L., Bartolome, A., & Villarica, V. (2025). Online emergency response management system for city disaster risk reduction management office of Calamba City, Laguna. International Journal of Advanced Research in Computer Science, 16(3). https://doi.org/10.26483/ijarcs.v16i3.7254
+
+Zhang, L. (2024). Evaluating the merits of low code/no code paradigm from the perspective of ISO 25010 quality requirment [Bachelor’s thesis]. In Dr. B. Naqvi, Lappeenranta–Lahti University of Technology LUT (p. 29). https://urn.fi/URN:NBN:fi-fe2024060443842
