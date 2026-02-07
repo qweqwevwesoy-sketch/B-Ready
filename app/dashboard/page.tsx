@@ -328,11 +328,11 @@ const timestamp = new Date().toISOString();
 
       <main className="max-w-7xl mx-auto px-4 py-8">
 
-        {/* Statistics Section */}
-        <Statistics reports={reports} />
-
-        {/* Reports Section */}
+{/* Reports Section */}
         <div className="bg-white/95 backdrop-blur-lg rounded-2xl p-8 shadow-xl">
+          {/* Statistics Section */}
+          <Statistics reports={reports} />
+
           <div className="flex justify-between items-center mb-6 flex-wrap gap-4">
             <div>
               <h1 className="text-3xl font-bold mb-2">
