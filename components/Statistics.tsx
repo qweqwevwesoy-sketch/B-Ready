@@ -14,20 +14,15 @@ interface StatisticsProps {
 export function Statistics({ reports }: StatisticsProps) {
   // Calculate statistics
   const totalReports = reports.length;
-  const approvedReports = reports.filter(r => r.status === 'approved').length;
   const currentReports = reports.filter(r => r.status === 'current').length;
-  const pendingReports = reports.filter(r => r.status === 'pending').length;
   const rejectedReports = reports.filter(r => r.status === 'rejected').length;
 
   // Time-based statistics
   const today = new Date();
   today.setHours(0, 0, 0, 0);
-  const yesterday = new Date(today);
-  yesterday.setDate(yesterday.getDate() - 1);
   const thisWeek = new Date(today);
   thisWeek.setDate(thisWeek.getDate() - thisWeek.getDay());
   const thisMonth = new Date(today.getFullYear(), today.getMonth(), 1);
-  const thisQuarter = new Date(today.getFullYear(), Math.floor(today.getMonth() / 3) * 3, 1);
   const thisYear = new Date(today.getFullYear(), 0, 1);
 
   const dailyReports = reports.filter(r => 
@@ -38,9 +33,6 @@ export function Statistics({ reports }: StatisticsProps) {
   ).length;
   const monthlyReports = reports.filter(r => 
     new Date(r.timestamp) >= thisMonth
-  ).length;
-  const quarterlyReports = reports.filter(r => 
-    new Date(r.timestamp) >= thisQuarter
   ).length;
   const yearlyReports = reports.filter(r => 
     new Date(r.timestamp) >= thisYear
@@ -63,16 +55,6 @@ export function Statistics({ reports }: StatisticsProps) {
 
     let summary = `There are ${totalText} in the system. In the last 24 hours, there were ${dailyText}. This week, we've received ${weeklyText}. This month, we've received ${monthlyText}. `;
 
-    if (approvedReports > 0) {
-      const approvedText = approvedReports === 1 ? '1 report has been approved' : `${approvedReports} reports have been approved`;
-      summary += `${approvedText}. `;
-    }
-
-    if (pendingReports > 0) {
-      const pendingText = pendingReports === 1 ? '1 report is pending review' : `${pendingReports} reports are pending review`;
-      summary += `${pendingText}. `;
-    }
-
     if (Object.keys(categoryCounts).length > 0) {
       const sortedCategories = Object.entries(categoryCounts)
         .sort((a, b) => b[1] - a[1])
@@ -93,11 +75,11 @@ export function Statistics({ reports }: StatisticsProps) {
   // Chart data for trends
   const getTrendData = () => {
     const trendData = {
-      labels: ['Today', 'This Week', 'This Month', 'This Quarter', 'This Year', 'Total'],
+      labels: ['Today', 'This Week', 'This Month', 'This Year', 'Total'],
       datasets: [
         {
           label: 'Report Counts',
-          data: [dailyReports, weeklyReports, monthlyReports, quarterlyReports, yearlyReports, totalReports],
+          data: [dailyReports, weeklyReports, monthlyReports, yearlyReports, totalReports],
           borderColor: 'rgb(75, 192, 192)',
           backgroundColor: 'rgba(75, 192, 192, 0.2)',
           tension: 0.1,
@@ -143,21 +125,11 @@ export function Statistics({ reports }: StatisticsProps) {
       </div>
 
       {/* Statistics Grid */} 
-      <div className="grid grid-cols-1 md:grid-cols-5 gap-4 mb-6">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
         <div className="bg-gradient-to-br from-blue-50 to-blue-100 rounded-lg p-4 hover:shadow-lg transition-shadow">
           <div className="text-2xl font-bold text-blue-600">{totalReports}</div>
           <div className="text-sm text-blue-800">Total Reports</div>
           <div className="text-xs text-blue-400 mt-1">All time</div>
-        </div>
-        <div className="bg-gradient-to-br from-green-50 to-green-100 rounded-lg p-4 hover:shadow-lg transition-shadow">
-          <div className="text-2xl font-bold text-green-600">{approvedReports}</div>
-          <div className="text-sm text-green-800">Approved</div>
-          <div className="text-xs text-green-400 mt-1">Processed</div>
-        </div>
-        <div className="bg-gradient-to-br from-yellow-50 to-yellow-100 rounded-lg p-4 hover:shadow-lg transition-shadow">
-          <div className="text-2xl font-bold text-yellow-600">{pendingReports}</div>
-          <div className="text-sm text-yellow-800">Pending</div>
-          <div className="text-xs text-yellow-400 mt-1">Awaiting review</div>
         </div>
         <div className="bg-gradient-to-br from-purple-50 to-purple-100 rounded-lg p-4 hover:shadow-lg transition-shadow">
           <div className="text-2xl font-bold text-purple-600">{dailyReports}</div>
@@ -174,43 +146,6 @@ export function Statistics({ reports }: StatisticsProps) {
       {/* Trend Chart */} 
       <div className="h-64 mb-6">
         <Line data={getTrendData()} options={trendOptions} />
-      </div>
-
-      {/* Progress Indicators */} 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
-        <div className="bg-gray-50 rounded-lg p-4">
-          <h3 className="text-lg font-semibold text-gray-800 mb-2">Monthly Performance</h3>
-          <div className="flex items-center justify-between mb-2">
-            <span className="text-gray-600">Monthly Target</span>
-            <span className="font-semibold">50 reports</span>
-          </div>
-          <div className="w-full bg-gray-200 rounded-full h-2">
-            <div 
-              className="bg-green-500 h-2 rounded-full transition-all duration-300" 
-              style={{ width: `${Math.min((monthlyReports / 50) * 100, 100)}%` }}
-            ></div>
-          </div>
-          <div className="text-sm text-gray-500 mt-1">
-            {monthlyReports} reports this month ({Math.min((monthlyReports / 50) * 100, 100).toFixed(1)}%)
-          </div>
-        </div>
-
-        <div className="bg-gray-50 rounded-lg p-4">
-          <h3 className="text-lg font-semibold text-gray-800 mb-2">Approval Rate</h3>
-          <div className="flex items-center justify-between mb-2">
-            <span className="text-gray-600">Approval Efficiency</span>
-            <span className="font-semibold">{totalReports > 0 ? Math.round((approvedReports / totalReports) * 100) : 0}%</span>
-          </div>
-          <div className="w-full bg-gray-200 rounded-full h-2">
-            <div 
-              className="bg-blue-500 h-2 rounded-full transition-all duration-300" 
-              style={{ width: `${totalReports > 0 ? Math.round((approvedReports / totalReports) * 100) : 0}%` }}
-            ></div>
-          </div>
-          <div className="text-sm text-gray-500 mt-1">
-            {approvedReports} approved out of {totalReports} total
-          </div>
-        </div>
       </div>
 
       {/* Sentence Summary */} 
