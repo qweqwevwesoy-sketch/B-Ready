@@ -494,7 +494,7 @@ const timestamp = new Date().toISOString();
             </div>
           </div>
         </div>
-        <div className="bg-white/95 backdrop-blur-lg rounded-2xl p-8 shadow-xl">
+        <div className="bg-white/95 backdrop-blur-lg rounded-2xl p-8 shadow-xl mt-24">
         {/* Statistics Section */}
           <Statistics reports={reports} />
         </div>
