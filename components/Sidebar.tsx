@@ -40,17 +40,12 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
     };
   }, []);
 
-  const handleNavigation = (path: string) => {
-    console.log('Navigating to:', path, 'User:', user);
-    // Allow direct navigation to profile for authenticated users
-    if (user) {
-      router.push(path);
-    } else {
-      // If not authenticated, redirect to login
-      router.push('/login');
-    }
-    onClose();
-  };
+const handleNavigation = (path: string) => {
+  if (!user) return;
+  console.log('Navigating to:', path, 'User:', user);
+  router.push(path);
+  onClose();
+};
 
   const handleLogout = async () => {
     await logout();
@@ -58,7 +53,11 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
     onClose();
   };
 
-  if (!user) return null;
+if (!user) {
+  return (
+    <div className="fixed inset-0 bg-black/50 z-40 backdrop-blur-sm" />
+  );
+}
 
   // When offline, only show Safety Tips
   const mainNavItems = isOffline ? [

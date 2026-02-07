@@ -37,9 +37,9 @@ export default function RootLayout({
         />
         <link rel="manifest" href="/manifest.json" />
         <meta name="theme-color" content="#28599a" />
-        <link rel="icon" type="image/png" sizes="32x32" href="/BLogo.png" />
-        <link rel="icon" type="image/png" sizes="16x16" href="/BLogo.png" />
-        <link rel="apple-touch-icon" href="/BLogo.png" />
+<link rel="icon" type="image/png" sizes="32x32" href="/Logo.svg" />
+<link rel="icon" type="image/png" sizes="16x16" href="/Logo.svg" />
+<link rel="apple-touch-icon" href="/Logo.svg" />
         <meta name="mobile-web-app-capable" content="yes" />
         <meta name="apple-mobile-web-app-status-bar-style" content="default" />
         <meta name="apple-mobile-web-app-title" content="B-READY" />

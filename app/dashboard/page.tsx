@@ -309,11 +309,11 @@ const timestamp = new Date().toISOString();
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
-          <img
-            src="/BLogo.png"
-            alt="B-READY Logo"
-            className="w-16 h-16 mx-auto mb-4 animate-pulse"
-          />
+<img
+  src="/Logo.svg"
+  alt="B-READY Logo"
+  className="w-16 h-16 mx-auto mb-4 animate-pulse"
+/>
           <p>Loading...</p>
         </div>
       </div>
@@ -330,8 +330,7 @@ const timestamp = new Date().toISOString();
 
 {/* Reports Section */}
         <div className="bg-white/95 backdrop-blur-lg rounded-2xl p-8 shadow-xl">
-          {/* Statistics Section */}
-          <Statistics reports={reports} />
+          
 
           <div className="flex justify-between items-center mb-6 flex-wrap gap-4">
             <div>
@@ -495,6 +494,8 @@ const timestamp = new Date().toISOString();
             </div>
           </div>
         </div>
+        {/* Statistics Section */}
+          <Statistics reports={reports} />
       </main>
 
       {user && <FAB onCategorySelect={handleCategorySelect} />}
