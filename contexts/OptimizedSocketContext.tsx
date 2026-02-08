@@ -82,11 +82,13 @@ export const OptimizedSocketProvider: React.FC<{ children: React.ReactNode }> = 
     endConnectionTimer,
   } = useSocketPerformance();
 
-  const [reports, setReports] = useState<Report[]>([]);
+const [reports, setReports] = useState<Report[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [lastUpdate, setLastUpdate] = useState<number>(Date.now());
+  const pollingInterval = useRef<NodeJS.Timeout | null>(null);
   
-  const [chatMessages, setChatMessages] = useState<Array<{
+const [chatMessages, setChatMessages] = useState<Array<{
     id: string;
     text: string;
     userName: string;
@@ -97,6 +99,7 @@ export const OptimizedSocketProvider: React.FC<{ children: React.ReactNode }> = 
   }>>([]);
   const [chatLoading, setChatLoading] = useState(false);
   const [currentChatReportId, setCurrentChatReportId] = useState<string | null>(null);
+  const processedMessageIds = useRef(new Set<string>());
   
   const reportsRef = useRef<Report[]>([]);
   const chatMessagesRef = useRef<Array<{
@@ -134,7 +137,7 @@ export const OptimizedSocketProvider: React.FC<{ children: React.ReactNode }> = 
     }
   }, [user, connect, disconnect, startConnectionTimer]);
 
-  // Authenticate user and request initial reports when connected
+// Authenticate user and request initial reports when connected
   useEffect(() => {
     if (!isConnected || !user) return;
 
@@ -162,11 +165,32 @@ export const OptimizedSocketProvider: React.FC<{ children: React.ReactNode }> = 
     authenticateAndFetchReports();
   }, [isConnected, user, emit]);
 
+  // Polling fallback for when WebSocket connection fails
+  useEffect(() => {
+    if (!isConnected) {
+      // Start polling every 10 seconds
+      pollingInterval.current = setInterval(() => {
+        if (!isConnected && user) {
+          console.log('🔄 Polling for reports (WebSocket disconnected)');
+          emit('get_reports', {});
+          setLastUpdate(Date.now());
+        }
+      }, 10000);
+    }
+
+    return () => {
+      if (pollingInterval.current) {
+        clearInterval(pollingInterval.current);
+        pollingInterval.current = null;
+      }
+    };
+  }, [isConnected, emit, user]);
+
   // Set up socket event listeners
   useEffect(() => {
     if (!isConnected) return;
 
-    const handleReportsUpdate = (data: unknown) => {
+const handleReportsUpdate = (data: unknown) => {
       try {
         // Handle both direct objects and stringified JSON
         let reportsData: { reports: Report[] };
@@ -189,6 +213,7 @@ export const OptimizedSocketProvider: React.FC<{ children: React.ReactNode }> = 
           console.log('📡 Received reports update:', reportsData.reports.length, 'reports');
           setReports(reportsData.reports);
           recordMessage();
+          setLastUpdate(Date.now());
         } else {
           console.warn('📡 Invalid reports array received:', reportsData);
         }
@@ -260,7 +285,7 @@ export const OptimizedSocketProvider: React.FC<{ children: React.ReactNode }> = 
       }
     };
 
-    // Unified chat message handler - handles all chat message types
+// Unified chat message handler - handles all chat message types
     const handleChatMessage = (data: unknown) => {
       try {
         let messageData: {
@@ -296,13 +321,16 @@ export const OptimizedSocketProvider: React.FC<{ children: React.ReactNode }> = 
         if (messageData) {
           // Only update messages for the current chat report or if no specific report is active
           if (messageData.reportId === currentChatReportId || !currentChatReportId) {
+            // Check if message ID has already been processed
+            if (processedMessageIds.current.has(messageData.id)) {
+              console.log('📝 Message already processed, skipping duplicate:', messageData.id);
+              return;
+            }
+
+            // Mark message as processed
+            processedMessageIds.current.add(messageData.id);
+
             setChatMessages(prev => {
-              // Check for duplicates to prevent message duplication
-              const exists = prev.some(msg => msg.id === messageData.id);
-              if (exists) {
-                console.log('📝 Message already exists, skipping duplicate:', messageData.id);
-                return prev;
-              }
               console.log('📝 Adding new message:', messageData.id);
               return [...prev, messageData];
             });
@@ -550,9 +578,10 @@ export const OptimizedSocketProvider: React.FC<{ children: React.ReactNode }> = 
     }
   }, [isConnected, emit, user]);
 
-  const refreshReports = useCallback(() => {
+const refreshReports = useCallback(() => {
     if (isConnected) {
       emit('get_reports', {});
+      setLastUpdate(Date.now());
     }
   }, [isConnected, emit]);
 

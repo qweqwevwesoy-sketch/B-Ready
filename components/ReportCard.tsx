@@ -68,7 +68,13 @@ export function ReportCard({
             <h3 className="font-semibold text-lg truncate">{report.type || 'Emergency Report'}</h3>
             {getStatusBadge()}
           </div>
-          <p className="text-gray-600 text-sm mb-2">{report.address || 'Location not specified'}</p>
+<p className="text-gray-600 text-sm mb-2">
+            {report.address 
+              ? report.address.includes(',')
+                ? report.address 
+                : `Location 📍 ${report.address}`
+              : 'Location not specified'}
+          </p>
           <p className="text-gray-500 text-xs mb-3">
             {report.isAnonymous ? 'Anonymous' : (report.userName || 'Resident')}
           </p>

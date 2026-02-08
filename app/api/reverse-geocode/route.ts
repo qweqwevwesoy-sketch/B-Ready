@@ -45,14 +45,27 @@ export async function GET(request: NextRequest) {
 
       const data = await response.json();
 
-      // Handle different response formats
+// Handle different response formats
       let address = '';
 
       if (service.url.includes('bigdatacloud.net')) {
-        address = data.city || data.locality || data.principalSubdivision || data.countryName || `Coordinates: ${lat}, ${lng}`;
+        // Build detailed address with fallback options
+        const components = [
+          data.city || data.locality,
+          data.principalSubdivision,
+          data.countryName
+        ].filter(Boolean);
+
+        address = components.length > 0 
+          ? components.join(', ') + ` ${lat}, ${lng}` 
+          : `Coordinates: ${lat}, ${lng}`;
       } else if (service.url.includes('positionstack.com')) {
-        address = data.data[0]?.label || data.data[0]?.name || `Coordinates: ${lat}, ${lng}`;
+        // Use the label if available, otherwise build from components
+        address = data.data[0]?.label || 
+                 (data.data[0]?.name && `${data.data[0].name} ${lat}, ${lng}`) ||
+                 `Coordinates: ${lat}, ${lng}`;
       } else if (service.url.includes('opencagedata.com')) {
+        // Use formatted address if available
         address = data.results[0]?.formatted || `Coordinates: ${lat}, ${lng}`;
       }
 
