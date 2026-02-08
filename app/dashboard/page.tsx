@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState, useCallback, Suspense } from 'react';
+import React, { useEffect, useState, useCallback, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
 import { useOptimizedSocketContext } from '@/contexts/OptimizedSocketContext';
@@ -27,6 +27,62 @@ import {
 } from '@/lib/offline-manager';
 import { getLocalStorageItem } from '@/lib/client-utils';
 import { Statistics } from '@/components/Statistics';
+
+// Error boundary component for dashboard
+class DashboardErrorBoundary extends React.Component<
+  { children: React.ReactNode },
+  { hasError: boolean; error?: Error }
+> {
+  constructor(props: { children: React.ReactNode }) {
+    super(props);
+    this.state = { hasError: false };
+  }
+
+  static getDerivedStateFromError(error: Error) {
+    return { hasError: true, error };
+  }
+
+  componentDidCatch(error: Error, errorInfo: React.ErrorInfo) {
+    console.error('Dashboard error caught by error boundary:', error, errorInfo);
+    notificationManager.error('An error occurred in the dashboard. Please refresh the page.');
+  }
+
+  render() {
+    if (this.state.hasError) {
+      return (
+        <div className="min-h-screen flex items-center justify-center bg-gray-50">
+          <div className="bg-white rounded-lg p-8 shadow-lg text-center max-w-md">
+            <div className="text-red-600 mb-4">
+              <svg className="w-16 h-16 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+            </div>
+            <h2 className="text-xl font-semibold text-gray-800 mb-2">Something went wrong</h2>
+            <p className="text-gray-600 mb-4">
+              The dashboard encountered an error. This could be due to a network issue or temporary problem.
+            </p>
+            <div className="space-y-2">
+              <button
+                onClick={() => window.location.reload()}
+                className="w-full bg-blue-500 text-white py-2 px-4 rounded-lg hover:bg-blue-600"
+              >
+                Refresh Page
+              </button>
+              <button
+                onClick={() => window.location.href = '/'}
+                className="w-full bg-gray-200 text-gray-800 py-2 px-4 rounded-lg hover:bg-gray-300"
+              >
+                Go Home
+              </button>
+            </div>
+          </div>
+        </div>
+      );
+    }
+
+    return this.props.children;
+  }
+}
 
 function SearchParamsWrapper() {
   const searchParams = useSearchParams();
@@ -78,26 +134,47 @@ function DashboardContent({ searchParams }: { searchParams: URLSearchParams }) {
   });
   const isOffline = useOfflineStatus();
 
-  // Filtered reports for each column
-  const filteredApprovedReports = filterReports(
-    reports.filter((r) => r.status === 'approved'),
-    approvedSearchTerm,
-    approvedFilters
-  );
+  // Filtered reports for each column - with error handling
+  const filteredApprovedReports = (() => {
+    try {
+      return filterReports(
+        reports.filter((r) => r.status === 'approved'),
+        approvedSearchTerm,
+        approvedFilters
+      );
+    } catch (error) {
+      console.error('Error filtering approved reports:', error);
+      return [];
+    }
+  })();
 
-  const filteredCurrentReports = filterReports(
-    reports.filter((r) => r.status === 'current'),
-    currentSearchTerm,
-    currentFilters
-  );
+  const filteredCurrentReports = (() => {
+    try {
+      return filterReports(
+        reports.filter((r) => r.status === 'current'),
+        currentSearchTerm,
+        currentFilters
+      );
+    } catch (error) {
+      console.error('Error filtering current reports:', error);
+      return [];
+    }
+  })();
 
-  const filteredThirdColumnReports = filterReports(
-    user?.role === 'admin'
-      ? reports.filter((r) => r.status === 'pending')
-      : reports.filter((r) => r.userId === user?.uid),
-    thirdColumnSearchTerm,
-    thirdColumnFilters
-  );
+  const filteredThirdColumnReports = (() => {
+    try {
+      return filterReports(
+        user?.role === 'admin'
+          ? reports.filter((r) => r.status === 'pending')
+          : reports.filter((r) => r.userId === user?.uid),
+        thirdColumnSearchTerm,
+        thirdColumnFilters
+      );
+    } catch (error) {
+      console.error('Error filtering third column reports:', error);
+      return [];
+    }
+  })();
 
   // Debug logging to verify reports are being received (throttled)
   useEffect(() => {
@@ -317,11 +394,11 @@ const timestamp = new Date().toISOString();
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
-<img
-  src="/Logo.svg"
-  alt="B-READY Logo"
-  className="w-16 h-16 mx-auto mb-4 animate-pulse"
-/>
+          <img
+            src="/Logo.svg"
+            alt="B-READY Logo"
+            className="w-16 h-16 mx-auto mb-4 animate-pulse"
+          />
           <p>Loading...</p>
         </div>
       </div>
@@ -336,7 +413,7 @@ const timestamp = new Date().toISOString();
 
       <main className="max-w-7xl mx-auto px-4 py-8">
 
-{/* Reports Section */}
+        {/* Reports Section */}
         <div className="bg-white/95 backdrop-blur-lg rounded-2xl p-8 shadow-xl">
           
 
@@ -576,7 +653,9 @@ export default function DashboardPage() {
         </div>
       </div>
     }>
-      <SearchParamsWrapper />
+      <DashboardErrorBoundary>
+        <SearchParamsWrapper />
+      </DashboardErrorBoundary>
     </Suspense>
   );
 }

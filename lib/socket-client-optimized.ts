@@ -63,29 +63,30 @@ class SocketConnectionPool {
       }
 
       // For cloud deployments, use the server deployment URL with correct port
-      if (window.location.hostname.includes('onrender.com')) {
-        // Use the server deployment URL for WebSocket connections with port 10000
-        const renderUrl = 'https://b-ready.onrender.com:10000';
+      if (typeof window !== 'undefined' && window.location.hostname.includes('onrender.com')) {
+        // Use the server deployment URL for WebSocket connections
+        // Note: Render doesn't support custom ports for WebSocket, use standard ports
+        const renderUrl = 'https://b-ready.onrender.com';
         console.log('🌐 Using Render WebSocket URL:', renderUrl);
         return renderUrl;
       }
 
       // For Vercel deployments, use the server deployment URL
-      if (window.location.hostname.includes('vercel.app')) {
-        const vercelUrl = 'https://b-ready.onrender.com:10000';
+      if (typeof window !== 'undefined' && window.location.hostname.includes('vercel.app')) {
+        const vercelUrl = 'https://b-ready.vercel.app';
         console.log('🌐 Using Vercel WebSocket URL:', vercelUrl);
         return vercelUrl;
       }
 
       // For localhost
-      if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
+      if (typeof window !== 'undefined' && (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')) {
         const localUrl = 'http://localhost:3001';
         console.log('🏠 Using localhost WebSocket URL:', localUrl);
         return localUrl;
       }
 
       // For ngrok URLs
-      if (window.location.hostname.includes('ngrok.io')) {
+      if (typeof window !== 'undefined' && window.location.hostname.includes('ngrok.io')) {
         const storedWsUrl = localStorage.getItem('bready_websocket_url');
         if (storedWsUrl) {
           const secureUrl = window.location.protocol === 'https:' 
@@ -94,13 +95,13 @@ class SocketConnectionPool {
           console.log('🔒 Using stored WebSocket URL for ngrok:', secureUrl);
           return secureUrl;
         }
-        const ngrokUrl = `https://${window.location.hostname}:3001`;
+        const ngrokUrl = `https://${window.location.hostname}`;
         console.log('🔄 Using fallback WebSocket URL for ngrok:', ngrokUrl);
         return ngrokUrl;
       }
 
-      // For other domains, try to connect to the server deployment with port
-      const fallbackUrl = 'https://b-ready.onrender.com:10000';
+      // For other domains, try to connect to the server deployment
+      const fallbackUrl = 'https://b-ready.onrender.com';
       console.log('🌐 Using fallback WebSocket URL:', fallbackUrl);
       return fallbackUrl;
     } catch (error) {
