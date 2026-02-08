@@ -9,6 +9,7 @@ import {
   getLocalStorageItem,
   setLocalStorageItem
 } from '@/lib/client-utils';
+import { createReport } from '@/lib/firebase-service';
 
 const OFFLINE_REPORTS_KEY = 'bready_offline_reports';
 const OFFLINE_MESSAGES_KEY = 'bready_offline_messages';
@@ -159,6 +160,37 @@ export const useOfflineStatus = () => {
   }, []);
 
   return isOffline;
+};
+
+// Sync offline reports to Firestore
+export const syncOfflineReports = async (): Promise<number> => {
+  const offlineReports = getOfflineReports().filter(report => !report.synced);
+  
+  if (offlineReports.length === 0) {
+    console.log('🔄 No unsynced reports to sync');
+    return 0;
+  }
+
+  console.log('🔄 Syncing offline reports:', offlineReports.length);
+  
+  let syncedCount = 0;
+  
+  for (const offlineReport of offlineReports) {
+    try {
+      const { offlineId, createdAt, synced, ...reportData } = offlineReport;
+      const firebaseId = await createReport(reportData);
+      console.log('✅ Synced report to Firestore:', offlineId, '→', firebaseId);
+      markReportSynced(offlineId);
+      syncedCount++;
+    } catch (error) {
+      console.error('❌ Failed to sync report:', offlineReport.offlineId, error);
+    }
+  }
+
+  cleanupSyncedReports();
+  console.log('✅ Sync completed. Synced:', syncedCount, 'reports');
+  
+  return syncedCount;
 };
 
 // React import for hook

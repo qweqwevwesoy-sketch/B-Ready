@@ -14,9 +14,11 @@ import {
   useOfflineStatus,
   isOnline,
   storeOfflineReport,
-  storeOfflineMessage
+  storeOfflineMessage,
+  syncOfflineReports
 } from '@/lib/offline-manager';
 import { notificationManager } from '@/components/NotificationManager';
+import { createReport } from '@/lib/firebase-service';
 
 export default function LandingPage() {
   const router = useRouter();
@@ -27,6 +29,22 @@ export default function LandingPage() {
   const [currentReportChat, setCurrentReportChat] = useState<string | null>(null);
   const [selectedCategory, setSelectedCategory] = useState<Category | null>(null);
   const [tempReportId, setTempReportId] = useState<string | null>(null);
+
+  // Sync offline reports when coming back online
+  useEffect(() => {
+    if (!isOffline) {
+      const syncReports = async () => {
+        const syncedCount = await syncOfflineReports();
+        if (syncedCount > 0) {
+          notificationManager.success(`Synced ${syncedCount} offline report(s)`);
+        }
+      };
+      
+      // Debounce to prevent multiple syncs when online status fluctuates
+      const timer = setTimeout(syncReports, 1000);
+      return () => clearTimeout(timer);
+    }
+  }, [isOffline]);
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-200">
@@ -338,15 +356,19 @@ export default function LandingPage() {
               notificationManager.info('Report saved offline. Will sync when online.');
               console.log('📱 Report stored offline:', offlineReport.offlineId);
             } else {
-              submitReport(reportData);
+              // Send directly to Firestore
+              createReport(reportData)
+                .then((firebaseId) => {
+                  console.log('✅ Report sent directly to Firestore with ID:', firebaseId);
+                  notificationManager.success('Report sent successfully!');
+                })
+                .catch((error) => {
+                  console.error('❌ Failed to send report to Firestore:', error);
+                  // Fallback to offline storage
+                  const offlineReport = storeOfflineReport(reportData);
+                  notificationManager.warning('Report saved offline. Will sync when online.');
+                });
             }
-
-            // Auto-submit after 3 seconds (only if online)
-            setTimeout(() => {
-              if (tempId === tempReportId && !isOffline) {
-                submitReport(reportData);
-              }
-            }, 3000);
           } catch (error) {
             console.error('Error creating report:', error);
             notificationManager.error('Failed to get location. Report will be submitted without location.');
@@ -373,12 +395,23 @@ export default function LandingPage() {
             };
 
             if (isOffline) {
-              const offlineReport = storeOfflineReport(reportData);
-              notificationManager.info('Report saved offline. Will sync when online.');
-              console.log('📱 Report stored offline:', offlineReport.offlineId);
-            } else {
-              submitReport(reportData);
-            }
+                const offlineReport = storeOfflineReport(reportData);
+                notificationManager.info('Report saved offline. Will sync when online.');
+                console.log('📱 Report stored offline:', offlineReport.offlineId);
+              } else {
+                // Send directly to Firestore
+                createReport(reportData)
+                  .then((firebaseId) => {
+                    console.log('✅ Report sent directly to Firestore with ID:', firebaseId);
+                    notificationManager.success('Report sent successfully!');
+                  })
+                  .catch((error) => {
+                    console.error('❌ Failed to send report to Firestore:', error);
+                    // Fallback to offline storage
+                    const offlineReport = storeOfflineReport(reportData);
+                    notificationManager.warning('Report saved offline. Will sync when online.');
+                  });
+              }
           }
         } else {
           // User is not logged in - create anonymous report
@@ -407,9 +440,17 @@ export default function LandingPage() {
               icon: category.icon,
             };
 
-            // Store report offline
-            storeOfflineReport(reportData);
-            console.log('Anonymous report created with location:', position);
+            // Send directly to Firestore (anonymous reports too)
+            createReport(reportData)
+              .then((firebaseId) => {
+                console.log('✅ Anonymous report sent directly to Firestore with ID:', firebaseId);
+                notificationManager.success('Anonymous report sent successfully!');
+              })
+              .catch((error) => {
+                console.error('❌ Failed to send anonymous report to Firestore:', error);
+                // Fallback to offline storage
+                storeOfflineReport(reportData);
+              });
           } catch (error) {
             console.error('Error getting location for anonymous report:', error);
             // Create report without location if we can't get it
@@ -428,7 +469,18 @@ export default function LandingPage() {
               subcategory: category.subcategories[0],
               icon: category.icon,
             };
-            storeOfflineReport(reportData);
+            
+            // Send directly to Firestore (anonymous reports too)
+            createReport(reportData)
+              .then((firebaseId) => {
+                console.log('✅ Anonymous report sent directly to Firestore with ID:', firebaseId);
+                notificationManager.success('Anonymous report sent successfully!');
+              })
+              .catch((error) => {
+                console.error('❌ Failed to send anonymous report to Firestore:', error);
+                // Fallback to offline storage
+                storeOfflineReport(reportData);
+              });
           }
         }
       }} />

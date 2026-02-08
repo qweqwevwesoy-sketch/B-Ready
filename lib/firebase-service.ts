@@ -1,6 +1,6 @@
 import { collection, addDoc, updateDoc, deleteDoc, doc, getDocs, getDoc, query, orderBy, where } from 'firebase/firestore';
 import { db } from './firebase';
-import type { SafetyTip, EmergencyKitItem, EmergencyContact, Station } from '@/types';
+import type { SafetyTip, EmergencyKitItem, EmergencyContact, Station, Report } from '@/types';
 
 // Safety Tips Firestore operations
 export const safetyTipsCollection = collection(db, 'safety_tips');
@@ -287,5 +287,113 @@ export const fetchStationsByStatus = async (status: Station['status']): Promise<
   } catch (error) {
     console.error('Error fetching stations by status:', error);
     throw new Error('Failed to fetch stations by status');
+  }
+};
+
+// Reports Firestore operations
+export const reportsCollection = collection(db, 'reports');
+
+export const createReport = async (report: Partial<Report>): Promise<string> => {
+  try {
+    const docRef = await addDoc(reportsCollection, {
+      ...report,
+      timestamp: new Date().toISOString(),
+      status: (report.status as string) || 'pending',
+    });
+    console.log('✅ Report created in Firebase:', docRef.id);
+    return docRef.id;
+  } catch (error) {
+    console.error('❌ Failed to create report in Firebase:', error);
+    throw new Error('Failed to create report');
+  }
+};
+
+export const updateReport = async (id: string, updates: Partial<Report>): Promise<void> => {
+  try {
+    const reportRef = doc(reportsCollection, id);
+    await updateDoc(reportRef, {
+      ...updates,
+      updatedAt: new Date().toISOString(),
+    });
+    console.log('✅ Report updated in Firebase:', id);
+  } catch (error) {
+    console.error('❌ Failed to update report in Firebase:', error);
+    throw new Error('Failed to update report');
+  }
+};
+
+export const fetchReports = async (filters?: { userId?: string; status?: string }): Promise<Report[]> => {
+  try {
+    let q = query(reportsCollection, orderBy('timestamp', 'desc'));
+
+    if (filters?.userId) {
+      q = query(q, where('userId', '==', filters.userId));
+    }
+    if (filters?.status) {
+      q = query(q, where('status', '==', filters.status));
+    }
+
+    const querySnapshot = await getDocs(q);
+    const reports: Report[] = [];
+
+    querySnapshot.forEach((doc) => {
+      reports.push({
+        id: doc.id,
+        ...doc.data(),
+      } as unknown as Report);
+    });
+
+    console.log(`📋 Retrieved ${reports.length} reports from Firebase`);
+    return reports;
+  } catch (error) {
+    console.error('❌ Failed to fetch reports from Firebase:', error);
+    throw new Error('Failed to fetch reports');
+  }
+};
+
+// Messages Firestore operations
+export const messagesCollection = collection(db, 'messages');
+
+export const createMessage = async (messageData: {
+  reportId: string;
+  text: string;
+  userName: string;
+  userRole: string;
+  timestamp: string;
+  imageData?: string;
+}): Promise<string> => {
+  try {
+    const docRef = await addDoc(messagesCollection, messageData);
+    console.log('✅ Message created in Firebase:', docRef.id);
+    return docRef.id;
+  } catch (error) {
+    console.error('❌ Failed to create message in Firebase:', error);
+    throw new Error('Failed to create message');
+  }
+};
+
+export const fetchMessages = async (reportId: string): Promise<Record<string, unknown>[]> => {
+  try {
+    const q = query(
+      messagesCollection,
+      where('reportId', '==', reportId),
+      orderBy('timestamp', 'asc')
+    );
+
+    const querySnapshot = await getDocs(q);
+    const messages: Record<string, unknown>[] = [];
+
+    querySnapshot.forEach((doc) => {
+      messages.push({
+        id: doc.id,
+        ...doc.data(),
+      });
+    });
+
+    console.log(`💬 Retrieved ${messages.length} messages from Firebase for report ${reportId}`);
+    return messages;
+  } catch (error) {
+    console.error('❌ Failed to fetch messages from Firebase:', error);
+    throw new Error('Failed to fetch messages');
   }
 };
