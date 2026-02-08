@@ -244,9 +244,9 @@ export async function reverseGeocode(lat: number, lng: number): Promise<string> 
       `/api/reverse-geocode?lat=${lat}&lng=${lng}`
     );
     const data = await response.json();
-    return data.address || `Coordinates: ${lat.toFixed(6)}, ${lng.toFixed(6)}`;
+    return data.address || 'Location not specified';
   } catch {
-    return `Coordinates: ${lat.toFixed(6)}, ${lng.toFixed(6)}`;
+    return 'Location not specified';
   }
 }
 

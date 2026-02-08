@@ -45,29 +45,41 @@ export async function GET(request: NextRequest) {
 
       const data = await response.json();
 
-// Handle different response formats
+      // Handle different response formats
       let address = '';
 
       if (service.url.includes('bigdatacloud.net')) {
-        // Build detailed address with fallback options
+        // Build detailed address with fallback options - this gives the most complete format
         const components = [
           data.address?.building || data.address?.road || data.locality,
+          data.address?.road || data.locality,
+          data.address?.suburb || data.address?.town || data.locality,
           data.city || data.locality,
           data.principalSubdivision,
           data.countryName
         ].filter(Boolean);
 
-        address = components.length > 0 
-          ? components.join(', ') 
-          : `Coordinates: ${lat}, ${lng}`;
+        // Remove duplicate components
+        const uniqueComponents = [];
+        const seen = new Set();
+        for (const component of components) {
+          if (!seen.has(component)) {
+            seen.add(component);
+            uniqueComponents.push(component);
+          }
+        }
+
+        address = uniqueComponents.length > 0 
+          ? uniqueComponents.join(', ') 
+          : 'Location not specified';
       } else if (service.url.includes('positionstack.com')) {
         // Use the label if available, otherwise build from components
         address = data.data[0]?.label || 
                  (data.data[0]?.name && data.data[0].name) ||
-                 `Coordinates: ${lat}, ${lng}`;
+                 'Location not specified';
       } else if (service.url.includes('opencagedata.com')) {
         // Use formatted address if available
-        address = data.results[0]?.formatted || `Coordinates: ${lat}, ${lng}`;
+        address = data.results[0]?.formatted || 'Location not specified';
       }
 
       if (address) {
@@ -85,10 +97,10 @@ export async function GET(request: NextRequest) {
     }
   }
 
-  // If all services failed, return coordinates as fallback
-  console.warn('⚠️ All reverse geocoding services failed, returning coordinates');
+  // If all services failed, return a proper fallback
+  console.warn('⚠️ All reverse geocoding services failed');
   return NextResponse.json({
     success: true,
-    address: `Coordinates: ${lat}, ${lng}`
+    address: 'Location not specified'
   });
 }

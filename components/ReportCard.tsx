@@ -111,11 +111,6 @@ export function ReportCard({
 <p className="text-gray-600 text-sm mb-2">
             Location 📍 {formattedAddress}
           </p>
-          {report.location && (
-            <p className="text-gray-500 text-xs mb-1">
-              {report.location.lat.toFixed(6)}, {report.location.lng.toFixed(6)}
-            </p>
-          )}
           <p className="text-gray-500 text-xs mb-3">
             {report.isAnonymous ? 'Anonymous' : (report.userName || 'Resident')}
           </p>
