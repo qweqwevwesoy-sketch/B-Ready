@@ -16,16 +16,25 @@ export async function GET(request: NextRequest) {
   // Try multiple reliable reverse geocoding services
   const services = [
     {
-      url: `https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${lat}&longitude=${lng}&localityLanguage=en`,
-      headers: { 'Accept': 'application/json' }
+      url: `https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lng}&format=json&addressdetails=1`,
+      headers: { 
+        'Accept': 'application/json',
+        'User-Agent': 'B-READY Emergency Response App (https://b-ready.example.com)'
+      }
     },
     {
-      url: `https://api.positionstack.com/v1/reverse?access_key=YOUR_ACCESS_KEY&query=${lat},${lng}`,
-      headers: { 'Accept': 'application/json' }
+      url: `https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${lat}&longitude=${lng}&localityLanguage=en`,
+      headers: { 
+        'Accept': 'application/json',
+        'User-Agent': 'B-READY Emergency Response App (https://b-ready.example.com)'
+      }
     },
     {
       url: `https://api.opencagedata.com/geocode/v1/json?q=${lat}+${lng}&key=YOUR_API_KEY&language=en`,
-      headers: { 'Accept': 'application/json' }
+      headers: { 
+        'Accept': 'application/json',
+        'User-Agent': 'B-READY Emergency Response App (https://b-ready.example.com)'
+      }
     }
   ];
 
@@ -48,18 +57,36 @@ export async function GET(request: NextRequest) {
       // Handle different response formats
       let address = '';
 
-      if (service.url.includes('bigdatacloud.net')) {
-        // Build abbreviated address format suitable for mailing/delivery
+      if (service.url.includes('nominatim')) {
+        // Use the display_name from Nominatim for a complete address
+        if (data.display_name) {
+          address = data.display_name;
+        } else {
+          // Fallback to building address components if available
+          const components = [
+            data.address?.road,
+            data.address?.building,
+            data.address?.neighbourhood,
+            data.address?.suburb,
+            data.address?.city,
+            data.address?.region,
+            data.address?.postcode,
+            data.address?.country
+          ].filter(Boolean);
+          
+          address = components.length > 0 ? components.join(', ') : 'Location not specified';
+        }
+      } else if (service.url.includes('bigdatacloud.net')) {
+        // Build address format from available data
         const components = [
-          data.address?.road || data.address?.building, // Street name or building
-          data.address?.suburb,                        // Suburb (e.g., Pagaran Village)
-          data.address?.locality || data.address?.town, // Locality or town (e.g., Marquez)
-          data.address?.district,                      // District (e.g., Apokon)
-          data.city,                                     // City (e.g., Tagum)
-          data.principalSubdivision,                     // Province (e.g., Davao del Norte)
-          data.localityInfo?.administrative?.find((admin: any) => admin.levels?.length === 1)?.name, // Region (e.g., Davao Region)
-          data.postcode,                                // Postal code (e.g., 8100)
-          data.countryName                               // Country (e.g., Philippines)
+          // Try to get street-level details if available (fallback to locality)
+          data.address?.road || data.address?.building || data.locality,
+          data.address?.suburb,
+          data.address?.district,
+          data.city,
+          data.principalSubdivision,
+          data.postcode,
+          data.countryName.replace(' (the)', '') // Clean up country name
         ].filter(Boolean);
 
         // Remove duplicate components
@@ -75,14 +102,14 @@ export async function GET(request: NextRequest) {
         address = uniqueComponents.length > 0 
           ? uniqueComponents.join(', ') 
           : 'Location not specified';
+      } else if (service.url.includes('opencagedata.com')) {
+        // Use formatted address if available
+        address = data.results[0]?.formatted || 'Location not specified';
       } else if (service.url.includes('positionstack.com')) {
         // Use the label if available, otherwise build from components
         address = data.data[0]?.label || 
                  (data.data[0]?.name && data.data[0].name) ||
                  'Location not specified';
-      } else if (service.url.includes('opencagedata.com')) {
-        // Use formatted address if available
-        address = data.results[0]?.formatted || 'Location not specified';
       }
 
       if (address) {
