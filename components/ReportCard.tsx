@@ -71,9 +71,11 @@ export function ReportCard({
 <p className="text-gray-600 text-sm mb-2">
             {report.address 
               ? report.address.includes(',')
-                ? report.address 
-                : `Location 📍 ${report.address}`
-              : 'Location not specified'}
+                ? `📍 ${report.address}`
+                : `📍 ${report.address}`
+              : report.location 
+              ? `📍 Coordinates: ${report.location.lat.toFixed(6)}, ${report.location.lng.toFixed(6)}`
+              : '📍 Location not specified'}
           </p>
           <p className="text-gray-500 text-xs mb-3">
             {report.isAnonymous ? 'Anonymous' : (report.userName || 'Resident')}

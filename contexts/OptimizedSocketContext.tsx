@@ -285,10 +285,63 @@ const handleReportsUpdate = (data: unknown) => {
       }
     };
 
-// Unified chat message handler - handles all chat message types
-    const handleChatMessage = (data: unknown) => {
-      try {
-        let messageData: {
+  // Centralized message processing function to prevent duplicates
+  const processChatMessage = useCallback((messageData: {
+    id: string;
+    text: string;
+    userName: string;
+    userRole: string;
+    timestamp: string;
+    reportId: string;
+    imageData?: string;
+  }) => {
+    if (!messageData || !messageData.id) {
+      console.warn('📝 Invalid message data received:', messageData);
+      return;
+    }
+
+    // Only update messages for the current chat report or if no specific report is active
+    if (messageData.reportId === currentChatReportId || !currentChatReportId) {
+      // Check if message ID has already been processed
+      if (processedMessageIds.current.has(messageData.id)) {
+        console.log('📝 Message already processed, skipping duplicate:', messageData.id);
+        return;
+      }
+
+      // Mark message as processed
+      processedMessageIds.current.add(messageData.id);
+
+      setChatMessages(prev => {
+        console.log('📝 Adding new message:', messageData.id, 'from', messageData.userName);
+        return [...prev, messageData];
+      });
+      recordMessage();
+    }
+  }, [currentChatReportId, recordMessage]);
+
+  // Unified chat message handler - handles all chat message types
+  const handleChatMessage = useCallback((data: unknown) => {
+    try {
+      let messageData: {
+        id: string;
+        text: string;
+        userName: string;
+        userRole: string;
+        timestamp: string;
+        reportId: string;
+        imageData?: string;
+      };
+      
+      // Handle both direct objects and stringified JSON
+      if (typeof data === 'string') {
+        try {
+          messageData = JSON.parse(data);
+        } catch (parseError) {
+          console.warn('📡 Failed to parse chat message data as JSON:', data);
+          return;
+        }
+      } else {
+        messageData = data as {
           id: string;
           text: string;
           userName: string;
@@ -297,17 +350,43 @@ const handleReportsUpdate = (data: unknown) => {
           reportId: string;
           imageData?: string;
         };
-        
-        // Handle both direct objects and stringified JSON
-        if (typeof data === 'string') {
-          try {
-            messageData = JSON.parse(data);
-          } catch (parseError) {
-            console.warn('📡 Failed to parse chat message data as JSON:', data);
-            return;
-          }
-        } else {
-          messageData = data as {
+      }
+
+      if (messageData) {
+        processChatMessage(messageData);
+      }
+    } catch (error) {
+      console.error('Error handling chat message:', error);
+    }
+  }, [processChatMessage]);
+
+  // Handle new chat message events (real-time updates)
+  const handleNewChatMessage = useCallback((data: unknown) => {
+    try {
+      let messageData: {
+        message: {
+          id: string;
+          text: string;
+          userName: string;
+          userRole: string;
+          timestamp: string;
+          reportId: string;
+          imageData?: string;
+        };
+        reportId: string;
+      };
+      
+      // Handle both direct objects and stringified JSON
+      if (typeof data === 'string') {
+        try {
+          messageData = JSON.parse(data);
+        } catch (parseError) {
+          console.warn('📡 Failed to parse new chat message data as JSON:', data);
+          return;
+        }
+      } else {
+        messageData = data as {
+          message: {
             id: string;
             text: string;
             userName: string;
@@ -316,36 +395,40 @@ const handleReportsUpdate = (data: unknown) => {
             reportId: string;
             imageData?: string;
           };
-        }
-
-        if (messageData) {
-          // Only update messages for the current chat report or if no specific report is active
-          if (messageData.reportId === currentChatReportId || !currentChatReportId) {
-            // Check if message ID has already been processed
-            if (processedMessageIds.current.has(messageData.id)) {
-              console.log('📝 Message already processed, skipping duplicate:', messageData.id);
-              return;
-            }
-
-            // Mark message as processed
-            processedMessageIds.current.add(messageData.id);
-
-            setChatMessages(prev => {
-              console.log('📝 Adding new message:', messageData.id);
-              return [...prev, messageData];
-            });
-            recordMessage();
-          }
-        }
-      } catch (error) {
-        console.error('Error handling chat message:', error);
+          reportId: string;
+        };
       }
-    };
 
-    const handleChatHistory = (data: unknown) => {
-      try {
-        // Handle both direct objects and stringified JSON
-        let historyData: { reportId: string; messages: Array<{
+      if (messageData && messageData.message) {
+        processChatMessage(messageData.message);
+      }
+    } catch (error) {
+      console.error('Error handling new chat message:', error);
+    }
+  }, [processChatMessage]);
+
+  const handleChatHistory = useCallback((data: unknown) => {
+    try {
+      // Handle both direct objects and stringified JSON
+      let historyData: { reportId: string; messages: Array<{
+        id: string;
+        text: string;
+        userName: string;
+        userRole: string;
+        timestamp: string;
+        reportId: string;
+        imageData?: string;
+      }> };
+      
+      if (typeof data === 'string') {
+        try {
+          historyData = JSON.parse(data);
+        } catch (parseError) {
+          console.warn('📡 Failed to parse chat history data as JSON:', data);
+          return;
+        }
+      } else if (data && typeof data === 'object' && 'messages' in data && 'reportId' in data) {
+        historyData = data as { reportId: string; messages: Array<{
           id: string;
           text: string;
           userName: string;
@@ -354,43 +437,36 @@ const handleReportsUpdate = (data: unknown) => {
           reportId: string;
           imageData?: string;
         }> };
-        
-        if (typeof data === 'string') {
-          try {
-            historyData = JSON.parse(data);
-          } catch (parseError) {
-            console.warn('📡 Failed to parse chat history data as JSON:', data);
-            return;
-          }
-        } else if (data && typeof data === 'object' && 'messages' in data && 'reportId' in data) {
-          historyData = data as { reportId: string; messages: Array<{
-            id: string;
-            text: string;
-            userName: string;
-            userRole: string;
-            timestamp: string;
-            reportId: string;
-            imageData?: string;
-          }> };
-        } else {
-          console.warn('📡 Invalid chat history data received:', data);
-          return;
-        }
+      } else {
+        console.warn('📡 Invalid chat history data received:', data);
+        return;
+      }
 
-        if (historyData && Array.isArray(historyData.messages)) {
-          console.log('📡 Received chat history for report:', historyData.reportId, 'with', historyData.messages.length, 'messages');
-          setChatMessages(historyData.messages);
-          setChatLoading(false);
-          recordMessage();
-        } else {
-          console.warn('📡 Invalid chat history array received:', historyData);
-          setChatLoading(false);
-        }
-      } catch (error) {
-        console.error('Error handling chat history:', error);
+      if (historyData && Array.isArray(historyData.messages)) {
+        console.log('📡 Received chat history for report:', historyData.reportId, 'with', historyData.messages.length, 'messages');
+        
+        // Clear processed IDs when loading new history to avoid conflicts
+        processedMessageIds.current.clear();
+        
+        // Mark all history messages as processed
+        historyData.messages.forEach(msg => {
+          if (msg.id) {
+            processedMessageIds.current.add(msg.id);
+          }
+        });
+        
+        setChatMessages(historyData.messages);
+        setChatLoading(false);
+        recordMessage();
+      } else {
+        console.warn('📡 Invalid chat history array received:', historyData);
         setChatLoading(false);
       }
-    };
+    } catch (error) {
+      console.error('Error handling chat history:', error);
+      setChatLoading(false);
+    }
+  }, [recordMessage]);
 
     const handleConnectionError = (error: unknown) => {
       try {
@@ -423,7 +499,7 @@ const handleReportsUpdate = (data: unknown) => {
     const unsubscribeNewReport = on('new_report', handleNewReport);
     const unsubscribeReportUpdate = on('report_updated', handleReportUpdate);
     const unsubscribeChatMessage = on('report_chat_message', handleChatMessage);
-    const unsubscribeNewChatMessage = on('new_chat_message', handleChatMessage);
+    const unsubscribeNewChatMessage = on('new_chat_message', handleNewChatMessage);
     const unsubscribeChatHistory = on('report_chat_history', handleChatHistory);
     const unsubscribeError = on('error', handleConnectionError);
     const unsubscribeReconnect = on('reconnect', handleReconnect);

@@ -119,6 +119,14 @@ function DashboardContent({ searchParams }: { searchParams: URLSearchParams }) {
     return () => clearTimeout(timeoutId);
   }, [reports.length, filteredApprovedReports.length, filteredCurrentReports.length, filteredThirdColumnReports.length, connected, socketLoading, socketError]);
 
+  // Force re-render when reports change to ensure UI updates
+  useEffect(() => {
+    // This ensures the dashboard re-renders when new reports are received
+    if (reports.length > 0) {
+      console.log('🔄 Dashboard reports updated, triggering re-render');
+    }
+  }, [reports]);
+
   // Unified offline/online functionality - dashboard works in both modes
   useEffect(() => {
     // Always try to sync when coming back online

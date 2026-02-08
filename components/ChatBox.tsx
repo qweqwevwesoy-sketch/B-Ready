@@ -374,6 +374,7 @@ export function ChatBox({ reportId, category, onClose, onSendMessage, onSendImag
 
       // Handle anonymous image storage
       if (isAnonymous && selectedCategory) {
+        const messageId = `msg_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
         const reportIdToUse = anonymousReportId || `anonymous_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
         storeOfflineMessage({
           reportId: reportIdToUse,
@@ -591,9 +592,12 @@ export function ChatBox({ reportId, category, onClose, onSendMessage, onSendImag
   const handleSend = (e: React.FormEvent) => {
     e.preventDefault();
     if (message.trim()) {
+      const messageId = `msg_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+      
       // Handle anonymous messages
       if (isAnonymous && selectedCategory) {
         const newMessage = {
+          id: messageId,
           text: message,
           sender: 'You (Anonymous)',
           time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
