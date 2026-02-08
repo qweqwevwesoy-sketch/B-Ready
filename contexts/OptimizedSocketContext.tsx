@@ -528,8 +528,8 @@ const handleReportsUpdate = (data: unknown) => {
   }, [isConnected, endConnectionTimer]);
 
   const submitReport = useCallback(async (reportData: Partial<Report>) => {
-    if (!isConnected) {
-      setError('Cannot submit report: not connected to server');
+    if (!isConnected || !user) {
+      setError('Cannot submit report: not connected to server or user not authenticated');
       return;
     }
 
@@ -539,9 +539,9 @@ const handleReportsUpdate = (data: unknown) => {
       
       emit('submit_report', {
         ...reportData,
-        userId: user?.uid,
-        userName: user ? `${user.firstName} ${user.lastName}` : 'Anonymous',
-        userRole: user?.role || 'resident',
+        userId: user.uid,
+        userName: `${user.firstName} ${user.lastName}`,
+        userRole: user.role || 'resident',
       });
       
       // Optimistic update - add to local state immediately
@@ -550,9 +550,9 @@ const handleReportsUpdate = (data: unknown) => {
         id: `temp_${Date.now()}`,
         status: 'current' as ReportStatus,
         timestamp: new Date().toISOString(),
-        userName: user ? `${user.firstName} ${user.lastName}` : 'Anonymous',
-        userId: user?.uid || '',
-        userRole: user?.role || 'resident',
+        userName: `${user.firstName} ${user.lastName}`,
+        userId: user.uid,
+        userRole: user.role || 'resident',
         severity: reportData.severity || 'medium',
         adminResponse: 'none',
         adminId: null,
@@ -588,7 +588,7 @@ const handleReportsUpdate = (data: unknown) => {
       console.error('Error joining chat:', err);
       setChatLoading(false);
     }
-  }, [isConnected, emit]);
+  }, [isConnected, emit, setError, setCurrentChatReportId, setChatMessages]);
 
   const leaveReportChat = useCallback(() => {
     setCurrentChatReportId(null);
@@ -620,7 +620,7 @@ const handleReportsUpdate = (data: unknown) => {
       console.error('Error sending message:', err);
       setError('Failed to send message');
     }
-  }, [isConnected, currentChatReportId, emit, user]);
+  }, [isConnected, currentChatReportId, emit, user, setError, setChatMessages]);
 
   const updateReport = useCallback(async (reportId: string, status: ReportStatus, notes?: string) => {
     if (!isConnected) {
@@ -652,7 +652,7 @@ const handleReportsUpdate = (data: unknown) => {
     } finally {
       setLoading(false);
     }
-  }, [isConnected, emit, user]);
+  }, [isConnected, emit, user, setError, setLoading, setReports]);
 
 const refreshReports = useCallback(() => {
     if (isConnected) {
