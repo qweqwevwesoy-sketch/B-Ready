@@ -49,14 +49,13 @@ export async function GET(request: NextRequest) {
       let address = '';
 
       if (service.url.includes('bigdatacloud.net')) {
-        // Build detailed address with fallback options - this gives the most complete format
+        // Build abbreviated address format suitable for mailing/delivery
         const components = [
-          data.address?.building || data.address?.road || data.locality,
-          data.address?.road || data.locality,
-          data.address?.suburb || data.address?.town || data.locality,
-          data.city || data.locality,
-          data.principalSubdivision,
-          data.countryName
+          data.address?.building || data.address?.road, // Building number/street name
+          data.address?.suburb || data.address?.town,    // Suburb or town
+          data.city,                                     // City
+          data.principalSubdivision,                     // Province/state
+          data.countryName                               // Country
         ].filter(Boolean);
 
         // Remove duplicate components
