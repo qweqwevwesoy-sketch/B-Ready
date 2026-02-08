@@ -232,7 +232,9 @@ export default function TermsPage() {
   const handleAccept = () => {
     if (accepted) {
       // Mark terms as accepted (could save to user profile or localStorage)
-      localStorage.setItem('terms_accepted', 'true');
+      if (typeof window !== 'undefined') {
+        localStorage.setItem('terms_accepted', 'true');
+      }
       router.push('/dashboard');
     } else {
       notificationManager.warning('Please accept the terms and conditions to continue.');

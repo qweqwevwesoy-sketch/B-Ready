@@ -35,8 +35,8 @@ export async function POST(request: NextRequest) {
       icon: '🚨',
     };
 
-    // Check if we're offline or should use local backend
-    const isOffline = !navigator.onLine || offlineService.shouldUseLocalBackend();
+    // In API routes, we're always online (since we're running on the server)
+    const isOffline = false;
 
     if (isOffline) {
       console.log('📱 Offline mode detected, storing report locally');

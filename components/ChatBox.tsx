@@ -20,13 +20,9 @@ interface ChatBoxProps {
   isAnonymous?: boolean;
 }
 
-const getInitialMessage = (category: Category | null | undefined, isAnonymous: boolean): { text: string; sender: string; time: string; type: 'sent' | 'received'; imageData?: string } => {
+const getInitialMessage = (category: Category | null | undefined): { text: string; sender: string; time: string; type: 'sent' | 'received'; imageData?: string } => {
   return {
-    text: isAnonymous
-      ? category
-        ? `Hello! I understand you're reporting a ${category.name} emergency anonymously. Can you please describe what happened?`
-        : 'Hello! I\'m here to help you report an emergency anonymously. What type of emergency are you experiencing?'
-      : category
+    text: category
       ? `Hello! How can we help you today? You're reporting a ${category.name.toLowerCase()} incident.`
       : 'Hello! How can we help you today?',
     sender: 'B-READY Support',
@@ -125,7 +121,7 @@ export function ChatBox({ reportId, category, onClose, onSendMessage, onSendImag
 
     // Always include initial message if no other messages exist
     if (uniqueMessages.length === 0) {
-      return [getInitialMessage(selectedCategory || category, isAnonymous)];
+      return [getInitialMessage(selectedCategory || category)];
     }
 
     // Check if initial message is already in the messages
@@ -137,7 +133,7 @@ export function ChatBox({ reportId, category, onClose, onSendMessage, onSendImag
 
     // If no initial message and we have a category, add it at the beginning
     if (!hasInitialMessage && (selectedCategory || category)) {
-      return [getInitialMessage(selectedCategory || category, isAnonymous), ...uniqueMessages];
+      return [getInitialMessage(selectedCategory || category), ...uniqueMessages];
     }
 
     return uniqueMessages;

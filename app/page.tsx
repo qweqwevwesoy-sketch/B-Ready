@@ -355,7 +355,7 @@ export default function LandingPage() {
         }
       }} />
 
-      {/* ChatBox for Anonymous Users */}
+      {/* ChatBox for Reports */}
       {showChatbox && (
         <ChatBox
           reportId={currentReportChat}
@@ -366,7 +366,7 @@ export default function LandingPage() {
             setSelectedCategory(null);
           }}
           onSendMessage={(text) => {
-            // Handle anonymous message sending
+            // Handle message sending
             if (currentReportChat) {
               storeOfflineMessage({
                 reportId: currentReportChat,
@@ -378,7 +378,7 @@ export default function LandingPage() {
             }
           }}
           onSendImage={(imageData) => {
-            // Handle anonymous image sending
+            // Handle image sending
             if (currentReportChat) {
               storeOfflineMessage({
                 reportId: currentReportChat,
@@ -390,7 +390,6 @@ export default function LandingPage() {
               });
             }
           }}
-          isAnonymous={true}
         />
       )}
 
