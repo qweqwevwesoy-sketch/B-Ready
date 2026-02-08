@@ -52,7 +52,7 @@ const MAP_CONFIG = {
   ]
 };
 
-import type { Station } from '@/types';
+import type { Station, EmergencyContact } from '@/types';
 interface SearchResult {
   place_id: number;
   display_name: string;
@@ -362,7 +362,15 @@ export default function RealTimeMapContent() {
   const [editingStationEmail, setEditingStationEmail] = useState('');
   const [editingStationWebsite, setEditingStationWebsite] = useState('');
   const [editingStationDescription, setEditingStationDescription] = useState('');
+  const [editingStationEmergencyContacts, setEditingStationEmergencyContacts] = useState<EmergencyContact[]>([]);
   const [showEditModal, setShowEditModal] = useState(false);
+  const [showContactModal, setShowContactModal] = useState(false);
+  const [editingContact, setEditingContact] = useState<EmergencyContact | null>(null);
+  const [editingContactId, setEditingContactId] = useState<string | null>(null);
+  const [editingContactName, setEditingContactName] = useState('');
+  const [editingContactPhone, setEditingContactPhone] = useState('');
+  const [editingContactType, setEditingContactType] = useState<'fire' | 'police' | 'medical' | 'barangay' | 'other'>('other');
+  const [editingContactAddress, setEditingContactAddress] = useState('');
 
   const addStation = async (lat: number, lng: number) => {
     if (!newStationName.trim()) {
@@ -917,7 +925,7 @@ const zoomIndicator = L.control({ position: 'bottomleft' });
         iconAnchor: [9, 9],
       });
 
-      const marker = L.marker([station.lat, station.lng], { icon: stationIcon })
+      const marker = L.marker([station.location.lat, station.location.lng], { icon: stationIcon })
         .addTo(mapRef.current!)
         .bindPopup(`
           <div class="p-2">

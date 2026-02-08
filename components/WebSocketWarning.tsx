@@ -1,13 +1,16 @@
 'use client';
 
 import { useEffect } from 'react';
-import { notificationManager } from '@/components/NotificationManager';
 import { useOptimizedSocketContext } from '@/contexts/OptimizedSocketContext';
 
 export function WebSocketWarning() {
   const { connected, connectionState } = useOptimizedSocketContext();
 
   useEffect(() => {
+    // WebSocket warning notification has been disabled to prevent spam
+    // If needed, you can re-enable it by uncommenting the code below
+    
+    /*
     const checkWebSocketAvailability = () => {
       const isRenderDeployment = typeof window !== 'undefined' && 
                                 window.location.hostname.includes('onrender.com');
@@ -26,6 +29,7 @@ export function WebSocketWarning() {
     const interval = setInterval(checkWebSocketAvailability, 10000); // Check every 10 seconds
 
     return () => clearInterval(interval);
+    */
   }, [connected, connectionState]);
 
   // This component no longer renders any UI - it only manages WebSocket availability notifications

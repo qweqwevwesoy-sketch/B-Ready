@@ -140,7 +140,8 @@ export async function POST(request: NextRequest) {
   console.log('📡 POST /api/stations called - Firestore version');
 
   try {
-const { name, type, location, address, capacity, currentLoad, status, contact, phone, email, website, description } = await request.json();
+    const { name, lat, lng, address, phone, email, website, description, created_by } = await request.json();
+    console.log('📡 Received station data:', { name, lat, lng, address, phone, email, website, description, created_by });
 
     if (!name) {
       return NextResponse.json(
@@ -151,28 +152,30 @@ const { name, type, location, address, capacity, currentLoad, status, contact, p
 
     const stationData = {
       name,
-      type: type || 'medical',
-      location: location || { lat: 0, lng: 0 },
+      type: 'medical' as const,
+      location: { lat, lng },
       address: address || 'Unknown',
-      capacity: capacity || 0,
-      currentLoad: currentLoad || 0,
-      status: status || 'operational',
-      contact: contact || 'Unknown',
+      capacity: 0,
+      currentLoad: 0,
+      status: 'operational' as const,
+      contact: phone || 'Unknown',
       phone: phone || '',
       email: email || '',
       website: website || '',
       description: description || ''
     };
 
+    console.log('📡 Creating station with data:', stationData);
     const stationId = await createStation(stationData);
+    console.log('📡 Station created with ID:', stationId);
     const station = await fetchStationById(stationId);
+    console.log('📡 Fetched station data:', station);
 
-    console.log('✅ Station added to Firestore:', stationId);
     return NextResponse.json({ success: true, station: station });
   } catch (error) {
     console.error('❌ Error adding station:', error);
     return NextResponse.json(
-      { success: false, error: 'Failed to add station' },
+      { success: false, error: 'Failed to add station: ' + (error as Error).message },
       { status: 500 }
     );
   }

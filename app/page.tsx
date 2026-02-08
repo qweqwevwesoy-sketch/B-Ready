@@ -350,24 +350,21 @@ export default function LandingPage() {
               icon: category.icon,
             };
 
-            if (isOffline) {
+      if (isOffline) {
               // Store offline
               const offlineReport = storeOfflineReport(reportData);
               notificationManager.info('Report saved offline. Will sync when online.');
               console.log('📱 Report stored offline:', offlineReport.offlineId);
             } else {
-              // Send directly to Firestore
-              createReport(reportData)
-                .then((firebaseId) => {
-                  console.log('✅ Report sent directly to Firestore with ID:', firebaseId);
-                  notificationManager.success('Report sent successfully!');
-                })
-                .catch((error) => {
-                  console.error('❌ Failed to send report to Firestore:', error);
-                  // Fallback to offline storage
-                  const offlineReport = storeOfflineReport(reportData);
-                  notificationManager.warning('Report saved offline. Will sync when online.');
-                });
+              // Directly call Firebase service to ensure report is saved
+              try {
+                const reportId = await createReport(reportData);
+                console.log('✅ Report created in Firebase:', reportId);
+                notificationManager.success('Report submitted successfully!');
+              } catch (firebaseError) {
+                console.error('❌ Failed to create report in Firebase:', firebaseError);
+                notificationManager.error('Failed to submit report. Please try again.');
+              }
             }
           } catch (error) {
             console.error('Error creating report:', error);
@@ -399,18 +396,15 @@ export default function LandingPage() {
                 notificationManager.info('Report saved offline. Will sync when online.');
                 console.log('📱 Report stored offline:', offlineReport.offlineId);
               } else {
-                // Send directly to Firestore
-                createReport(reportData)
-                  .then((firebaseId) => {
-                    console.log('✅ Report sent directly to Firestore with ID:', firebaseId);
-                    notificationManager.success('Report sent successfully!');
-                  })
-                  .catch((error) => {
-                    console.error('❌ Failed to send report to Firestore:', error);
-                    // Fallback to offline storage
-                    const offlineReport = storeOfflineReport(reportData);
-                    notificationManager.warning('Report saved offline. Will sync when online.');
-                  });
+                // Directly call Firebase service to ensure report is saved
+                try {
+                  const reportId = await createReport(reportData);
+                  console.log('✅ Report created in Firebase:', reportId);
+                  notificationManager.success('Report submitted successfully!');
+                } catch (firebaseError) {
+                  console.error('❌ Failed to create report in Firebase:', firebaseError);
+                  notificationManager.error('Failed to submit report. Please try again.');
+                }
               }
           }
         } else {
@@ -440,17 +434,15 @@ export default function LandingPage() {
               icon: category.icon,
             };
 
-            // Send directly to Firestore (anonymous reports too)
-            createReport(reportData)
-              .then((firebaseId) => {
-                console.log('✅ Anonymous report sent directly to Firestore with ID:', firebaseId);
-                notificationManager.success('Anonymous report sent successfully!');
-              })
-              .catch((error) => {
-                console.error('❌ Failed to send anonymous report to Firestore:', error);
-                // Fallback to offline storage
-                storeOfflineReport(reportData);
-              });
+            // Directly call Firebase service to ensure report is saved
+            try {
+              const createdReportId = await createReport(reportData);
+              console.log('✅ Anonymous report created in Firebase:', createdReportId);
+              notificationManager.success('Report submitted successfully!');
+            } catch (firebaseError) {
+              console.error('❌ Failed to create anonymous report in Firebase:', firebaseError);
+              notificationManager.error('Failed to submit report. Please try again.');
+            }
           } catch (error) {
             console.error('Error getting location for anonymous report:', error);
             // Create report without location if we can't get it
@@ -470,17 +462,15 @@ export default function LandingPage() {
               icon: category.icon,
             };
             
-            // Send directly to Firestore (anonymous reports too)
-            createReport(reportData)
-              .then((firebaseId) => {
-                console.log('✅ Anonymous report sent directly to Firestore with ID:', firebaseId);
-                notificationManager.success('Anonymous report sent successfully!');
-              })
-              .catch((error) => {
-                console.error('❌ Failed to send anonymous report to Firestore:', error);
-                // Fallback to offline storage
-                storeOfflineReport(reportData);
-              });
+            // Directly call Firebase service to ensure report is saved
+            try {
+              const createdReportId = await createReport(reportData);
+              console.log('✅ Anonymous report created in Firebase:', createdReportId);
+              notificationManager.success('Report submitted successfully!');
+            } catch (firebaseError) {
+              console.error('❌ Failed to create anonymous report in Firebase:', firebaseError);
+              notificationManager.error('Failed to submit report. Please try again.');
+            }
           }
         }
       }} />

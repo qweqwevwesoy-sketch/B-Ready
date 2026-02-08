@@ -51,11 +51,15 @@ export async function GET(request: NextRequest) {
       if (service.url.includes('bigdatacloud.net')) {
         // Build abbreviated address format suitable for mailing/delivery
         const components = [
-          data.address?.building || data.address?.road, // Building number/street name
-          data.address?.suburb || data.address?.town,    // Suburb or town
-          data.city,                                     // City
-          data.principalSubdivision,                     // Province/state
-          data.countryName                               // Country
+          data.address?.road || data.address?.building, // Street name or building
+          data.address?.suburb,                        // Suburb (e.g., Pagaran Village)
+          data.address?.locality || data.address?.town, // Locality or town (e.g., Marquez)
+          data.address?.district,                      // District (e.g., Apokon)
+          data.city,                                     // City (e.g., Tagum)
+          data.principalSubdivision,                     // Province (e.g., Davao del Norte)
+          data.localityInfo?.administrative?.find((admin: any) => admin.levels?.length === 1)?.name, // Region (e.g., Davao Region)
+          data.postcode,                                // Postal code (e.g., 8100)
+          data.countryName                               // Country (e.g., Philippines)
         ].filter(Boolean);
 
         // Remove duplicate components

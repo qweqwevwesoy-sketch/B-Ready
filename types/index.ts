@@ -125,6 +125,7 @@ export interface Station {
   email?: string;
   website?: string;
   description?: string;
+  emergencyContacts?: EmergencyContact[];
   created_at: string;
   updated_at: string;
 }

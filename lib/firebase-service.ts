@@ -182,6 +182,7 @@ export const createStation = async (station: Omit<Station, 'id' | 'created_at' |
   try {
     const docRef = await addDoc(stationsCollection, {
       ...station,
+      emergencyContacts: station.emergencyContacts || [],
       created_at: new Date().toISOString(),
       updated_at: new Date().toISOString()
     });
@@ -287,6 +288,99 @@ export const fetchStationsByStatus = async (status: Station['status']): Promise<
   } catch (error) {
     console.error('Error fetching stations by status:', error);
     throw new Error('Failed to fetch stations by status');
+  }
+};
+
+// Emergency Contacts operations (now part of stations)
+export const addEmergencyContactToStation = async (stationId: string, contact: Omit<EmergencyContact, 'id' | 'created_at' | 'updated_at'>): Promise<void> => {
+  try {
+    const stationRef = doc(stationsCollection, stationId);
+    const stationSnapshot = await getDoc(stationRef);
+    
+    if (!stationSnapshot.exists()) {
+      throw new Error('Station not found');
+    }
+    
+    const station = stationSnapshot.data() as Station;
+    const newContact = {
+      ...contact,
+      id: `contact_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString()
+    };
+    
+    const updatedContacts = [...(station.emergencyContacts || []), newContact];
+    
+    await updateDoc(stationRef, {
+      emergencyContacts: updatedContacts,
+      updated_at: new Date().toISOString()
+    });
+  } catch (error) {
+    console.error('Error adding emergency contact to station:', error);
+    throw new Error('Failed to add emergency contact');
+  }
+};
+
+export const updateEmergencyContactInStation = async (stationId: string, contactId: string, contact: Partial<EmergencyContact>): Promise<void> => {
+  try {
+    const stationRef = doc(stationsCollection, stationId);
+    const stationSnapshot = await getDoc(stationRef);
+    
+    if (!stationSnapshot.exists()) {
+      throw new Error('Station not found');
+    }
+    
+    const station = stationSnapshot.data() as Station;
+    const updatedContacts = (station.emergencyContacts || []).map(c => 
+      c.id === contactId ? { ...c, ...contact, updated_at: new Date().toISOString() } : c
+    );
+    
+    await updateDoc(stationRef, {
+      emergencyContacts: updatedContacts,
+      updated_at: new Date().toISOString()
+    });
+  } catch (error) {
+    console.error('Error updating emergency contact in station:', error);
+    throw new Error('Failed to update emergency contact');
+  }
+};
+
+export const deleteEmergencyContactFromStation = async (stationId: string, contactId: string): Promise<void> => {
+  try {
+    const stationRef = doc(stationsCollection, stationId);
+    const stationSnapshot = await getDoc(stationRef);
+    
+    if (!stationSnapshot.exists()) {
+      throw new Error('Station not found');
+    }
+    
+    const station = stationSnapshot.data() as Station;
+    const updatedContacts = (station.emergencyContacts || []).filter(c => c.id !== contactId);
+    
+    await updateDoc(stationRef, {
+      emergencyContacts: updatedContacts,
+      updated_at: new Date().toISOString()
+    });
+  } catch (error) {
+    console.error('Error deleting emergency contact from station:', error);
+    throw new Error('Failed to delete emergency contact');
+  }
+};
+
+export const fetchEmergencyContactsByStation = async (stationId: string): Promise<EmergencyContact[]> => {
+  try {
+    const stationRef = doc(stationsCollection, stationId);
+    const stationSnapshot = await getDoc(stationRef);
+    
+    if (!stationSnapshot.exists()) {
+      throw new Error('Station not found');
+    }
+    
+    const station = stationSnapshot.data() as Station;
+    return station.emergencyContacts || [];
+  } catch (error) {
+    console.error('Error fetching emergency contacts by station:', error);
+    throw new Error('Failed to fetch emergency contacts');
   }
 };
 

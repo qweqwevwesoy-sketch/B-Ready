@@ -363,6 +363,28 @@ export function EmergencyContacts({ userLocation, variant = 'display' }: Emergen
                         {station.description}
                       </div>
                     )}
+                    {station.emergencyContacts && station.emergencyContacts.length > 0 && (
+                      <div className="mt-3 pt-3 border-t border-gray-200">
+                        <div className="text-sm font-semibold mb-2">Emergency Contacts:</div>
+                        <div className="space-y-1">
+                          {station.emergencyContacts.map((contact) => (
+                            <div key={contact.id} className="text-sm text-gray-600">
+                              <div className="flex justify-between items-center">
+                                <span>{contact.name} ({contact.type})</span>
+                                <a href={`tel:${contact.phone}`} className="text-blue-600 hover:text-blue-800 underline">
+                                  {contact.phone}
+                                </a>
+                              </div>
+                              {contact.address && (
+                                <div className="text-xs text-gray-500 mt-1">
+                                  {contact.address}
+                                </div>
+                              )}
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
                   </div>
                 </div>
               </div>
