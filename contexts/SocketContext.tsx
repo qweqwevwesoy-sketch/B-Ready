@@ -192,7 +192,20 @@ export function SocketProvider({ children }: { children: React.ReactNode }) {
 export function useSocketContext() {
   const context = useContext(SocketContext);
   if (context === undefined) {
-    throw new Error('useSocketContext must be used within a SocketProvider');
+    // Provide default values when context is not available (for static rendering)
+    return {
+      socket: null,
+      connected: false,
+      connectionError: null,
+      reports: [],
+      setReports: () => {},
+      submitReport: () => {},
+      updateReport: () => {},
+      joinReportChat: () => {},
+      sendChatMessage: () => {},
+      chatMessages: {},
+      setChatMessages: () => {},
+    };
   }
   return context;
 }

@@ -56,7 +56,41 @@ const OptimizedSocketContext = createContext<OptimizedSocketContextType | undefi
 export const useOptimizedSocketContext = () => {
   const context = useContext(OptimizedSocketContext);
   if (context === undefined) {
-    throw new Error('useOptimizedSocketContext must be used within an OptimizedSocketProvider');
+    // Provide default values when context is not available (for static rendering)
+    return {
+      // Connection state
+      connected: false,
+      connectionState: 'disconnected',
+      queueLength: 0,
+      hasPendingMessages: false,
+      
+      // Reports
+      reports: [],
+      loading: false,
+      error: null,
+      
+      // Chat functionality
+      chatMessages: [],
+      chatLoading: false,
+      currentChatReportId: null,
+      
+      // Performance metrics
+      performanceMetrics: {
+        connectionTime: 0,
+        messageRate: 0,
+        lastMessageTime: 0,
+        totalMessages: 0,
+      },
+      
+      // Actions
+      submitReport: async () => {},
+      joinReportChat: () => {},
+      leaveReportChat: () => {},
+      sendMessage: async () => {},
+      updateReport: async () => {},
+      refreshReports: () => {},
+      clearError: () => {},
+    };
   }
   return context;
 };
