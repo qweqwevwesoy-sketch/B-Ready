@@ -327,6 +327,7 @@ export default function RealTimeMapContent() {
           email: editingStationEmail,
           website: editingStationWebsite,
           description: editingStationDescription,
+          emergencyContacts: editingStationEmergencyContacts,
         }),
       });
 
@@ -345,6 +346,7 @@ export default function RealTimeMapContent() {
         setEditingStationEmail('');
         setEditingStationWebsite('');
         setEditingStationDescription('');
+        setEditingStationEmergencyContacts([]);
       } else {
         console.error('Failed to update station:', data.error);
         alert('Failed to update station: ' + data.error);
@@ -565,28 +567,29 @@ const selectSearchResult = (result: SearchResult): void => {
           console.log('Map loaded successfully');
           
           // Add zoom level indicator
-const zoomIndicator = L.control({ position: 'bottomleft' });
-          zoomIndicator.onAdd = function() {
-            const div = L.DomUtil.create('div', 'zoom-indicator');
-            div.style.backgroundColor = 'rgba(255, 255, 255, 0.8)';
-            div.style.padding = '4px 8px';
-            div.style.borderRadius = '4px';
-            div.style.fontSize = '12px';
-            div.style.fontWeight = 'bold';
-            div.style.color = '#333';
-            div.style.boxShadow = '0 2px 4px rgba(0,0,0,0.1)';
-            div.style.pointerEvents = 'none'; // Let clicks pass through
+          const zoomIndicator = L.Control.extend({
+            onAdd: function() {
+              const div = L.DomUtil.create('div', 'zoom-indicator');
+              div.style.backgroundColor = 'rgba(255, 255, 255, 0.8)';
+              div.style.padding = '4px 8px';
+              div.style.borderRadius = '4px';
+              div.style.fontSize = '12px';
+              div.style.fontWeight = 'bold';
+              div.style.color = '#333';
+              div.style.boxShadow = '0 2px 4px rgba(0,0,0,0.1)';
+              div.style.pointerEvents = 'none'; // Let clicks pass through
 
-            function updateZoom() {
-              div.innerHTML = `Zoom: ${map.getZoom()}`;
-            }
+              function updateZoom() {
+                div.innerHTML = `Zoom: ${map.getZoom()}`;
+              }
 
-            map.on('zoomend', updateZoom);
-            updateZoom();
+              map.on('zoomend', updateZoom);
+              updateZoom();
 
-            return div;
-          };
-          zoomIndicator.addTo(map);
+              return div;
+            },
+          });
+          new zoomIndicator({ position: 'bottomleft' }).addTo(map);
         });
 
         // Try to get current location in background without blocking
@@ -1308,6 +1311,60 @@ const zoomIndicator = L.control({ position: 'bottomleft' });
                       className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:border-primary focus:outline-none"
                     />
                   </div>
+
+                  {/* Emergency Contacts Section */}
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Emergency Contacts</label>
+                    <div className="space-y-2">
+                      {editingStationEmergencyContacts.map((contact, index) => (
+                        <div key={contact.id} className="flex gap-2 items-center bg-gray-50 p-2 rounded">
+                          <div className="flex-1">
+                            <div className="text-sm font-medium">{contact.name}</div>
+                            <div className="text-xs text-gray-600">{contact.phone} ({contact.type})</div>
+                            {contact.address && <div className="text-xs text-gray-500">{contact.address}</div>}
+                          </div>
+                          <button
+                            onClick={() => {
+                              setEditingContact(contact);
+                              setEditingContactId(contact.id);
+                              setEditingContactName(contact.name);
+                              setEditingContactPhone(contact.phone);
+                              setEditingContactType(contact.type);
+                              setEditingContactAddress(contact.address || '');
+                              setShowContactModal(true);
+                            }}
+                            className="px-2 py-1 bg-yellow-500 text-white text-xs rounded hover:bg-yellow-600"
+                          >
+                            Edit
+                          </button>
+                          <button
+                            onClick={() => {
+                              setEditingStationEmergencyContacts(prev => 
+                                prev.filter((_, i) => i !== index)
+                              );
+                            }}
+                            className="px-2 py-1 bg-red-500 text-white text-xs rounded hover:bg-red-600"
+                          >
+                            Delete
+                          </button>
+                        </div>
+                      ))}
+                      <button
+                        onClick={() => {
+                          setEditingContact(null);
+                          setEditingContactId(null);
+                          setEditingContactName('');
+                          setEditingContactPhone('');
+                          setEditingContactType('other');
+                          setEditingContactAddress('');
+                          setShowContactModal(true);
+                        }}
+                        className="w-full px-2 py-1 bg-blue-500 text-white text-xs rounded hover:bg-blue-600"
+                      >
+                        + Add Contact
+                      </button>
+                    </div>
+                  </div>
                 </div>
 
                 <div className="flex justify-end gap-2 mt-6">
@@ -1322,6 +1379,117 @@ const zoomIndicator = L.control({ position: 'bottomleft' });
                     className="px-4 py-2 bg-primary text-white rounded-lg hover:opacity-90"
                   >
                     Update Station
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Emergency Contact Modal */}
+          {showContactModal && (
+            <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4 z-50">
+              <div className="bg-white rounded-xl p-6 max-w-md w-full shadow-xl">
+                <div className="flex justify-between items-center mb-4">
+                  <h3 className="text-xl font-bold">
+                    {editingContact ? 'Edit Emergency Contact' : 'Add Emergency Contact'}
+                  </h3>
+                  <button
+                    onClick={() => setShowContactModal(false)}
+                    className="text-gray-500 hover:text-gray-700 text-2xl"
+                  >
+                    ×
+                  </button>
+                </div>
+
+                <div className="space-y-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Name</label>
+                    <input
+                      type="text"
+                      value={editingContactName}
+                      onChange={(e) => setEditingContactName(e.target.value)}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:border-primary focus:outline-none"
+                      placeholder="Enter contact name"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Phone</label>
+                    <input
+                      type="tel"
+                      value={editingContactPhone}
+                      onChange={(e) => setEditingContactPhone(e.target.value)}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:border-primary focus:outline-none"
+                      placeholder="Enter phone number"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Type</label>
+                    <select
+                      value={editingContactType}
+                      onChange={(e) => setEditingContactType(e.target.value as 'fire' | 'police' | 'medical' | 'barangay' | 'other')}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:border-primary focus:outline-none"
+                    >
+                      <option value="fire">Fire</option>
+                      <option value="police">Police</option>
+                      <option value="medical">Medical</option>
+                      <option value="barangay">Barangay</option>
+                      <option value="other">Other</option>
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Address</label>
+                    <input
+                      type="text"
+                      value={editingContactAddress}
+                      onChange={(e) => setEditingContactAddress(e.target.value)}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:border-primary focus:outline-none"
+                      placeholder="Enter address (optional)"
+                    />
+                  </div>
+                </div>
+
+                <div className="flex justify-end gap-2 mt-6">
+                  <button
+                    onClick={() => setShowContactModal(false)}
+                    className="px-4 py-2 border-2 border-gray-300 rounded-lg hover:bg-gray-100"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    onClick={() => {
+                      if (!editingContactName.trim() || !editingContactPhone.trim()) {
+                        alert('Name and phone are required');
+                        return;
+                      }
+
+                      const contact: EmergencyContact = {
+                        id: editingContactId || `contact_${Date.now()}`,
+                        name: editingContactName,
+                        phone: editingContactPhone,
+                        type: editingContactType,
+                        address: editingContactAddress,
+                        created_at: editingContact?.created_at || new Date().toISOString(),
+                        updated_at: new Date().toISOString(),
+                      };
+
+                      if (editingContactId) {
+                        // Update existing contact
+                        setEditingStationEmergencyContacts(prev => 
+                          prev.map(c => c.id === editingContactId ? contact : c)
+                        );
+                      } else {
+                        // Add new contact
+                        setEditingStationEmergencyContacts(prev => [...prev, contact]);
+                      }
+
+                      setShowContactModal(false);
+                    }}
+                    className="px-4 py-2 bg-primary text-white rounded-lg hover:opacity-90"
+                  >
+                    Save
                   </button>
                 </div>
               </div>

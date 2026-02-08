@@ -25,16 +25,71 @@ interface Station {
 }
 
 // GET /api/stations - Get all stations
-export async function getAllStations() {
+export async function GET(request: NextRequest) {
   console.log('📡 GET /api/stations called - Firestore version');
 
+  const { searchParams } = new URL(request.url);
+  const stationId = searchParams.get('id');
+  const type = searchParams.get('type');
+  const status = searchParams.get('status');
+
   try {
-    const stations = await fetchStations();
-    console.log('✅ Successfully fetched stations from Firestore:', stations.length);
-    return NextResponse.json({
-      success: true,
-      stations: stations
-    });
+    if (stationId) {
+      // Get station by ID
+      const station = await fetchStationById(stationId);
+      if (!station) {
+        return NextResponse.json(
+          { success: false, error: 'Station not found' },
+          { status: 404 }
+        );
+      }
+
+      console.log('✅ Successfully fetched station by ID:', stationId);
+      return NextResponse.json({
+        success: true,
+        station: station
+      });
+    } else if (type) {
+      // Get stations by type
+      const validTypes = ['fire', 'police', 'medical', 'barangay'];
+      if (!validTypes.includes(type)) {
+        return NextResponse.json(
+          { success: false, error: 'Invalid station type' },
+          { status: 400 }
+        );
+      }
+      
+      const stations = await fetchStationsByType(type as 'fire' | 'police' | 'medical' | 'barangay');
+      console.log('✅ Successfully fetched stations by type:', type);
+      return NextResponse.json({
+        success: true,
+        stations: stations
+      });
+    } else if (status) {
+      // Get stations by status
+      const validStatuses = ['operational', 'overloaded', 'closed'];
+      if (!validStatuses.includes(status)) {
+        return NextResponse.json(
+          { success: false, error: 'Invalid station status' },
+          { status: 400 }
+        );
+      }
+      
+      const stations = await fetchStationsByStatus(status as 'operational' | 'overloaded' | 'closed');
+      console.log('✅ Successfully fetched stations by status:', status);
+      return NextResponse.json({
+        success: true,
+        stations: stations
+      });
+    } else {
+      // Get all stations
+      const stations = await fetchStations();
+      console.log('✅ Successfully fetched stations from Firestore:', stations.length);
+      return NextResponse.json({
+        success: true,
+        stations: stations
+      });
+    }
   } catch (error) {
     console.error('❌ Error fetching stations:', error);
     return NextResponse.json(
@@ -44,96 +99,6 @@ export async function getAllStations() {
   }
 }
 
-// GET /api/stations?id=station_id - Get station by ID
-export async function getStationById(request: NextRequest) {
-  const { searchParams } = new URL(request.url);
-  const stationId = searchParams.get('id');
-
-  if (!stationId) {
-    return NextResponse.json(
-      { success: false, error: 'Station ID is required' },
-      { status: 400 }
-    );
-  }
-
-  try {
-    const station = await fetchStationById(stationId);
-    if (!station) {
-      return NextResponse.json(
-        { success: false, error: 'Station not found' },
-        { status: 404 }
-      );
-    }
-
-    console.log('✅ Successfully fetched station by ID:', stationId);
-    return NextResponse.json({
-      success: true,
-      station: station
-    });
-  } catch (error) {
-    console.error('❌ Error fetching station by ID:', error);
-    return NextResponse.json(
-      { success: false, error: 'Failed to fetch station' },
-      { status: 500 }
-    );
-  }
-}
-
-// GET /api/stations?type=fire - Get stations by type
-export async function getStationsByType(request: NextRequest) {
-  const { searchParams } = new URL(request.url);
-  const type = searchParams.get('type') as Station['type'];
-
-  if (!type) {
-    return NextResponse.json(
-      { success: false, error: 'Station type is required' },
-      { status: 400 }
-    );
-  }
-
-  try {
-    const stations = await fetchStationsByType(type);
-    console.log('✅ Successfully fetched stations by type:', type);
-    return NextResponse.json({
-      success: true,
-      stations: stations
-    });
-  } catch (error) {
-    console.error('❌ Error fetching stations by type:', error);
-    return NextResponse.json(
-      { success: false, error: 'Failed to fetch stations by type' },
-      { status: 500 }
-    );
-  }
-}
-
-// GET /api/stations?status=operational - Get stations by status
-export async function getStationsByStatus(request: NextRequest) {
-  const { searchParams } = new URL(request.url);
-  const status = searchParams.get('status') as Station['status'];
-
-  if (!status) {
-    return NextResponse.json(
-      { success: false, error: 'Station status is required' },
-      { status: 400 }
-    );
-  }
-
-  try {
-    const stations = await fetchStationsByStatus(status);
-    console.log('✅ Successfully fetched stations by status:', status);
-    return NextResponse.json({
-      success: true,
-      stations: stations
-    });
-  } catch (error) {
-    console.error('❌ Error fetching stations by status:', error);
-    return NextResponse.json(
-      { success: false, error: 'Failed to fetch stations by status' },
-      { status: 500 }
-    );
-  }
-}
 
 // POST /api/stations - Add a new station (admin only)
 export async function POST(request: NextRequest) {

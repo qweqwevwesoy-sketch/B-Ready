@@ -105,7 +105,7 @@ export interface EmergencyContact {
   phone: string;
   type: 'fire' | 'police' | 'medical' | 'barangay' | 'other';
   address: string;
-  location: Location;
+  location?: Location;
   description?: string;
   created_at: string;
   updated_at: string;

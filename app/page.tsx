@@ -356,15 +356,8 @@ export default function LandingPage() {
               notificationManager.info('Report saved offline. Will sync when online.');
               console.log('📱 Report stored offline:', offlineReport.offlineId);
             } else {
-              // Directly call Firebase service to ensure report is saved
-              try {
-                const reportId = await createReport(reportData);
-                console.log('✅ Report created in Firebase:', reportId);
-                notificationManager.success('Report submitted successfully!');
-              } catch (firebaseError) {
-                console.error('❌ Failed to create report in Firebase:', firebaseError);
-                notificationManager.error('Failed to submit report. Please try again.');
-              }
+              // Use socket to submit report (same as dashboard)
+              submitReport(reportData);
             }
           } catch (error) {
             console.error('Error creating report:', error);
@@ -396,15 +389,8 @@ export default function LandingPage() {
                 notificationManager.info('Report saved offline. Will sync when online.');
                 console.log('📱 Report stored offline:', offlineReport.offlineId);
               } else {
-                // Directly call Firebase service to ensure report is saved
-                try {
-                  const reportId = await createReport(reportData);
-                  console.log('✅ Report created in Firebase:', reportId);
-                  notificationManager.success('Report submitted successfully!');
-                } catch (firebaseError) {
-                  console.error('❌ Failed to create report in Firebase:', firebaseError);
-                  notificationManager.error('Failed to submit report. Please try again.');
-                }
+                // Use socket to submit report (same as dashboard)
+                submitReport(reportData);
               }
           }
         } else {
@@ -434,15 +420,8 @@ export default function LandingPage() {
               icon: category.icon,
             };
 
-            // Directly call Firebase service to ensure report is saved
-            try {
-              const createdReportId = await createReport(reportData);
-              console.log('✅ Anonymous report created in Firebase:', createdReportId);
-              notificationManager.success('Report submitted successfully!');
-            } catch (firebaseError) {
-              console.error('❌ Failed to create anonymous report in Firebase:', firebaseError);
-              notificationManager.error('Failed to submit report. Please try again.');
-            }
+            // Use socket to submit report (same as dashboard)
+            submitReport(reportData);
           } catch (error) {
             console.error('Error getting location for anonymous report:', error);
             // Create report without location if we can't get it
@@ -462,15 +441,8 @@ export default function LandingPage() {
               icon: category.icon,
             };
             
-            // Directly call Firebase service to ensure report is saved
-            try {
-              const createdReportId = await createReport(reportData);
-              console.log('✅ Anonymous report created in Firebase:', createdReportId);
-              notificationManager.success('Report submitted successfully!');
-            } catch (firebaseError) {
-              console.error('❌ Failed to create anonymous report in Firebase:', firebaseError);
-              notificationManager.error('Failed to submit report. Please try again.');
-            }
+            // Use socket to submit report (same as dashboard)
+            submitReport(reportData);
           }
         }
       }} />
