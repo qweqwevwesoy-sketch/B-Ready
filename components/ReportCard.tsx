@@ -1,7 +1,8 @@
 'use client';
 
-import { formatDate } from '@/lib/utils';
+import { formatDate, reverseGeocode } from '@/lib/utils';
 import type { Report } from '@/types';
+import { useEffect, useState } from 'react';
 
 interface ReportCardProps {
   report: Report;
@@ -20,6 +21,45 @@ export function ReportCard({
   canOpenChat = false,
   showActions = false,
 }: ReportCardProps) {
+  // Initialize state with address from report directly
+  const [formattedAddress, setFormattedAddress] = useState<string>(() => {
+    if (report.address) {
+      return report.address;
+    } else if (report.location) {
+      return 'Location not specified'; // We'll update this with reverse geocode
+    } else {
+      return 'Location not specified';
+    }
+  });
+
+  useEffect(() => {
+    // If report has coordinates but no address, reverse geocode to get human-readable address
+    if (report.location && !report.address) {
+      reverseGeocode(report.location.lat, report.location.lng)
+        .then(address => {
+          // Only update if we got a proper address (not just coordinates)
+          if (address && !address.includes('Coordinates:')) {
+            setFormattedAddress(address);
+          } else {
+            setFormattedAddress('Location not specified');
+          }
+        })
+        .catch(() => {
+          setFormattedAddress('Location not specified');
+        });
+    } else if (report.address && formattedAddress !== report.address) {
+      // Use setTimeout to defer state update
+      const timer = setTimeout(() => {
+        setFormattedAddress(report.address);
+      }, 0);
+      return () => clearTimeout(timer);
+    } else if (!report.address && !report.location && formattedAddress !== 'Location not specified') {
+      const timer = setTimeout(() => {
+        setFormattedAddress('Location not specified');
+      }, 0);
+      return () => clearTimeout(timer);
+    }
+  }, [report, formattedAddress]);
   const getStatusBadge = () => {
     const statusClasses = {
       pending: 'bg-yellow-100 text-yellow-800',
@@ -69,12 +109,13 @@ export function ReportCard({
             {getStatusBadge()}
           </div>
 <p className="text-gray-600 text-sm mb-2">
-            {report.address 
-              ? report.address.includes(',')
-                ? report.address 
-                : `Location 📍 ${report.address}`
-              : 'Location not specified'}
+            Location 📍 {formattedAddress}
           </p>
+          {report.location && (
+            <p className="text-gray-500 text-xs mb-1">
+              {report.location.lat.toFixed(6)}, {report.location.lng.toFixed(6)}
+            </p>
+          )}
           <p className="text-gray-500 text-xs mb-3">
             {report.isAnonymous ? 'Anonymous' : (report.userName || 'Resident')}
           </p>

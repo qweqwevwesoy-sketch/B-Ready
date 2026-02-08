@@ -224,6 +224,8 @@ const handleReportsUpdate = (data: unknown) => {
 
     const handleNewReport = (data: unknown) => {
       try {
+        console.log('📡 Received new report event:', data);
+        
         // Handle both direct objects and stringified JSON
         let reportData: Report;
         
@@ -433,7 +435,7 @@ const handleReportsUpdate = (data: unknown) => {
       }
     };
 
-    // Subscribe to events
+    // Subscribe to events - add more robust error handling and logging
     const unsubscribeReports = on('reports_update', handleReportsUpdate);
     const unsubscribeNewReport = on('new_report', handleNewReport);
     const unsubscribeReportUpdate = on('report_updated', handleReportUpdate);

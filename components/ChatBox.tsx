@@ -97,7 +97,7 @@ export function ChatBox({ reportId, category, onClose, onSendMessage, onSendImag
       }));
     }
 
-    // Combine and deduplicate messages
+    // Combine and deduplicate messages - use a more robust deduplication approach
     const allMessages: Array<{ text: string; sender: string; time: string; type: 'sent' | 'received'; imageData?: string; id?: string }> = [
       ...onlineMessages, 
       ...offlineMessages, 
@@ -107,8 +107,15 @@ export function ChatBox({ reportId, category, onClose, onSendMessage, onSendImag
     const uniqueMessagesMap = new Map();
     
     allMessages.forEach(msg => {
-      // Use message id, or combination of text + sender + time to identify duplicates
-      const uniqueKey = msg.id || `${msg.text || 'image'}_${msg.sender}_${msg.time}`;
+      // For image messages, use imageData as part of the key since text might be identical
+      let uniqueKey: string;
+      if (msg.imageData) {
+        // For images, use a hash of the image data or just the first 100 characters to avoid long keys
+        uniqueKey = `img_${msg.imageData.substring(0, 100)}_${msg.sender}_${msg.time}`;
+      } else {
+        uniqueKey = msg.id || `${msg.text}_${msg.sender}_${msg.time}`;
+      }
+      
       if (!uniqueMessagesMap.has(uniqueKey)) {
         uniqueMessagesMap.set(uniqueKey, msg);
       }
