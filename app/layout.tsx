@@ -8,6 +8,7 @@ import { ServiceWorker } from "@/components/ServiceWorker";
 import SiteBackground from "@/components/SiteBackground";
 import SocketProviderWrapper from "@/components/SocketProviderWrapper";
 import WebSocketConfigWrapper from "@/components/WebSocketConfigWrapper";
+import { OfflineBanner } from "@/components/OfflineBanner";
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -46,6 +47,7 @@ export default function RootLayout({
       </head>
           <body className={inter.className} suppressHydrationWarning>
             <SiteBackground />
+            <OfflineBanner />
             <AuthProvider>
               <SocketProviderWrapper>
                 <ModalManagerProvider>

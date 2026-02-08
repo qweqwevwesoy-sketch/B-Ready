@@ -2,33 +2,31 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import { useAuth } from '@/contexts/AuthContext';
+import { useOptimizedSocketContext } from '@/contexts/OptimizedSocketContext';
 import { Header } from '@/components/Header';
 import { FAB } from '@/components/FAB';
 import { ChatBox } from '@/components/ChatBox';
 import { categories } from '@/lib/categories';
-import type { Category } from '@/types';
+import type { Category, Report } from '@/types';
 import { getCurrentLocation, reverseGeocode } from '@/lib/utils';
-import { storeOfflineReport, storeOfflineMessage } from '@/lib/offline-manager';
+import {
+  useOfflineStatus,
+  isOnline,
+  storeOfflineReport,
+  storeOfflineMessage
+} from '@/lib/offline-manager';
+import { notificationManager } from '@/components/NotificationManager';
 
 export default function LandingPage() {
   const router = useRouter();
-  const [isOffline, setIsOffline] = useState(() => !navigator.onLine);
+  const { user } = useAuth();
+  const { submitReport, joinReportChat, sendMessage } = useOptimizedSocketContext();
+  const isOffline = useOfflineStatus();
   const [showChatbox, setShowChatbox] = useState(false);
   const [currentReportChat, setCurrentReportChat] = useState<string | null>(null);
   const [selectedCategory, setSelectedCategory] = useState<Category | null>(null);
-
-  useEffect(() => {
-    const handleOnline = () => setIsOffline(false);
-    const handleOffline = () => setIsOffline(true);
-
-    window.addEventListener('online', handleOnline);
-    window.addEventListener('offline', handleOffline);
-
-    return () => {
-      window.removeEventListener('online', handleOnline);
-      window.removeEventListener('offline', handleOffline);
-    };
-  }, []);
+  const [tempReportId, setTempReportId] = useState<string | null>(null);
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-200">
@@ -301,57 +299,137 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* Floating Action Button for Anonymous Emergency Reporting */}
+      {/* Floating Action Button for Emergency Reporting */}
       <FAB onCategorySelect={async (category) => {
         setSelectedCategory(category);
         setShowChatbox(true);
-        const reportId = `anonymous_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-        setCurrentReportChat(reportId);
 
-        try {
-          // Get user's location automatically for anonymous reports
-          const position = await getCurrentLocation();
-          const address = await reverseGeocode(position.lat, position.lng);
-          
-          // Store the location with the report
-          const reportData = {
-            id: reportId,
-            type: category.name,
-            description: `${category.name} emergency reported anonymously`,
-            location: position,
-            address: address,
-            timestamp: new Date().toISOString(),
-            userId: 'anonymous',
-            userName: 'Anonymous User',
-            severity: 'medium' as const,
-            status: 'pending' as const,
-            category: category.name,
-            subcategory: category.subcategories[0],
-            icon: category.icon,
-          };
+        if (user) {
+          // User is logged in - create normal report
+          try {
+            const position = await getCurrentLocation();
+            const address = await reverseGeocode(position.lat, position.lng);
+            const timestamp = new Date().toISOString();
+            const tempId = `temp_${Date.now()}_${user.uid}`;
+            setTempReportId(tempId);
+            setCurrentReportChat(tempId); // Enable chat immediately
+            joinReportChat(tempId); // Join the chat room for the temp report
 
-          // Store report offline
-          storeOfflineReport(reportData);
-          console.log('Anonymous report created with location:', position);
-        } catch (error) {
-          console.error('Error getting location for anonymous report:', error);
-          // Create report without location if we can't get it
-          const reportData = {
-            id: reportId,
-            type: category.name,
-            description: `${category.name} emergency reported anonymously`,
-            location: null,
-            address: 'Location not available',
-            timestamp: new Date().toISOString(),
-            userId: 'anonymous',
-            userName: 'Anonymous User',
-            severity: 'medium' as const,
-            status: 'pending' as const,
-            category: category.name,
-            subcategory: category.subcategories[0],
-            icon: category.icon,
-          };
-          storeOfflineReport(reportData);
+            const reportData: Partial<Report> = {
+              id: tempId,
+              type: category.name,
+              description: `Emergency: ${category.name}`,
+              location: position,
+              address: address,
+              timestamp: timestamp,
+              userId: user.uid,
+              userName: `${user.firstName} ${user.lastName}`,
+              userPhone: user.phone,
+              severity: 'medium',
+              status: 'pending',
+              category: category.name,
+              subcategory: category.subcategories[0],
+              icon: category.icon,
+            };
+
+            if (isOffline) {
+              // Store offline
+              const offlineReport = storeOfflineReport(reportData);
+              notificationManager.info('Report saved offline. Will sync when online.');
+              console.log('📱 Report stored offline:', offlineReport.offlineId);
+            } else {
+              submitReport(reportData);
+            }
+
+            // Auto-submit after 3 seconds (only if online)
+            setTimeout(() => {
+              if (tempId === tempReportId && !isOffline) {
+                submitReport(reportData);
+              }
+            }, 3000);
+          } catch (error) {
+            console.error('Error creating report:', error);
+            notificationManager.error('Failed to get location. Report will be submitted without location.');
+
+            const timestamp = new Date().toISOString();
+            const tempId = `temp_${Date.now()}_${user.uid}`;
+            setTempReportId(tempId);
+            setCurrentReportChat(tempId); // Enable chat immediately
+            joinReportChat(tempId); // Join the chat room for the temp report
+
+            const reportData: Partial<Report> = {
+              id: tempId,
+              type: category.name,
+              description: `Emergency: ${category.name}`,
+              location: null,
+              address: 'Location not available',
+              timestamp: timestamp,
+              userId: user.uid,
+              userName: `${user.firstName} ${user.lastName}`,
+              severity: 'medium',
+              status: 'pending',
+              category: category.name,
+              icon: category.icon,
+            };
+
+            if (isOffline) {
+              const offlineReport = storeOfflineReport(reportData);
+              notificationManager.info('Report saved offline. Will sync when online.');
+              console.log('📱 Report stored offline:', offlineReport.offlineId);
+            } else {
+              submitReport(reportData);
+            }
+          }
+        } else {
+          // User is not logged in - create anonymous report
+          const reportId = `anonymous_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+          setCurrentReportChat(reportId);
+
+          try {
+            // Get user's location automatically for anonymous reports
+            const position = await getCurrentLocation();
+            const address = await reverseGeocode(position.lat, position.lng);
+            
+            // Store the location with the report
+            const reportData = {
+              id: reportId,
+              type: category.name,
+              description: `${category.name} emergency reported anonymously`,
+              location: position,
+              address: address,
+              timestamp: new Date().toISOString(),
+              userId: 'anonymous',
+              userName: 'Anonymous User',
+              severity: 'medium' as const,
+              status: 'pending' as const,
+              category: category.name,
+              subcategory: category.subcategories[0],
+              icon: category.icon,
+            };
+
+            // Store report offline
+            storeOfflineReport(reportData);
+            console.log('Anonymous report created with location:', position);
+          } catch (error) {
+            console.error('Error getting location for anonymous report:', error);
+            // Create report without location if we can't get it
+            const reportData = {
+              id: reportId,
+              type: category.name,
+              description: `${category.name} emergency reported anonymously`,
+              location: null,
+              address: 'Location not available',
+              timestamp: new Date().toISOString(),
+              userId: 'anonymous',
+              userName: 'Anonymous User',
+              severity: 'medium' as const,
+              status: 'pending' as const,
+              category: category.name,
+              subcategory: category.subcategories[0],
+              icon: category.icon,
+            };
+            storeOfflineReport(reportData);
+          }
         }
       }} />
 
@@ -368,58 +446,64 @@ export default function LandingPage() {
           onSendMessage={(text) => {
             // Handle message sending
             if (currentReportChat) {
-              storeOfflineMessage({
-                reportId: currentReportChat,
-                text: text,
-                userName: 'Anonymous User',
-                userRole: 'user',
-                timestamp: new Date().toISOString(),
-              });
+              if (user) {
+                // Logged in user - send via socket or store offline
+                if (isOffline) {
+                  storeOfflineMessage({
+                    reportId: currentReportChat,
+                    text,
+                    userName: `${user.firstName} ${user.lastName}`,
+                    userRole: user.role,
+                    timestamp: new Date().toISOString(),
+                  });
+                  console.log('💬 Message stored offline for report:', currentReportChat);
+                } else {
+                  sendMessage(text);
+                }
+              } else {
+                // Anonymous user - store offline
+                storeOfflineMessage({
+                  reportId: currentReportChat,
+                  text: text,
+                  userName: 'Anonymous User',
+                  userRole: 'user',
+                  timestamp: new Date().toISOString(),
+                });
+              }
             }
           }}
           onSendImage={(imageData) => {
             // Handle image sending
             if (currentReportChat) {
-              storeOfflineMessage({
-                reportId: currentReportChat,
-                text: '[Photo]',
-                userName: 'Anonymous User',
-                userRole: 'user',
-                timestamp: new Date().toISOString(),
-                imageData: imageData,
-              });
+              if (user) {
+                // Logged in user - send via socket or store offline
+                if (isOffline) {
+                  storeOfflineMessage({
+                    reportId: currentReportChat,
+                    text: '[Photo]',
+                    userName: `${user.firstName} ${user.lastName}`,
+                    userRole: user.role,
+                    timestamp: new Date().toISOString(),
+                    imageData,
+                  });
+                  console.log('📸 Image stored offline for report:', currentReportChat);
+                } else {
+                  sendMessage('[Photo]', imageData);
+                }
+              } else {
+                // Anonymous user - store offline
+                storeOfflineMessage({
+                  reportId: currentReportChat,
+                  text: '[Photo]',
+                  userName: 'Anonymous User',
+                  userRole: 'user',
+                  timestamp: new Date().toISOString(),
+                  imageData: imageData,
+                });
+              }
             }
           }}
         />
-      )}
-
-      {/* Offline Message Overlay */}
-      {isOffline && (
-        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-2xl p-8 max-w-md w-full text-center shadow-2xl">
-            <div className="text-6xl mb-4">📱</div>
-            <h2 className="text-2xl font-bold text-gray-800 mb-4">
-              Can't open page
-            </h2>
-              <p className="text-gray-600 mb-6">
-              Your phone is not connected to the internet. You can still access Safety Tips and emergency reporting features.
-            </p>
-            <div className="space-y-3">
-              <button
-                onClick={() => router.push('/safety-tips')}
-                className="w-full px-6 py-3 bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-700 transition-colors"
-              >
-                🛡️ View Safety Tips
-              </button>
-              <button
-                onClick={() => setIsOffline(false)}
-                className="w-full px-6 py-3 bg-gray-200 text-gray-700 rounded-lg font-semibold hover:bg-gray-300 transition-colors"
-              >
-                Continue Browsing
-              </button>
-            </div>
-          </div>
-        </div>
       )}
 
     </div>
