@@ -35,11 +35,13 @@ export async function getCurrentLocation(): Promise<{ lat: number; lng: number }
     }
 
     // Check if we're on HTTPS or localhost (affects geolocation behavior)
-    const isSecure = location.protocol === 'https:' ||
-                     location.hostname === 'localhost' ||
-                     location.hostname === '127.0.0.1';
-
-    console.log(`📍 Environment: ${isSecure ? 'Secure (HTTPS/localhost)' : 'HTTP environment'}`);
+    let isSecure = true; // Default to secure for SSR
+    if (typeof window !== 'undefined' && window.location) {
+      isSecure = location.protocol === 'https:' ||
+                 location.hostname === 'localhost' ||
+                 location.hostname === '127.0.0.1';
+      console.log(`📍 Environment: ${isSecure ? 'Secure (HTTPS/localhost)' : 'HTTP environment'}`);
+    }
 
     // Always try geolocation first for accuracy, regardless of HTTP/HTTPS
     // This is crucial for emergency response apps where precision matters

@@ -7,6 +7,8 @@ import { FAB } from '@/components/FAB';
 import { ChatBox } from '@/components/ChatBox';
 import { categories } from '@/lib/categories';
 import type { Category } from '@/types';
+import { getCurrentLocation, reverseGeocode } from '@/lib/utils';
+import { storeOfflineReport, storeOfflineMessage } from '@/lib/offline-manager';
 
 export default function LandingPage() {
   const router = useRouter();
@@ -300,10 +302,57 @@ export default function LandingPage() {
       </section>
 
       {/* Floating Action Button for Anonymous Emergency Reporting */}
-      <FAB onCategorySelect={(category) => {
+      <FAB onCategorySelect={async (category) => {
         setSelectedCategory(category);
         setShowChatbox(true);
-        setCurrentReportChat(`anonymous_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`);
+        const reportId = `anonymous_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+        setCurrentReportChat(reportId);
+
+        try {
+          // Get user's location automatically for anonymous reports
+          const position = await getCurrentLocation();
+          const address = await reverseGeocode(position.lat, position.lng);
+          
+          // Store the location with the report
+          const reportData = {
+            id: reportId,
+            type: category.name,
+            description: `${category.name} emergency reported anonymously`,
+            location: position,
+            address: address,
+            timestamp: new Date().toISOString(),
+            userId: 'anonymous',
+            userName: 'Anonymous User',
+            severity: 'medium' as const,
+            status: 'pending' as const,
+            category: category.name,
+            subcategory: category.subcategories[0],
+            icon: category.icon,
+          };
+
+          // Store report offline
+          storeOfflineReport(reportData);
+          console.log('Anonymous report created with location:', position);
+        } catch (error) {
+          console.error('Error getting location for anonymous report:', error);
+          // Create report without location if we can't get it
+          const reportData = {
+            id: reportId,
+            type: category.name,
+            description: `${category.name} emergency reported anonymously`,
+            location: null,
+            address: 'Location not available',
+            timestamp: new Date().toISOString(),
+            userId: 'anonymous',
+            userName: 'Anonymous User',
+            severity: 'medium' as const,
+            status: 'pending' as const,
+            category: category.name,
+            subcategory: category.subcategories[0],
+            icon: category.icon,
+          };
+          storeOfflineReport(reportData);
+        }
       }} />
 
       {/* ChatBox for Anonymous Users */}
@@ -318,11 +367,28 @@ export default function LandingPage() {
           }}
           onSendMessage={(text) => {
             // Handle anonymous message sending
-            console.log('Anonymous message:', text);
+            if (currentReportChat) {
+              storeOfflineMessage({
+                reportId: currentReportChat,
+                text: text,
+                userName: 'Anonymous User',
+                userRole: 'user',
+                timestamp: new Date().toISOString(),
+              });
+            }
           }}
           onSendImage={(imageData) => {
             // Handle anonymous image sending
-            console.log('Anonymous image sent');
+            if (currentReportChat) {
+              storeOfflineMessage({
+                reportId: currentReportChat,
+                text: '[Photo]',
+                userName: 'Anonymous User',
+                userRole: 'user',
+                timestamp: new Date().toISOString(),
+                imageData: imageData,
+              });
+            }
           }}
           isAnonymous={true}
         />

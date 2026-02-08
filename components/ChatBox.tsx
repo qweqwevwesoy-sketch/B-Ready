@@ -6,7 +6,7 @@ import { useOptimizedSocketContext } from '@/contexts/OptimizedSocketContext';
 import { useAuth } from '@/contexts/AuthContext';
 import { useOfflineStatus, storeOfflineMessage, getOfflineMessagesForReport, storeOfflineReport } from '@/lib/offline-manager';
 import { notificationManager } from '@/components/NotificationManager';
-import { getCurrentLocation } from '@/lib/utils';
+import { getCurrentLocation, reverseGeocode } from '@/lib/utils';
 import { useModalManager } from '@/contexts/ModalManager';
 import type { Category, Report } from '@/types';
 import { categories } from '@/lib/categories';
@@ -704,30 +704,56 @@ export function ChatBox({ reportId, category, onClose, onSendMessage, onSendImag
               {categories.map((category) => (
                 <button
                   key={category.id}
-                  onClick={() => {
+                  onClick={async () => {
                     setSelectedCategory(category);
                     setShowCategorySelection(false);
                     // Create anonymous report
                     const newReportId = `anonymous_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
                     setAnonymousReportId(newReportId);
 
-                    const reportData = {
-                      id: newReportId,
-                      type: category.name,
-                      description: `${category.name} emergency reported anonymously`,
-                      location: null,
-                      address: 'Anonymous location',
-                      timestamp: new Date().toISOString(),
-                      userId: 'anonymous',
-                      userName: 'Anonymous User',
-                      severity: 'high' as const,
-                      status: 'pending' as const,
-                      category: category.name,
-                      subcategory: category.subcategories[0] || 'General',
-                      icon: category.icon,
-                    };
+                    try {
+                      // Get user's location automatically for anonymous reports
+                      const position = await getCurrentLocation();
+                      const address = await reverseGeocode(position.lat, position.lng);
+                      
+                      const reportData = {
+                        id: newReportId,
+                        type: category.name,
+                        description: `${category.name} emergency reported anonymously`,
+                        location: position,
+                        address: address,
+                        timestamp: new Date().toISOString(),
+                        userId: 'anonymous',
+                        userName: 'Anonymous User',
+                        severity: 'high' as const,
+                        status: 'pending' as const,
+                        category: category.name,
+                        subcategory: category.subcategories[0] || 'General',
+                        icon: category.icon,
+                      };
 
-                    storeOfflineReport(reportData);
+                      storeOfflineReport(reportData);
+                      console.log('Anonymous report created with location:', position);
+                    } catch (error) {
+                      console.error('Error getting location for anonymous report:', error);
+                      // Create report without location if we can't get it
+                      const reportData = {
+                        id: newReportId,
+                        type: category.name,
+                        description: `${category.name} emergency reported anonymously`,
+                        location: null,
+                        address: 'Location not available',
+                        timestamp: new Date().toISOString(),
+                        userId: 'anonymous',
+                        userName: 'Anonymous User',
+                        severity: 'high' as const,
+                        status: 'pending' as const,
+                        category: category.name,
+                        subcategory: category.subcategories[0] || 'General',
+                        icon: category.icon,
+                      };
+                      storeOfflineReport(reportData);
+                    }
                   }}
                   className="w-full p-3 bg-gray-50 hover:bg-red-50 border border-gray-200 hover:border-red-300 rounded-lg transition-all duration-200 text-left flex items-center gap-3 group"
                 >
