@@ -54,8 +54,8 @@ export function ChatBox({ reportId, category, onClose, onSendMessage, onSendImag
   const isOffline = useOfflineStatus();
 
   const messages = useMemo(() => {
-    let onlineMessages: Array<{ text: string; sender: string; time: string; type: 'sent' | 'received'; imageData?: string }> = [];
-    let offlineMessages: Array<{ text: string; sender: string; time: string; type: 'sent' | 'received'; imageData?: string }> = [];
+    let onlineMessages: Array<{ text: string; sender: string; time: string; type: 'sent' | 'received'; imageData?: string; id?: string }> = [];
+    let offlineMessages: Array<{ text: string; sender: string; time: string; type: 'sent' | 'received'; imageData?: string; id?: string }> = [];
 
     if (reportId) {
       // Get online messages from context
@@ -74,6 +74,7 @@ export function ChatBox({ reportId, category, onClose, onSendMessage, onSendImag
         }
 
         return {
+          id: msg.id,
           text: msg.text,
           sender: senderName,
           time: new Date(msg.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
@@ -87,6 +88,7 @@ export function ChatBox({ reportId, category, onClose, onSendMessage, onSendImag
       // Get offline messages
       const offlineMsgs = getOfflineMessagesForReport(reportId);
       offlineMessages = offlineMsgs.map(msg => ({
+        id: `offline_${msg.timestamp}`,
         text: msg.text,
         sender: msg.userName,
         time: new Date(msg.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
@@ -95,15 +97,32 @@ export function ChatBox({ reportId, category, onClose, onSendMessage, onSendImag
       }));
     }
 
-    const allMessages = [...onlineMessages, ...offlineMessages, ...localMessages];
+    // Combine and deduplicate messages
+    const allMessages: Array<{ text: string; sender: string; time: string; type: 'sent' | 'received'; imageData?: string; id?: string }> = [
+      ...onlineMessages, 
+      ...offlineMessages, 
+      ...localMessages.map(msg => ({ ...msg, id: `local_${Date.now()}_${Math.random().toString(36).substr(2, 9)}` }))
+    ];
+    
+    const uniqueMessagesMap = new Map();
+    
+    allMessages.forEach(msg => {
+      // Use message id, or combination of text + sender + time to identify duplicates
+      const uniqueKey = msg.id || `${msg.text || 'image'}_${msg.sender}_${msg.time}`;
+      if (!uniqueMessagesMap.has(uniqueKey)) {
+        uniqueMessagesMap.set(uniqueKey, msg);
+      }
+    });
+    
+    const uniqueMessages = Array.from(uniqueMessagesMap.values());
 
     // Always include initial message if no other messages exist
-    if (allMessages.length === 0) {
+    if (uniqueMessages.length === 0) {
       return [getInitialMessage(selectedCategory || category, isAnonymous)];
     }
 
     // Check if initial message is already in the messages
-    const hasInitialMessage = allMessages.some(msg =>
+    const hasInitialMessage = uniqueMessages.some(msg =>
       msg.sender === 'B-READY Support' &&
       msg.type === 'received' &&
       msg.text.includes('Hello! How can we help you')
@@ -111,10 +130,10 @@ export function ChatBox({ reportId, category, onClose, onSendMessage, onSendImag
 
     // If no initial message and we have a category, add it at the beginning
     if (!hasInitialMessage && (selectedCategory || category)) {
-      return [getInitialMessage(selectedCategory || category, isAnonymous), ...allMessages];
+      return [getInitialMessage(selectedCategory || category, isAnonymous), ...uniqueMessages];
     }
 
-    return allMessages;
+    return uniqueMessages;
   }, [reportId, chatMessages, category, selectedCategory, isAnonymous, localMessages, user]);
 
   // Get the actual report data for the modal
@@ -374,7 +393,6 @@ export function ChatBox({ reportId, category, onClose, onSendMessage, onSendImag
 
       // Handle anonymous image storage
       if (isAnonymous && selectedCategory) {
-        const messageId = `msg_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
         const reportIdToUse = anonymousReportId || `anonymous_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
         storeOfflineMessage({
           reportId: reportIdToUse,
@@ -592,12 +610,9 @@ export function ChatBox({ reportId, category, onClose, onSendMessage, onSendImag
   const handleSend = (e: React.FormEvent) => {
     e.preventDefault();
     if (message.trim()) {
-      const messageId = `msg_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-      
       // Handle anonymous messages
       if (isAnonymous && selectedCategory) {
         const newMessage = {
-          id: messageId,
           text: message,
           sender: 'You (Anonymous)',
           time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),

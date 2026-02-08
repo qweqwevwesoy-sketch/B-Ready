@@ -16,19 +16,16 @@ export async function GET(request: NextRequest) {
   // Try multiple reliable reverse geocoding services
   const services = [
     {
-      url: `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&addressdetails=1&accept-language=en`,
-      headers: { 
-        'Accept': 'application/json',
-        'User-Agent': 'B-READY-App/1.0 (contact@bready.com)'
-      } as Record<string, string>
-    },
-    {
-      url: `https://geocode.maps.co/reverse?lat=${lat}&lon=${lng}`,
-      headers: { 'Accept': 'application/json' } as Record<string, string>
-    },
-    {
       url: `https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${lat}&longitude=${lng}&localityLanguage=en`,
-      headers: { 'Accept': 'application/json' } as Record<string, string>
+      headers: { 'Accept': 'application/json' }
+    },
+    {
+      url: `https://api.positionstack.com/v1/reverse?access_key=YOUR_ACCESS_KEY&query=${lat},${lng}`,
+      headers: { 'Accept': 'application/json' }
+    },
+    {
+      url: `https://api.opencagedata.com/geocode/v1/json?q=${lat}+${lng}&key=YOUR_API_KEY&language=en`,
+      headers: { 'Accept': 'application/json' }
     }
   ];
 
@@ -48,55 +45,32 @@ export async function GET(request: NextRequest) {
 
       const data = await response.json();
 
-      // Handle different response formats
+// Handle different response formats
       let address = '';
 
-      if (service.url.includes('nominatim.openstreetmap.org')) {
-        // OpenStreetMap Nominatim format
-        if (data && data.display_name) {
-          address = data.display_name;
-        } else if (data && data.address) {
-          const components = [
-            data.address.amenity || data.address.house_name || data.address.house_number,
-            data.address.road,
-            data.address.suburb,
-            data.address.city || data.address.town || data.address.village,
-            data.address.state,
-            data.address.country
-          ].filter(Boolean);
-          
-          address = components.length > 0 ? components.join(', ') : `Coordinates: ${lat}, ${lng}`;
-        }
-      } else if (service.url.includes('geocode.maps.co')) {
-        // Maps.co format
-        if (data && data.display_name) {
-          address = data.display_name;
-        } else if (data && data.address) {
-          const components = [
-            data.address.amenity || data.address.house_name || data.address.house_number,
-            data.address.road,
-            data.address.suburb,
-            data.address.city || data.address.town || data.address.village,
-            data.address.state,
-            data.address.country
-          ].filter(Boolean);
-          
-          address = components.length > 0 ? components.join(', ') : `Coordinates: ${lat}, ${lng}`;
-        }
-      } else if (service.url.includes('bigdatacloud.net')) {
-        // BigDataCloud format
+      if (service.url.includes('bigdatacloud.net')) {
+        // Build detailed address with fallback options
         const components = [
+          data.address?.building || data.address?.road || data.locality,
           data.city || data.locality,
           data.principalSubdivision,
           data.countryName
         ].filter(Boolean);
 
         address = components.length > 0 
-          ? components.join(', ') + ` ${lat}, ${lng}` 
+          ? components.join(', ') 
           : `Coordinates: ${lat}, ${lng}`;
+      } else if (service.url.includes('positionstack.com')) {
+        // Use the label if available, otherwise build from components
+        address = data.data[0]?.label || 
+                 (data.data[0]?.name && data.data[0].name) ||
+                 `Coordinates: ${lat}, ${lng}`;
+      } else if (service.url.includes('opencagedata.com')) {
+        // Use formatted address if available
+        address = data.results[0]?.formatted || `Coordinates: ${lat}, ${lng}`;
       }
 
-      if (address && address !== 'Coordinates: ' + lat + ', ' + lng) {
+      if (address) {
         console.log('✅ Reverse geocoding successful');
         return NextResponse.json({
           success: true,

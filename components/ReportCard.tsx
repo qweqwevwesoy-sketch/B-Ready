@@ -20,12 +20,6 @@ export function ReportCard({
   canOpenChat = false,
   showActions = false,
 }: ReportCardProps) {
-  // Early return if report is invalid
-  if (!report || !report.id) {
-    console.warn('ReportCard received invalid report:', report);
-    return null;
-  }
-
   const getStatusBadge = () => {
     const statusClasses = {
       pending: 'bg-yellow-100 text-yellow-800',
@@ -36,7 +30,7 @@ export function ReportCard({
 
     const statusLabels = {
       pending: 'Pending',
-      approved: 'Approved',
+      approved: 'Approved'  ,
       current: 'Active',
       rejected: 'Rejected',
     };
@@ -74,14 +68,12 @@ export function ReportCard({
             <h3 className="font-semibold text-lg truncate">{report.type || 'Emergency Report'}</h3>
             {getStatusBadge()}
           </div>
-          <p className="text-gray-600 text-sm mb-2">
+<p className="text-gray-600 text-sm mb-2">
             {report.address 
               ? report.address.includes(',')
-                ? `📍 ${report.address}`
-                : `📍 ${report.address}`
-              : report.location 
-              ? `📍 Coordinates: ${report.location.lat.toFixed(6)}, ${report.location.lng.toFixed(6)}`
-              : '📍 Location not specified'}
+                ? report.address 
+                : `Location 📍 ${report.address}`
+              : 'Location not specified'}
           </p>
           <p className="text-gray-500 text-xs mb-3">
             {report.isAnonymous ? 'Anonymous' : (report.userName || 'Resident')}
