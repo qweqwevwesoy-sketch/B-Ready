@@ -19,7 +19,7 @@ service cloud.firestore {
     
     match /emergency_stations/{stationId} {
       allow read: if true;
-      allow write: if request.auth != null && (request.auth.token.admin == true || request.auth.token.moderator == true);
+      allow write: if true;
     }
     
     match /users/{userId} {

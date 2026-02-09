@@ -1,42 +1,61 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createStation, updateStation, deleteStation, fetchStations, fetchStationById, fetchStationsByType, fetchStationsByStatus } from '@/lib/firebase-service';
+import type { Station } from '@/types';
 
-console.log('🚀 Stations API route loaded - Firestore version');
+console.log('🚀 Stations API route loaded - REST version');
 
-interface Station {
-  id: string;
-  name: string;
-  type: 'fire' | 'police' | 'medical' | 'barangay';
-  location: {
-    lat: number;
-    lng: number;
-  };
-  address: string;
-  capacity: number;
-  currentLoad: number;
-  status: 'operational' | 'overloaded' | 'closed';
-  contact: string;
-  phone?: string;
-  email?: string;
-  website?: string;
-  description?: string;
-  created_at: string;
-  updated_at: string;
-}
+// Mock data for stations (temporary solution)
+const mockStations: Station[] = [
+  {
+    id: 'station_1',
+    name: 'Test Fire Station',
+    type: 'fire',
+    location: { lat: 14.5995, lng: 120.9842 },
+    address: 'Test Address',
+    capacity: 50,
+    currentLoad: 0,
+    status: 'operational',
+    contact: '123-456-7890',
+    phone: '123-456-7890',
+    email: 'test@example.com',
+    website: 'https://example.com',
+    description: 'Test fire station for emergency response',
+    emergencyContacts: [],
+    created_at: '2026-02-09T17:13:31.187Z',
+    updated_at: '2026-02-09T17:13:31.188Z'
+  },
+  {
+    id: 'station_2',
+    name: 'Test Police Station',
+    type: 'medical',
+    location: { lat: 14.6, lng: 120.985 },
+    address: 'Test Police Address',
+    capacity: 0,
+    currentLoad: 0,
+    status: 'operational',
+    contact: '987-654-3210',
+    phone: '987-654-3210',
+    email: 'police@example.com',
+    website: 'https://police.example.com',
+    description: 'Test police station for emergency response',
+    created_by: 'test_user_123',
+    emergencyContacts: [],
+    created_at: '2026-02-09T17:36:35.615Z',
+    updated_at: '2026-02-09T17:36:35.615Z'
+  }
+];
 
 // GET /api/stations - Get all stations
 export async function GET(request: NextRequest) {
-  console.log('📡 GET /api/stations called - Firestore version');
+  console.log('📡 GET /api/stations called - REST version');
 
   const { searchParams } = new URL(request.url);
   const stationId = searchParams.get('id');
-  const type = searchParams.get('type');
-  const status = searchParams.get('status');
 
   try {
     if (stationId) {
       // Get station by ID
-      const station = await fetchStationById(stationId);
+      const station = mockStations.find(s => s.id === stationId);
+      
       if (!station) {
         return NextResponse.json(
           { success: false, error: 'Station not found' },
@@ -49,45 +68,12 @@ export async function GET(request: NextRequest) {
         success: true,
         station: station
       });
-    } else if (type) {
-      // Get stations by type
-      const validTypes = ['fire', 'police', 'medical', 'barangay'];
-      if (!validTypes.includes(type)) {
-        return NextResponse.json(
-          { success: false, error: 'Invalid station type' },
-          { status: 400 }
-        );
-      }
-      
-      const stations = await fetchStationsByType(type as 'fire' | 'police' | 'medical' | 'barangay');
-      console.log('✅ Successfully fetched stations by type:', type);
-      return NextResponse.json({
-        success: true,
-        stations: stations
-      });
-    } else if (status) {
-      // Get stations by status
-      const validStatuses = ['operational', 'overloaded', 'closed'];
-      if (!validStatuses.includes(status)) {
-        return NextResponse.json(
-          { success: false, error: 'Invalid station status' },
-          { status: 400 }
-        );
-      }
-      
-      const stations = await fetchStationsByStatus(status as 'operational' | 'overloaded' | 'closed');
-      console.log('✅ Successfully fetched stations by status:', status);
-      return NextResponse.json({
-        success: true,
-        stations: stations
-      });
     } else {
       // Get all stations
-      const stations = await fetchStations();
-      console.log('✅ Successfully fetched stations from Firestore:', stations.length);
+      console.log('✅ Successfully fetched stations from mock data:', mockStations.length);
       return NextResponse.json({
         success: true,
-        stations: stations
+        stations: mockStations
       });
     }
   } catch (error) {
@@ -99,10 +85,9 @@ export async function GET(request: NextRequest) {
   }
 }
 
-
 // POST /api/stations - Add a new station (admin only)
 export async function POST(request: NextRequest) {
-  console.log('📡 POST /api/stations called - Firestore version');
+  console.log('📡 POST /api/stations called - REST version');
 
   try {
     const { name, lat, lng, address, phone, email, website, description, created_by } = await request.json();
@@ -115,7 +100,8 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const stationData = {
+    const stationData: Station = {
+      id: `station_${Date.now()}`,
       name,
       type: 'medical' as const,
       location: { lat, lng },
@@ -127,16 +113,21 @@ export async function POST(request: NextRequest) {
       phone: phone || '',
       email: email || '',
       website: website || '',
-      description: description || ''
+      description: description || '',
+      created_by: created_by || null,
+      emergencyContacts: [],
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString()
     };
 
     console.log('📡 Creating station with data:', stationData);
-    const stationId = await createStation(stationData);
-    console.log('📡 Station created with ID:', stationId);
-    const station = await fetchStationById(stationId);
-    console.log('📡 Fetched station data:', station);
-
-    return NextResponse.json({ success: true, station: station });
+    mockStations.push(stationData);
+    
+    console.log('📡 Station created in mock data:', stationData.id);
+    return NextResponse.json({ 
+      success: true, 
+      station: stationData 
+    });
   } catch (error) {
     console.error('❌ Error adding station:', error);
     return NextResponse.json(
@@ -148,7 +139,7 @@ export async function POST(request: NextRequest) {
 
 // PUT /api/stations - Update a station (admin only)
 export async function PUT(request: NextRequest) {
-  console.log('📡 PUT /api/stations called - Firestore version');
+  console.log('📡 PUT /api/stations called - REST version');
 
   try {
     const { id, name, type, location, address, capacity, currentLoad, status, contact, phone, email, website, description } = await request.json();
@@ -157,6 +148,14 @@ export async function PUT(request: NextRequest) {
       return NextResponse.json(
         { success: false, error: 'Station ID is required' },
         { status: 400 }
+      );
+    }
+
+    const index = mockStations.findIndex(s => s.id === id);
+    if (index === -1) {
+      return NextResponse.json(
+        { success: false, error: 'Station not found' },
+        { status: 404 }
       );
     }
 
@@ -172,14 +171,17 @@ export async function PUT(request: NextRequest) {
       phone,
       email,
       website,
-      description
+      description,
+      updated_at: new Date().toISOString()
     };
 
-    await updateStation(id, stationData);
-    const updatedStation = await fetchStationById(id);
+    mockStations[index] = { ...mockStations[index], ...stationData };
 
-    console.log('✅ Station updated in Firestore:', id);
-    return NextResponse.json({ success: true, station: updatedStation });
+    console.log('✅ Station updated in mock data:', id);
+    return NextResponse.json({ 
+      success: true, 
+      station: mockStations[index] 
+    });
   } catch (error) {
     console.error('❌ Error updating station:', error);
     return NextResponse.json(
@@ -191,7 +193,7 @@ export async function PUT(request: NextRequest) {
 
 // DELETE /api/stations?id=station_id - Delete a station (admin only)
 export async function DELETE(request: NextRequest) {
-  console.log('📡 DELETE /api/stations called - Firestore version');
+  console.log('📡 DELETE /api/stations called - REST version');
 
   try {
     const { searchParams } = new URL(request.url);
@@ -205,7 +207,7 @@ export async function DELETE(request: NextRequest) {
     }
 
     // Don't allow deleting default stations
-    const defaultStationIds = ['station_1', 'station_2', 'station_3', 'station_4'];
+    const defaultStationIds = ['station_1', 'station_2'];
     if (defaultStationIds.includes(stationId)) {
       return NextResponse.json(
         { success: false, error: 'Cannot delete default stations' },
@@ -213,9 +215,17 @@ export async function DELETE(request: NextRequest) {
       );
     }
 
-    await deleteStation(stationId);
+    const index = mockStations.findIndex(s => s.id === stationId);
+    if (index === -1) {
+      return NextResponse.json(
+        { success: false, error: 'Station not found' },
+        { status: 404 }
+      );
+    }
 
-    console.log('✅ Station deleted from Firestore:', stationId);
+    mockStations.splice(index, 1);
+
+    console.log('✅ Station deleted from mock data:', stationId);
     return NextResponse.json({ success: true });
   } catch (error) {
     console.error('❌ Error deleting station:', error);

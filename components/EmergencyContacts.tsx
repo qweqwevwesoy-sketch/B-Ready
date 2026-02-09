@@ -6,77 +6,8 @@ import { useAuth } from '@/contexts/AuthContext';
 import { notificationManager } from '@/components/NotificationManager';
 import type { Station } from '@/types';
 
-// Default offline stations data (copied from Real Time Map)
-const DEFAULT_STATIONS: Station[] = [
-  {
-    id: 'fire_1',
-    name: 'Manila Fire Station',
-    type: 'fire',
-    location: { lat: 14.5820, lng: 120.9730 },
-    address: '1015 Padre Burgos Ave, Ermita, Manila',
-    capacity: 10,
-    currentLoad: 3,
-    status: 'operational',
-    contact: '+63 2 8527 7000',
-    phone: '+63 2 8527 7000',
-    email: 'manila.fire@bfp.gov.ph',
-    website: 'https://manila.gov.ph/fire-station',
-    description: 'Main fire station for Manila City',
-    created_at: new Date().toISOString(),
-    updated_at: new Date().toISOString()
-  },
-  {
-    id: 'police_1',
-    name: 'Manila Police Station',
-    type: 'police',
-    location: { lat: 14.5800, lng: 120.9750 },
-    address: '275 Padre Burgos Ave, Ermita, Manila',
-    capacity: 20,
-    currentLoad: 8,
-    status: 'operational',
-    contact: '+63 2 8527 0000',
-    phone: '+63 2 8527 0000',
-    email: 'manila.police@pnnp.gov.ph',
-    website: 'https://manila.gov.ph/police-station',
-    description: 'Central police station for Manila',
-    created_at: new Date().toISOString(),
-    updated_at: new Date().toISOString()
-  },
-  {
-    id: 'medical_1',
-    name: 'Philippine General Hospital',
-    type: 'medical',
-    location: { lat: 14.5600, lng: 120.9890 },
-    address: 'Taft Avenue, Ermita, Manila',
-    capacity: 500,
-    currentLoad: 245,
-    status: 'operational',
-    contact: '+63 2 8554 8400',
-    phone: '+63 2 8554 8400',
-    email: 'info@pgh.gov.ph',
-    website: 'https://pgh.gov.ph',
-    description: 'National university hospital',
-    created_at: new Date().toISOString(),
-    updated_at: new Date().toISOString()
-  },
-  {
-    id: 'barangay_1',
-    name: 'Barangay San Antonio',
-    type: 'barangay',
-    location: { lat: 14.5800, lng: 120.9700 },
-    address: 'San Antonio St, Ermita, Manila',
-    capacity: 100,
-    currentLoad: 15,
-    status: 'operational',
-    contact: '+63 2 8527 1234',
-    phone: '+63 2 8527 1234',
-    email: 'sanantonio@manila.gov.ph',
-    website: 'https://manila.gov.ph/barangay/san-antonio',
-    description: 'Local barangay hall for community assistance',
-    created_at: new Date().toISOString(),
-    updated_at: new Date().toISOString()
-  }
-];
+// No default stations - will fetch from Firebase
+const DEFAULT_STATIONS: Station[] = [];
 
 interface EmergencyContactsProps {
   userLocation?: { lat: number; lng: number } | null;
@@ -121,14 +52,14 @@ export function EmergencyContacts({ userLocation, variant = 'display' }: Emergen
           setStations(JSON.parse(cachedStations));
           console.log('✅ Loaded stations from local cache');
         } else {
-          // No cached data, use defaults
-          setStations(DEFAULT_STATIONS);
-          console.log('ℹ️ Using default stations (no cache available)');
+          // No cached data, use empty array
+          setStations([]);
+          console.log('ℹ️ No stations available (no cache or API response)');
         }
       } catch (cacheError) {
         console.error('Error loading from cache:', cacheError);
-        // Use default data
-        setStations(DEFAULT_STATIONS);
+        // Use empty array
+        setStations([]);
       }
     } finally {
       setLoading(false);

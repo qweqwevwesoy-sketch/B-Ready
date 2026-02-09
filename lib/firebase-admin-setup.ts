@@ -1,5 +1,6 @@
 import { initializeApp, cert, getApps } from 'firebase-admin/app';
 import { getAuth } from 'firebase-admin/auth';
+import { getFirestore } from 'firebase-admin/firestore';
 
 /**
  * Firebase Admin Setup Utility
@@ -23,6 +24,7 @@ export class FirebaseAdminManager {
   private static instance: FirebaseAdminManager;
   private app: any = null;
   private auth: any = null;
+  private db: any = null;
 
   private constructor() {}
 
@@ -79,6 +81,7 @@ export class FirebaseAdminManager {
       }
 
       this.auth = getAuth(this.app);
+      this.db = getFirestore(this.app);
       console.log('✅ Firebase Admin SDK initialized successfully');
     } catch (error) {
       console.error('❌ Firebase Admin initialization failed:', error);
@@ -94,6 +97,16 @@ export class FirebaseAdminManager {
       throw new Error('Firebase Admin not initialized. Call initialize() first.');
     }
     return this.auth;
+  }
+
+  /**
+   * Get Firebase Admin Firestore instance
+   */
+  getFirestoreInstance(): any {
+    if (!this.db) {
+      throw new Error('Firebase Admin not initialized. Call initialize() first.');
+    }
+    return this.db;
   }
 
   /**
