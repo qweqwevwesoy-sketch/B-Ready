@@ -1,10 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
 import type { Station } from '@/types';
 
-console.log('🚀 Stations API route loaded - REST version');
+console.log('🚀 Stations API route loaded - Mock version');
 
 // Mock data for stations (temporary solution)
-const mockStations: Station[] = [
+let mockStations: Station[] = [
   {
     id: 'station_1',
     name: 'Test Fire Station',
@@ -19,7 +19,19 @@ const mockStations: Station[] = [
     email: 'test@example.com',
     website: 'https://example.com',
     description: 'Test fire station for emergency response',
-    emergencyContacts: [],
+    emergencyContacts: [
+      {
+        id: 'contact_1',
+        name: 'Fire Chief',
+        type: 'fire',
+        phone: '123-456-7890',
+        address: 'Test Address',
+        location: { lat: 14.5995, lng: 120.9842 },
+        description: 'Fire chief contact',
+        created_at: '2026-02-09T17:13:31.187Z',
+        updated_at: '2026-02-09T17:13:31.188Z'
+      }
+    ],
     created_at: '2026-02-09T17:13:31.187Z',
     updated_at: '2026-02-09T17:13:31.188Z'
   },
@@ -38,7 +50,19 @@ const mockStations: Station[] = [
     website: 'https://police.example.com',
     description: 'Test police station for emergency response',
     created_by: 'test_user_123',
-    emergencyContacts: [],
+    emergencyContacts: [
+      {
+        id: 'contact_2',
+        name: 'Police Chief',
+        type: 'police',
+        phone: '987-654-3210',
+        address: 'Test Police Address',
+        location: { lat: 14.6, lng: 120.985 },
+        description: 'Police chief contact',
+        created_at: '2026-02-09T17:13:31.187Z',
+        updated_at: '2026-02-09T17:13:31.188Z'
+      }
+    ],
     created_at: '2026-02-09T17:36:35.615Z',
     updated_at: '2026-02-09T17:36:35.615Z'
   }
@@ -46,7 +70,7 @@ const mockStations: Station[] = [
 
 // GET /api/stations - Get all stations
 export async function GET(request: NextRequest) {
-  console.log('📡 GET /api/stations called - REST version');
+  console.log('📡 GET /api/stations called - Mock version');
 
   const { searchParams } = new URL(request.url);
   const stationId = searchParams.get('id');
@@ -87,7 +111,7 @@ export async function GET(request: NextRequest) {
 
 // POST /api/stations - Add a new station (admin only)
 export async function POST(request: NextRequest) {
-  console.log('📡 POST /api/stations called - REST version');
+  console.log('📡 POST /api/stations called - Mock version');
 
   try {
     const { name, lat, lng, address, phone, email, website, description, created_by } = await request.json();
@@ -139,7 +163,7 @@ export async function POST(request: NextRequest) {
 
 // PUT /api/stations - Update a station (admin only)
 export async function PUT(request: NextRequest) {
-  console.log('📡 PUT /api/stations called - REST version');
+  console.log('📡 PUT /api/stations called - Mock version');
 
   try {
     const { id, name, type, location, address, capacity, currentLoad, status, contact, phone, email, website, description } = await request.json();
@@ -193,7 +217,7 @@ export async function PUT(request: NextRequest) {
 
 // DELETE /api/stations?id=station_id - Delete a station (admin only)
 export async function DELETE(request: NextRequest) {
-  console.log('📡 DELETE /api/stations called - REST version');
+  console.log('📡 DELETE /api/stations called - Mock version');
 
   try {
     const { searchParams } = new URL(request.url);
