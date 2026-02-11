@@ -32,6 +32,13 @@ export default function ProfilePage() {
   const [currentLocation, setCurrentLocation] = useState<{ lat: number; lng: number } | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
+  // Define user properties with null checks
+  const userFirstName = user ? user.firstName : '';
+  const userLastName = user ? user.lastName : '';
+  const userRole = user ? user.role : '';
+  const userEmail = user ? user.email : '';
+  const userIsAnonymous = user ? user.isAnonymous : false;
+
   useEffect(() => {
     if (user) {
       setFormData({
@@ -129,47 +136,47 @@ export default function ProfilePage() {
           <div className="bg-primary/10 p-6 rounded-xl mb-8 border-l-4 border-primary">
             <div className="flex items-center gap-4">
               <div className="relative">
-                {user.profilePictureUrl ? (
-                  <>
+                {user && user.profilePictureUrl ? (
+                  <div>
                     {/* eslint-disable-next-line @next/next/no-img-element */}
                     <img
                       src={user.profilePictureUrl}
                       alt="Profile"
                       className="w-20 h-20 rounded-full object-cover border-2 border-white"
-        onError={(e) => {
-          // If Firebase image fails to load due to CORS, try localStorage fallback
-          if (typeof window !== 'undefined') {
-            const localKey = `profile_pic_${user.uid}`;
-            const localPicture = localStorage.getItem(localKey);
-            if (localPicture && localPicture !== user.profilePictureUrl) {
-              (e.target as HTMLImageElement).src = localPicture;
-            } else {
-              // Hide the image and show initials instead
-              (e.target as HTMLImageElement).style.display = 'none';
-              const parent = (e.target as HTMLElement).parentElement;
-              if (parent) {
-                const initialsDiv = parent.querySelector('.initials-fallback') as HTMLElement;
-                if (initialsDiv) initialsDiv.style.display = 'flex';
-              }
-            }
-          } else {
-            // On server side, just hide the image and show initials
-            (e.target as HTMLImageElement).style.display = 'none';
-            const parent = (e.target as HTMLElement).parentElement;
-            if (parent) {
-              const initialsDiv = parent.querySelector('.initials-fallback') as HTMLElement;
-              if (initialsDiv) initialsDiv.style.display = 'flex';
-            }
-          }
-        }}
+                      onError={(e) => {
+                        // If Firebase image fails to load due to CORS, try localStorage fallback
+                        if (typeof window !== 'undefined') {
+                          const localKey = `profile_pic_${user.uid}`;
+                          const localPicture = localStorage.getItem(localKey);
+                          if (localPicture && localPicture !== user.profilePictureUrl) {
+                            (e.target as HTMLImageElement).src = localPicture;
+                          } else {
+                            // Hide the image and show initials instead
+                            (e.target as HTMLImageElement).style.display = 'none';
+                            const parent = (e.target as HTMLElement).parentElement;
+                            if (parent) {
+                              const initialsDiv = parent.querySelector('.initials-fallback') as HTMLElement;
+                              if (initialsDiv) initialsDiv.style.display = 'flex';
+                            }
+                          }
+                        } else {
+                          // On server side, just hide the image and show initials
+                          (e.target as HTMLImageElement).style.display = 'none';
+                          const parent = (e.target as HTMLElement).parentElement;
+                          if (parent) {
+                            const initialsDiv = parent.querySelector('.initials-fallback') as HTMLElement;
+                            if (initialsDiv) initialsDiv.style.display = 'flex';
+                          }
+                        }
+                      }}
                     />
                     <div className="w-20 h-20 rounded-full bg-gradient-to-br from-primary to-primary-dark text-white flex items-center justify-center font-bold text-2xl initials-fallback hidden">
-                      {user.firstName.charAt(0)}{user.lastName.charAt(0)}
+                      {userFirstName.charAt(0)}{userLastName.charAt(0)}
                     </div>
-                  </>
+                  </div>
                 ) : (
                   <div className="w-20 h-20 rounded-full bg-gradient-to-br from-primary to-primary-dark text-white flex items-center justify-center font-bold text-2xl">
-                    {user.firstName.charAt(0)}{user.lastName.charAt(0)}
+                    {userFirstName.charAt(0)}{userLastName.charAt(0)}
                   </div>
                 )}
                 <button
@@ -189,8 +196,8 @@ export default function ProfilePage() {
                 />
               </div>
               <div>
-                <h2 className="text-2xl font-bold mb-1">{user.firstName} {user.lastName}</h2>
-                <p className="text-gray-600">{user.role === 'admin' ? 'Administrator' : 'Resident'}</p>
+                <h2 className="text-2xl font-bold mb-1">{userFirstName} {userLastName}</h2>
+                <p className="text-gray-600">{userRole === 'admin' ? 'Administrator' : 'Resident'}</p>
                 {uploadingPicture && (
                   <p className="text-sm text-primary mt-1">Uploading profile picture...</p>
                 )}
@@ -226,7 +233,7 @@ export default function ProfilePage() {
               <label className="block text-sm font-semibold mb-2">Email Address</label>
               <input
                 type="email"
-                value={user.email}
+                value={userEmail}
                 disabled
                 className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg bg-gray-100"
               />
@@ -254,32 +261,35 @@ export default function ProfilePage() {
             <div>
               <label className="block text-sm font-semibold mb-2">Phone Number</label>
               <input
-                type="tel"
-                value={formData.phone}
-                onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-                className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:border-primary focus:outline-none"
+                type="checkbox"
+                checked={userIsAnonymous || false}
+                onChange={async (e) => {
+                  const isAnonymous = e.target.checked;
+                  if (isAnonymous) {
+                    const confirmed = confirm(
+                      'Anonymous Mode will hide your name and profile picture from other residents in reports and chats. ' +
+                      'Only administrators will be able to see your identity. Continue?'
+                    );
+                    if (!confirmed) {
+                      e.target.checked = false;
+                      return;
+                    }
+                  }
+                  try {
+                    await updateProfile({ isAnonymous });
+                    notificationManager.success(
+                      isAnonymous ? 'Anonymous mode enabled' : 'Anonymous mode disabled'
+                    );
+                  } catch (error) {
+                    const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
+                    notificationManager.error('Error updating anonymous setting: ' + errorMessage);
+                  }
+                }}
+                className="sr-only"
               />
-            </div>
-
-            <div>
-              <label className="block text-sm font-semibold mb-2">Birthdate</label>
-              <input
-                type="date"
-                value={formData.birthdate}
-                onChange={(e) => setFormData({ ...formData, birthdate: e.target.value })}
-                className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:border-primary focus:outline-none"
-                required
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm font-semibold mb-2">Account Type</label>
-              <input
-                type="text"
-                value={user.role === 'admin' ? 'Administrator' : 'Resident'}
-                disabled
-                className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg bg-gray-100"
-              />
+              <div className={`w-11 h-6 rounded-full transition-colors ${userIsAnonymous ? 'bg-primary' : 'bg-gray-300'}`}>
+                <div className="dot absolute left-1 top-1 bg-white w-4 h-4 rounded-full transition-transform duration-200 ease-in-out" style={{ transform: userIsAnonymous ? 'translateX(20px)' : 'translateX(0)' }}></div>
+              </div>
             </div>
 
             {user.role === 'admin' && (
@@ -328,7 +338,7 @@ export default function ProfilePage() {
             </p>
           </div>
 
-            <div className="mt-8 pt-8 border-t border-gray-200">
+          <div className="mt-8 pt-8 border-t border-gray-200">
             <h3 className="text-xl font-bold mb-4">Account Security</h3>
 
             <div className="bg-gray-50 p-6 rounded-xl mb-6">

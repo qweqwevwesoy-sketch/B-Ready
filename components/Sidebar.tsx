@@ -14,7 +14,7 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
   const router = useRouter();
   const pathname = usePathname();
   const { user, logout } = useAuth();
-  const [isOffline, setIsOffline] = useState(() => !navigator.onLine);
+  const [isOffline, setIsOffline] = useState(() => typeof window !== 'undefined' && !navigator.onLine);
 
   useEffect(() => {
     if (isOpen) {
@@ -39,6 +39,40 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
       window.removeEventListener('offline', handleOffline);
     };
   }, []);
+
+  // Handle case when user is null
+  if (!user) {
+    return (
+      <>
+        {isOpen && (
+          <div
+            className="fixed inset-0 bg-black/50 z-40 backdrop-blur-sm"
+            onClick={onClose}
+          />
+        )}
+        <aside
+          className={`fixed top-0 right-0 w-80 h-full bg-gradient-to-b from-primary to-primary-dark text-white backdrop-blur-lg shadow-xl z-50 transform transition-transform duration-300 ease-in-out ${
+            isOpen ? 'translate-x-0' : 'translate-x-full'
+          } flex flex-col`}
+        >
+          <div className="p-6">
+            <div className="flex justify-between items-center mb-6">
+              <h2 className="text-xl font-bold">Menu</h2>
+              <button
+                onClick={onClose}
+                className="text-gray-500 hover:text-gray-700 text-2xl"
+              >
+                ×
+              </button>
+            </div>
+            <div className="text-center py-8">
+              <p className="text-gray-300">Please log in to access the menu</p>
+            </div>
+          </div>
+        </aside>
+      </>
+    );
+  }
 
 const handleNavigation = (path: string) => {
   if (!user) return;
