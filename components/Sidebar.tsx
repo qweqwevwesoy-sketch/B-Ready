@@ -53,11 +53,6 @@ const handleNavigation = (path: string) => {
     onClose();
   };
 
-if (!user) {
-  return (
-    <div className="fixed inset-0 bg-black/50 z-40 backdrop-blur-sm" />
-  );
-}
 
   // When offline, only show Safety Tips
   const mainNavItems = isOffline ? [
