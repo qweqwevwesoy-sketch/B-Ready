@@ -275,7 +275,7 @@ export function ColumnSearch({
                   { value: 'all', label: 'All Statuses', color: 'bg-gray-200' },
                   { value: 'pending', label: 'Pending', color: 'bg-yellow-200' },
                   { value: 'current', label: 'Current', color: 'bg-blue-200' },
-                  { value: 'approved', label: 'Approved', color: 'bg-green-200' }
+                  { value: 'approved', label: 'Completed', color: 'bg-green-200' }
                 ].map((option) => (
                   <label key={option.value} className="flex items-center gap-2 p-2 hover:bg-gray-50 rounded cursor-pointer">
                     <input

@@ -70,7 +70,7 @@ export function ReportCard({
 
     const statusLabels = {
       pending: 'Pending',
-      approved: 'Approved'  ,
+    approved: 'Completed',
       current: 'Active',
       rejected: 'Rejected',
     };

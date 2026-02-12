@@ -98,7 +98,7 @@ export default function StatusUpdatePage() {
     currentFilters
   );
 
-  const filteredApprovedReports = filterReports(
+  const filteredCompletedReports = filterReports(
     reports.filter((r) => r.status === 'approved'),
     approvedSearchTerm,
     approvedFilters
@@ -246,11 +246,11 @@ export default function StatusUpdatePage() {
               </div>
             </div>
 
-            {/* Approved Reports */}
+            {/* Completed Reports */}
             <div className="bg-gray-50 rounded-xl overflow-hidden border border-gray-200 flex flex-col h-[70vh]">
               <div className="bg-gradient-to-r from-custom-yellow-500 to-custom-yellow-600 text-white p-4 text-center font-semibold">
-                ✅ Approved Reports
-                <div className="text-sm opacity-90 mt-1">{filteredApprovedReports.length} reports</div>
+                ✅ Completed Reports
+                <div className="text-sm opacity-90 mt-1">{filteredCompletedReports.length} reports</div>
               </div>
               <div className="p-3 border-b border-gray-200">
                 <ColumnSearch
@@ -258,12 +258,12 @@ export default function StatusUpdatePage() {
                     setApprovedSearchTerm(searchTerm);
                     setApprovedFilters(filters);
                   }}
-                  placeholder="Search approved reports..."
+                  placeholder="Search completed reports..."
                 />
               </div>
               <div className="flex-1 overflow-y-auto p-4 space-y-4">
-                {filteredApprovedReports.length > 0 ? (
-                  filteredApprovedReports.map((report) => (
+                {filteredCompletedReports.length > 0 ? (
+                  filteredCompletedReports.map((report) => (
                     <div key={report.id} className="bg-white rounded-lg p-4 shadow-md">
                       <ReportCard
                         report={report}
@@ -306,7 +306,7 @@ export default function StatusUpdatePage() {
                   ))
                 ) : (
                   <div className="text-center text-gray-500 py-8">
-                    <p>No approved reports</p>
+                <p>No completed reports</p>
                   </div>
                 )}
               </div>

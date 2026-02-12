@@ -79,7 +79,7 @@ function DashboardContent({ searchParams }: { searchParams: URLSearchParams }) {
   const isOffline = useOfflineStatus();
 
   // Filtered reports for each column
-  const filteredApprovedReports = filterReports(
+  const filteredCompletedReports = filterReports(
     reports.filter((r) => r.status === 'approved'),
     approvedSearchTerm,
     approvedFilters
@@ -105,7 +105,7 @@ function DashboardContent({ searchParams }: { searchParams: URLSearchParams }) {
     const logReportsState = () => {
       console.log('📡 Dashboard reports state:', {
         totalReports: reports.length,
-        approvedReports: filteredApprovedReports.length,
+        completedReports: filteredCompletedReports.length,
         currentReports: filteredCurrentReports.length,
         thirdColumnReports: filteredThirdColumnReports.length,
         connected,
@@ -117,7 +117,7 @@ function DashboardContent({ searchParams }: { searchParams: URLSearchParams }) {
     // Only log on significant changes, not on every render
     const timeoutId = setTimeout(logReportsState, 100);
     return () => clearTimeout(timeoutId);
-  }, [reports.length, filteredApprovedReports.length, filteredCurrentReports.length, filteredThirdColumnReports.length, connected, socketLoading, socketError]);
+  }, [reports.length, filteredCompletedReports.length, filteredCurrentReports.length, filteredThirdColumnReports.length, connected, socketLoading, socketError]);
 
   // Unified offline/online functionality - dashboard works in both modes
   useEffect(() => {
@@ -386,11 +386,11 @@ const timestamp = new Date().toISOString();
           </div>
 
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            {/* Approved Reports Column */}
+            {/* Completed Reports Column */}
             <div className="bg-gray-50 rounded-xl overflow-hidden border border-gray-200 flex flex-col h-[70vh]">
               <div className="bg-custom-yellow-gradient bg-gradient-to-r from-custom-yellow-500 to-custom-yellow-600 text-white p-4 text-center font-semibold">
-                ✅ Approved Reports
-                <div className="text-sm opacity-90 mt-1">{filteredApprovedReports.length} reports</div>
+                ✅ Completed Reports
+                <div className="text-sm opacity-90 mt-1">{filteredCompletedReports.length} reports</div>
               </div>
               <div className="p-3 border-b border-gray-200">
                 <ColumnSearch
@@ -398,12 +398,12 @@ const timestamp = new Date().toISOString();
                     setApprovedSearchTerm(searchTerm);
                     setApprovedFilters(filters);
                   }}
-                  placeholder="Search approved reports..."
+                  placeholder="Search completed reports..."
                 />
               </div>
               <div className="flex-1 overflow-y-auto p-4 space-y-4">
-                {filteredApprovedReports.length > 0 ? (
-                  filteredApprovedReports.map((report) => (
+                {filteredCompletedReports.length > 0 ? (
+                  filteredCompletedReports.map((report) => (
                     <ReportCard
                       key={report.id}
                       report={report}
@@ -413,8 +413,8 @@ const timestamp = new Date().toISOString();
                   ))
                 ) : (
                   <div className="text-center text-gray-500 py-8">
-                    <p>No approved reports yet</p>
-                    <p className="text-sm mt-2">Reports approved by officials will appear here</p>
+                <p>No completed reports yet</p>
+                    <p className="text-sm mt-2">Completed reports will appear here</p>
                   </div>
                 )}
               </div>

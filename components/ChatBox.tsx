@@ -1237,7 +1237,7 @@ export function ChatBox({ reportId, category, onClose, onSendMessage, onSendImag
                       'bg-green-100 text-green-800'
                     ) : 'bg-green-100 text-green-800'
                   }`}>
-                    {currentReport?.status === 'approved' ? 'Approved' :
+                    {currentReport?.status === 'approved' ? 'Completed' :
                      currentReport?.status === 'current' ? 'Active' :
                      currentReport?.status === 'pending' ? 'Pending' :
                      currentReport?.status === 'rejected' ? 'Rejected' :
