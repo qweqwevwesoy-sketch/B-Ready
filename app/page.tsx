@@ -87,7 +87,7 @@ export default function LandingPage() {
           </p>
           <div className="flex gap-4 justify-center flex-wrap">
             <button
-              onClick={() => router.push('/login')}
+              onClick={() => router.push('/signup?mode=login')}
               className="px-8 py-4 bg-white text-primary rounded-xl font-semibold text-lg hover:bg-gray-100 transition-colors shadow-lg"
             >
               🚀 Get Started
@@ -309,7 +309,7 @@ export default function LandingPage() {
             Join thousands of residents using B-READY for emergency reporting and response.
           </p>
           <button
-            onClick={() => router.push('/login')}
+            onClick={() => router.push('/signup?mode=login')}
             className="px-10 py-4 bg-white text-primary rounded-xl font-semibold text-lg hover:bg-gray-100 transition-colors shadow-lg"
           >
             🚨 Start Protecting Your Community

@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, Suspense } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import dynamic from 'next/dynamic';
 import { useAuth } from '@/contexts/AuthContext';
 import { Header } from '@/components/Header';
@@ -23,10 +23,14 @@ const MapPicker = dynamic(() => import('@/components/MapPicker').then(mod => ({ 
     </div>
   )
 });
- 
-export default function SignupPage() {
+
+function SignupPageContent() {
   const router = useRouter();
-  const { signup } = useAuth();
+  const searchParams = useSearchParams();
+  const mode = searchParams.get('mode'); // 'login' or 'create'
+  const isLoginMode = mode === 'login';
+  
+  const { signup, login } = useAuth();
   const [accountType, setAccountType] = useState<UserRole | null>(null);
   const [showMapPicker, setShowMapPicker] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
@@ -42,13 +46,22 @@ export default function SignupPage() {
     birthdate: '',
     employeeId: '',
   });
+  const [loginData, setLoginData] = useState({
+    email: '',
+    password: '',
+  });
   const [loading, setLoading] = useState(false);
 
   const handleAccountTypeSelect = (type: UserRole) => {
     setAccountType(type);
+    
+    // If in login mode, after selecting role, show login form
+    if (isLoginMode) {
+      // Stay on same page but will show login form now
+    }
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSignupSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
     if (!accountType) {
@@ -108,6 +121,48 @@ export default function SignupPage() {
     }
   };
 
+  const handleLoginSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (!loginData.email || !loginData.password) {
+      notificationManager.error('Please enter email and password');
+      return;
+    }
+
+    setLoading(true);
+    try {
+      await login(loginData.email, loginData.password);
+      notificationManager.success('Login successful!');
+      router.push('/dashboard');
+    } catch (error: unknown) {
+      let errorMessage = 'Login failed. ';
+      const firebaseError = error as { code?: string; message?: string };
+      switch (firebaseError.code) {
+        case 'auth/user-not-found':
+          errorMessage += 'No account found with this email.';
+          break;
+        case 'auth/wrong-password':
+          errorMessage += 'Incorrect password.';
+          break;
+        case 'auth/invalid-email':
+          errorMessage += 'Invalid email address.';
+          break;
+        case 'auth/user-disabled':
+          errorMessage += 'This account has been disabled.';
+          break;
+        default:
+          errorMessage += firebaseError.message || 'Unknown error occurred';
+      }
+      notificationManager.error(errorMessage);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Determine what to show based on mode and accountType
+  // Show login form if in login mode and account type is selected
+  const showLoginForm = isLoginMode && accountType;
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-200">
       <Header />
@@ -116,11 +171,81 @@ export default function SignupPage() {
         <div className="bg-white/95 backdrop-blur-lg rounded-2xl p-8 shadow-xl">
           <div className="text-center mb-8">
             <div className="text-5xl mb-4">🚨</div>
-            <h1 className="text-3xl font-bold mb-2">Create Account</h1>
-            <p className="text-gray-600">Choose your account type</p>
+            <h1 className="text-3xl font-bold mb-2">
+              {showLoginForm ? 'Login to B-READY' : (isLoginMode ? 'Login Account' : 'Create Account')}
+            </h1>
+            <p className="text-gray-600">
+              {showLoginForm ? 'Enter your credentials to continue' : 'Choose your account type'}
+            </p>
           </div>
 
-          {!accountType ? (
+          {/* Show login form for login mode after role selection */}
+          {showLoginForm ? (
+            <form onSubmit={handleLoginSubmit} className="space-y-6">
+              <div>
+                <label className="block text-sm font-semibold mb-2">Email Address</label>
+                <input
+                  type="email"
+                  value={loginData.email}
+                  onChange={(e) => setLoginData({ ...loginData, email: e.target.value })}
+                  className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20"
+                  placeholder="your@email.com"
+                  required
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-semibold mb-2">Password</label>
+                <div className="relative">
+                  <input
+                    type={showPassword ? "text" : "password"}
+                    value={loginData.password}
+                    onChange={(e) => setLoginData({ ...loginData, password: e.target.value })}
+                    className="w-full px-4 py-3 pr-12 border-2 border-gray-300 rounded-lg focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20"
+                    placeholder="Enter your password"
+                    required
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500 hover:text-gray-700 focus:outline-none"
+                  >
+                    {showPassword ? (
+                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.878 9.878L3 3m6.878 6.878L21 21" />
+                      </svg>
+                    ) : (
+                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                      </svg>
+                    )}
+                  </button>
+                </div>
+                <div className="mt-2 text-right">
+                  <Link href="/forgot-password" className="text-sm text-primary hover:underline">
+                    Forgot Password?
+                  </Link>
+                </div>
+              </div>
+
+              <button
+                type="submit"
+                disabled={loading}
+                className="w-full py-3 bg-gradient-to-r from-primary to-primary-dark text-white rounded-lg font-semibold hover:opacity-90 transition-opacity disabled:opacity-50"
+              >
+                {loading ? 'Logging in...' : 'Login'}
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setAccountType(null)}
+                className="w-full py-2 text-primary font-semibold"
+              >
+                ← Back to account type selection
+              </button>
+            </form>
+          ) : !accountType ? (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
               <button
                 onClick={() => handleAccountTypeSelect('resident')}
@@ -140,7 +265,7 @@ export default function SignupPage() {
               </button>
             </div>
           ) : (
-            <form onSubmit={handleSubmit} className="space-y-4">
+            <form onSubmit={handleSignupSubmit} className="space-y-4">
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-semibold mb-2">First Name</label>
@@ -306,12 +431,15 @@ export default function SignupPage() {
             </form>
           )}
 
-          <p className="text-center text-gray-600 mt-6">
-            Already have an account?{' '}
-            <Link href="/login" className="text-primary font-semibold hover:underline">
-              Login here
-            </Link>
-          </p>
+          {/* Only show "Already have an account?" link when NOT in login mode */}
+          {!isLoginMode && (
+            <p className="text-center text-gray-600 mt-6">
+              Already have an account?{' '}
+              <Link href="/login" className="text-primary font-semibold hover:underline">
+                Login here
+              </Link>
+            </p>
+          )}
         </div>
       </div>
 
@@ -325,5 +453,24 @@ export default function SignupPage() {
         />
       )}
     </div>
+  );
+}
+
+// Wrapper component to handle Suspense for useSearchParams
+export default function SignupPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-200">
+        <Header />
+        <div className="flex items-center justify-center min-h-screen">
+          <div className="text-center">
+            <div className="text-4xl mb-4">⏳</div>
+            <p>Loading...</p>
+          </div>
+        </div>
+      </div>
+    }>
+      <SignupPageContent />
+    </Suspense>
   );
 }

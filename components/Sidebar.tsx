@@ -194,6 +194,18 @@ const handleNavigation = (path: string) => {
 
         {/* Bottom section - fixed to bottom */}
         <div className="flex-shrink-0 mt-auto p-6 border-t border-gray-200">
+          {user.role === 'admin' && (
+            <button
+              onClick={() => {
+                router.push('/signup?mode=create');
+                onClose();
+              }}
+              className="w-full text-left p-4 rounded-lg transition-all flex items-center gap-3 hover:bg-white/10 text-white mb-2"
+            >
+              <span className="text-xl">➕</span>
+              <span>Create Account</span>
+            </button>
+          )}
           <button
             onClick={handleLogout}
             className="w-full text-left p-4 rounded-lg transition-all flex items-center gap-3 hover:bg-white/10 text-red-500"
