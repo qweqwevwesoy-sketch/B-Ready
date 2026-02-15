@@ -431,15 +431,6 @@ function SignupPageContent() {
             </form>
           )}
 
-          {/* Only show "Already have an account?" link when NOT in login mode */}
-          {!isLoginMode && (
-            <p className="text-center text-gray-600 mt-6">
-              Already have an account?{' '}
-              <Link href="/login" className="text-primary font-semibold hover:underline">
-                Login here
-              </Link>
-            </p>
-          )}
         </div>
       </div>
 
