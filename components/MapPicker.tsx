@@ -266,7 +266,7 @@ export function MapPicker({ onSelect, onClose }: MapPickerProps) {
         <div
           ref={mapContainerRef}
           className="w-full h-96 rounded-lg overflow-hidden mb-4"
-          style={{ minHeight: '400px' }}
+          style={{ minHeight: '400px', position: 'relative' }}
         />
 
         {/* Location Status */}
