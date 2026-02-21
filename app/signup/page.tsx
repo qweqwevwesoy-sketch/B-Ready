@@ -378,21 +378,23 @@ function SignupPageContent() {
 
               <div>
                 <label className="block text-sm font-semibold mb-2">Address</label>
-                <div className="flex gap-2 items-stretch">
+                <div className="relative">
                   <input
                     type="text"
                     value={formData.address}
                     readOnly
-                    className="flex-1 px-4 py-3 border-2 border-gray-300 rounded-lg bg-gray-50 focus:outline-none"
+                    className="w-full px-4 py-3 pr-12 border-2 border-gray-300 rounded-lg bg-gray-50 focus:outline-none"
                     placeholder="Select your location"
                   />
                   <button
                     type="button"
                     onClick={() => setShowMapPicker(true)}
-                    className="px-4 py-3 bg-primary text-white rounded-lg hover:opacity-90 whitespace-nowrap flex items-center gap-2"
+                    className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500 hover:text-gray-700 focus:outline-none"
                   >
-                    <span>📍</span>
-                    <span>Map</span>
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                    </svg>
                   </button>
                 </div>
               </div>
