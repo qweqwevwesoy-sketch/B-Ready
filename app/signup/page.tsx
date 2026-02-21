@@ -378,20 +378,21 @@ function SignupPageContent() {
 
               <div>
                 <label className="block text-sm font-semibold mb-2">Address</label>
-                <div className="flex gap-2">
+                <div className="flex gap-2 items-stretch">
                   <input
                     type="text"
                     value={formData.address}
                     readOnly
-                    className="flex-1 px-4 py-3 border-2 border-gray-300 rounded-lg bg-gray-50"
+                    className="flex-1 px-4 py-3 border-2 border-gray-300 rounded-lg bg-gray-50 focus:outline-none"
                     placeholder="Select your location"
                   />
                   <button
                     type="button"
                     onClick={() => setShowMapPicker(true)}
-                    className="px-4 py-3 bg-primary text-white rounded-lg hover:opacity-90"
+                    className="px-4 py-3 bg-primary text-white rounded-lg hover:opacity-90 whitespace-nowrap flex items-center gap-2"
                   >
-                    📍 Map
+                    <span>📍</span>
+                    <span>Map</span>
                   </button>
                 </div>
               </div>
