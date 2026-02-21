@@ -1,11 +1,12 @@
 'use client';
 
-import { useState, Suspense } from 'react';
+import { useState, Suspense, useEffect } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import dynamic from 'next/dynamic';
 import { useAuth } from '@/contexts/AuthContext';
 import { Header } from '@/components/Header';
 import { notificationManager } from '@/components/NotificationManager';
+import { getCurrentLocation, reverseGeocode } from '@/lib/utils';
 import Link from 'next/link';
 import type { UserRole } from '@/types';
 
@@ -162,6 +163,22 @@ function SignupPageContent() {
   // Determine what to show based on mode and accountType
   // Show login form if in login mode and account type is selected
   const showLoginForm = isLoginMode && accountType;
+
+  // Auto-detect location when signup form is shown
+  useEffect(() => {
+    if (accountType && !isLoginMode && !formData.address) {
+      const detectLocation = async () => {
+        try {
+          const location = await getCurrentLocation();
+          const address = await reverseGeocode(location.lat, location.lng);
+          setFormData(prev => ({ ...prev, address }));
+        } catch (error) {
+          console.log('Could not auto-detect location:', error);
+        }
+      };
+      detectLocation();
+    }
+  }, [accountType, isLoginMode, formData.address]);
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-200">

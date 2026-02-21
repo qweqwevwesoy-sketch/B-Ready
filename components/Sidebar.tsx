@@ -115,8 +115,8 @@ const handleNavigation = (path: string) => {
           isOpen ? 'translate-x-0' : 'translate-x-full'
         } flex flex-col`}
       >
-        {/* Top section - fixed to top */}
-        <div className="flex-shrink-0">
+        {/* Top section - scrollable */}
+        <div className="flex-1 overflow-y-auto">
           <div className="p-6">
             <div className="flex justify-between items-center mb-6">
               <h2 className="text-xl font-bold">Menu</h2>
