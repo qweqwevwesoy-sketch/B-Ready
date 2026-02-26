@@ -377,10 +377,12 @@ io.on('connection', (socket) => {
     console.log('💬 New chat message for report:', messageData.reportId);
 
     const { reportId } = messageData;
+    // Use the timestamp provided by the client to avoid duplicate messages due to timestamp mismatch
+    // Only generate new timestamp if client didn't provide one
     const message = {
       ...messageData,
-      timestamp: new Date().toISOString(),
-      id: `msg_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
+      timestamp: messageData.timestamp || new Date().toISOString(),
+      id: messageData.id || `msg_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
     };
 
     // Store the message
