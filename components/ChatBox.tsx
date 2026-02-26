@@ -610,33 +610,52 @@ export function ChatBox({ reportId, category, onClose, onSendMessage, onSendImag
     fileInput.click();
   };
 
+  // Use a ref to track if we've already processed this submission
+  const isSubmittingRef = useRef(false);
+
   const handleSend = (e: React.FormEvent) => {
     e.preventDefault();
+    
+    // Prevent duplicate submissions
+    if (isSubmittingRef.current) {
+      return;
+    }
+    
     if (message.trim()) {
-      // Handle anonymous messages
-      if (isAnonymous && selectedCategory) {
-        const newMessage = {
-          text: message,
-          sender: 'You (Anonymous)',
-          time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-          type: 'sent' as const,
-        };
-        setLocalMessages(prev => [...prev, newMessage]);
+      // Mark as submitting to prevent double submission
+      isSubmittingRef.current = true;
+      
+      try {
+        // Handle anonymous messages
+        if (isAnonymous && selectedCategory) {
+          const newMessage = {
+            text: message,
+            sender: 'You (Anonymous)',
+            time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+            type: 'sent' as const,
+          };
+          setLocalMessages(prev => [...prev, newMessage]);
 
-        // Store offline message for anonymous report
-        const reportIdToUse = anonymousReportId || `anonymous_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-        storeOfflineMessage({
-          reportId: reportIdToUse,
-          text: message,
-          userName: 'Anonymous User',
-          userRole: 'user',
-          timestamp: new Date().toISOString(),
-        });
-      } else {
-        // Handle authenticated user messages
-        onSendMessage(message);
+          // Store offline message for anonymous report
+          const reportIdToUse = anonymousReportId || `anonymous_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+          storeOfflineMessage({
+            reportId: reportIdToUse,
+            text: message,
+            userName: 'Anonymous User',
+            userRole: 'user',
+            timestamp: new Date().toISOString(),
+          });
+        } else {
+          // Handle authenticated user messages
+          onSendMessage(message);
+        }
+        setMessage('');
+      } finally {
+        // Reset the submitting flag after a short delay to allow for next submission
+        setTimeout(() => {
+          isSubmittingRef.current = false;
+        }, 100);
       }
-      setMessage('');
     }
   };
 

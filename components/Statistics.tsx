@@ -24,23 +24,26 @@ interface ZoomContext {
 export function Statistics({ reports }: StatisticsProps) {
   const [zoomContext, setZoomContext] = useState<ZoomContext>({ level: 'years' });
 
-  // Calculate statistics
-  const totalReports = reports.length;
-  const dailyReports = reports.filter(r => 
+  // Filter out rejected reports from statistics
+  const activeReports = reports.filter(r => r.status !== 'rejected');
+
+  // Calculate statistics (excluding rejected reports)
+  const totalReports = activeReports.length;
+  const dailyReports = activeReports.filter(r => 
     new Date(r.timestamp) >= new Date(new Date().setHours(0, 0, 0, 0))
   ).length;
-  const weeklyReports = reports.filter(r => 
-    new Date(r.timestamp) >= new Date(new Date().setDate(new Date().getDate() - new Date().getDay()))
+  const weeklyReports = activeReports.filter(r => 
+    new Date(r.timestamp) >= new Date(new Date().getDate(new Date().getDate() - new Date().getDay()))
   ).length;
 
-  // Generate sentence summary
+  // Generate sentence summary (using activeReports to exclude rejected)
   const generateSummary = () => {
     const totalText = totalReports === 1 ? '1 report' : `${totalReports} reports`;
     const dailyText = dailyReports === 1 ? '1 report today' : `${dailyReports} reports today`;
     const weeklyText = weeklyReports === 1 ? '1 report this week' : `${weeklyReports} reports this week`;
-    const monthlyText = reports.filter(r => new Date(r.timestamp) >= new Date(new Date().getFullYear(), new Date().getMonth(), 1)).length;
+    const monthlyText = activeReports.filter(r => new Date(r.timestamp) >= new Date(new Date().getFullYear(), new Date().getMonth(), 1)).length;
     const monthlyReportsText = monthlyText === 1 ? '1 report this month' : `${monthlyText} reports this month`;
-    const yearlyText = reports.filter(r => new Date(r.timestamp) >= new Date(new Date().getFullYear(), 0, 1)).length;
+    const yearlyText = activeReports.filter(r => new Date(r.timestamp) >= new Date(new Date().getFullYear(), 0, 1)).length;
     const yearlyReportsText = yearlyText === 1 ? '1 report this year' : `${yearlyText} reports this year`;
 
     return `There are ${totalText} in the system. In the last 24 hours, there were ${dailyText}. This week, we've received ${weeklyText}. This month, we've received ${monthlyReportsText}. This year, we've received ${yearlyReportsText}.`;
