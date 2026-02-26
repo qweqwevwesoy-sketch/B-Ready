@@ -626,7 +626,7 @@ export function ChatBox({ reportId, category, onClose, onSendMessage, onSendImag
       isSubmittingRef.current = true;
       
       try {
-        // Handle anonymous messages
+        // Handle anonymous/offline messages - add to localMessages for immediate display
         if (isAnonymous && selectedCategory) {
           const newMessage = {
             text: message,
@@ -646,7 +646,9 @@ export function ChatBox({ reportId, category, onClose, onSendMessage, onSendImag
             timestamp: new Date().toISOString(),
           });
         } else {
-          // Handle authenticated user messages
+          // For authenticated users: Do NOT add to localMessages here!
+          // The socket context will handle the optimistic update via chatMessages
+          // Adding to localMessages here causes visual duplicates
           onSendMessage(message);
         }
         setMessage('');
@@ -660,35 +662,17 @@ export function ChatBox({ reportId, category, onClose, onSendMessage, onSendImag
   };
 
   // Add real-time message handler for immediate updates
+  // ONLY needed for anonymous/offline users - authenticated users get messages from chatMessages
   useEffect(() => {
     if (!reportId) return;
 
-    // Listen for real-time message updates from socket context
-    const handleRealTimeMessage = (data: {
-      message: {
-        text: string;
-        userName: string;
-        timestamp: string;
-        imageData?: string;
-      };
-      reportId: string;
-    }) => {
-      if (data && data.message && data.reportId === reportId) {
-        // Add message immediately for real-time experience
-        const newMessage = {
-          text: data.message.text,
-          sender: data.message.userName === user?.uid ? 'You' : data.message.userName,
-          time: new Date(data.message.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-          type: data.message.userName === user?.uid ? 'sent' : 'received' as 'sent' | 'received',
-          imageData: data.message.imageData,
-        };
-        setLocalMessages(prev => [...prev, newMessage]);
-      }
-    };
+    // For authenticated users: don't add to localMessages - chatMessages handles this
+    // For anonymous users: this provides real-time updates when offline messages come in
+    if (!isAnonymous) return;
 
-    // This would need to be connected to the socket context
-    // For now, we'll rely on the existing socket context updates
-  }, [reportId, user]);
+    // This useEffect is primarily for anonymous/offline scenarios
+    // Authenticated users get messages from chatMessages via the socket context
+  }, [reportId, isAnonymous]);
 
   // Get proper z-index values from ModalManager
   const { getModalZIndex } = useModalManager();

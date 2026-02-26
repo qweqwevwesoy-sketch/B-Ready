@@ -372,13 +372,18 @@ const handleReportsUpdate = (data: unknown) => {
         if (messageData) {
           // Only update messages for the current chat report or if no specific report is active
           if (messageData.reportId === currentChatReportId || !currentChatReportId) {
-            // Check if message ID has already been processed
-            if (processedMessageIds.current.has(messageData.id)) {
-              console.log('📝 Message already processed, skipping duplicate:', messageData.id);
+            // Create a unique key based on content + timestamp + sender (not just ID, since IDs may differ)
+            const uniqueKey = `${messageData.text}_${messageData.userName}_${messageData.timestamp}`;
+            
+            // Check if we've already processed this exact message using content-based deduplication
+            if (processedMessageIds.current.has(uniqueKey)) {
+              console.log('📝 Message already processed (content match), skipping duplicate:', uniqueKey);
               return;
             }
 
-            // Mark message as processed
+            // Mark message as processed using content-based key
+            processedMessageIds.current.add(uniqueKey);
+            // Also mark by ID for ID-based checks
             processedMessageIds.current.add(messageData.id);
 
             setChatMessages(prev => {
