@@ -1005,15 +1005,6 @@ export function ChatBox({ reportId, category, onClose, onSendMessage, onSendImag
                 name="message"
                 value={message}
                 onChange={(e) => setMessage(e.target.value)}
-                onKeyPress={(e: React.KeyboardEvent<HTMLInputElement>) => {
-                  if (e.key === 'Enter' && !e.shiftKey) {
-                    e.preventDefault();
-                    const syntheticEvent = {
-                      preventDefault: () => {},
-                    } as React.FormEvent;
-                    handleSend(syntheticEvent);
-                  }
-                }}
                 placeholder={category ? `Describe the ${category.name.toLowerCase()} incident...` : 'Type your message...'}
                 className="w-full px-3 py-2 text-sm border-2 border-gray-300 rounded-lg focus:border-primary focus:outline-none"
                 autoComplete="off"
